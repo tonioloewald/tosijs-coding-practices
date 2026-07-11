@@ -21,7 +21,9 @@ surprised.
 - **Observant, not reactive.** tosijs uses observers/pub-sub. The UI is *not* `f(state)`;
   the DOM is a persistent structure wired by bindings, and observers surgically update
   bound nodes in place. This is unlike React/vdom and unlike Lit's render-rewrite. Say
-  "observant." Do not describe tosijs as "reactive rendering."
+  "observant." Do not describe tosijs as "reactive rendering." This is the single most
+  important concept in the stack — [`observant-model.md`](observant-model.md) is its
+  canonical explanation and required reading before component/binding work.
 - **Boxed vs. raw.** tosijs exposes state through proxies; scalars can be "boxed" (carry
   `.value`/`.path`/`.observe`) or raw. See `state-and-schema.md`.
 - **Safety boundaries.** In TJS, validate at public API edges (`safety inputs`) and drop

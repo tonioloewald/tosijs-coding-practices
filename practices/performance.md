@@ -2,8 +2,12 @@
 
 ## The core philosophy: observant, surgical updates
 
-The stack's performance model is *not* re-render-and-diff. Observers update the specific
-bound DOM nodes that changed and nothing else:
+The stack's performance model is *not* re-render-and-diff — it is
+[observant](observant-model.md): the DOM is built once and observers update only the specific
+bound nodes that changed. Performance here is a *consequence* of the model (cost is
+proportional to what actually changed, not to what a render re-describes), so most of this
+doc is about not defeating it. Observers update the specific bound DOM nodes that changed and
+nothing else:
 
 - **id-paths give surgical array updates.** A list binding with `idPath: 'id'` lets a
   mutation inside an item synthesize a targeted touch (`list[id=123].color`) so only that

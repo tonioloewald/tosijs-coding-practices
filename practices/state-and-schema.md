@@ -14,7 +14,8 @@ own docs are the reference.
   Mutations flow up and down the path tree.
 - **Observant, not reactive.** tosijs is MVC with path-based bindings, not `f(state)`
   re-rendering. Bindings wire DOM to paths once; observers surgically update the bound nodes.
-  Don't model UI as render-returns-UI — see `./00-stack.md`. — seen in: tosijs, kith-email
+  Don't model UI as render-returns-UI — see [`observant-model.md`](observant-model.md) for
+  the full contrast. — seen in: tosijs, kith-email
 
 ## Entry points
 

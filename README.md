@@ -23,6 +23,14 @@ task.
 Precedence when guidance conflicts: **the local project's `CLAUDE.md`/`AGENTS.md` wins**
 over this repo (it knows its own exceptions); this repo wins over generic model priors.
 
+## Core model — read this first
+
+tosijs is **observant, not reactive.** The DOM is static-by-default and updated by pin-point
+changes from observed state and user events — there is no `UI = f(state)`, no re-render, no
+diff. If you carry a React/Lit mental model into tosijs, you will write subtly wrong code.
+**[`practices/observant-model.md`](practices/observant-model.md) is required reading before
+any component or binding work.**
+
 ## The assumed stack
 
 Unless a project says otherwise, assume: **Bun** (runtime, test runner, bundler),
@@ -34,6 +42,7 @@ or **Cloudflare Pages / R2** as appropriate. Full detail: [`practices/00-stack.m
 
 | When you are… | Read |
 | --- | --- |
+| Building UI at all (the core mental model) | **[`practices/observant-model.md`](practices/observant-model.md)** |
 | Setting up or working in a project day-to-day | [`practices/development.md`](practices/development.md) |
 | Writing or debugging tests | [`practices/testing.md`](practices/testing.md) |
 | Linting, formatting, type-safety, naming | [`practices/code-quality.md`](practices/code-quality.md) |
@@ -53,6 +62,7 @@ AGENTS.md            ← pointer so agent tooling auto-discovers this README
 CONTRIBUTING.md      ← the write-back protocol: how to add/change a practice
 practices/
   00-stack.md        ← the assumed stack + when to override it
+  observant-model.md ← observant vs reactive — the core UI mental model
   development.md
   testing.md
   code-quality.md

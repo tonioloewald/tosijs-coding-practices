@@ -5,6 +5,11 @@ custom elements — no JSX, no virtual DOM, no transpile requirement. The mental
 is **persistent terrain wired to state**, not a `render(state)` output. Bindings update bound
 nodes in place; there is no re-render cycle.
 
+> **tosijs is observant, not reactive** — read [`observant-model.md`](observant-model.md)
+> first. It is why `render()` is often unnecessary (or only does surgical structural updates)
+> and why `content()` builds the DOM once. Bringing a React/Lit `UI = f(state)` habit here is
+> the number-one source of bugs below.
+
 ## Defining a component
 
 Configure via **static properties**, never constructor args. The enforced pattern across the
