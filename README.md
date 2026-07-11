@@ -52,7 +52,7 @@ or **Cloudflare Pages / R2** as appropriate. Full detail: [`practices/00-stack.m
 | Writing or debugging tests | [`practices/testing.md`](practices/testing.md) |
 | Linting, formatting, type-safety, naming | [`practices/code-quality.md`](practices/code-quality.md) |
 | Worrying about speed, bundle size, or monitoring | [`practices/performance.md`](practices/performance.md) |
-| Reviewing code (yours or a PR) | [`practices/review.md`](practices/review.md) |
+| Reviewing code (a diff, a PR, or the six-lens pre-release review) | [`practices/review.md`](practices/review.md) |
 | Cutting a release / publishing | [`practices/releasing.md`](practices/releasing.md) |
 | Shipping to a host | [`practices/deployment.md`](practices/deployment.md) |
 | Managing state or schemas | [`practices/state-and-schema.md`](practices/state-and-schema.md) |

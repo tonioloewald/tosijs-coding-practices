@@ -12,6 +12,91 @@
   runs tests first and exits non-zero on failure — run it, don't assume a pipeline will.
   — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, kith-email, react-tosijs
 
+## Comprehensive pre-release review (minor & major)
+
+Before any **minor or major** version bump, run a structured multi-lens review — not one
+blended pass. Blending dilutes every lens; a reviewer told to "check everything" checks
+nothing deeply. Run the **six lenses below as independent passes**, each scoped to the diff
+since the last release (`git diff vLAST..HEAD`) plus the code it touches (for a **major**,
+review whole affected subsystems, not just the diff). This maps directly onto the tooling:
+one focused `/code-review high` per lens, or `/code-review ultra` / a `Workflow` fan-out with
+one reviewer agent per lens in parallel, then triage the union.
+
+**Scale to the bump:** patch → a quick correctness + docs pass. Minor → all six. Major → all
+six plus a **completeness critic** ("what subsystem/claim/lens did we *not* review?").
+
+Each lens returns **ranked findings with a concrete failure scenario**; a finding without a
+repro is a question, not a defect. **Adversarially verify** before acting on or filing anything.
+
+### 1. Correctness
+- Observant correctness: new state paths actually observed/bound (no manual re-render sneaking
+  in); `await updates()` around post-mutation assertions; id-path surgical updates intact.
+- Boxed vs. raw: no proxy-on-proxy nesting; `===` on a BoxedScalar and `toDOM` getting raw
+  values are silent traps.
+- Component lifecycle: `content()` once vs `render()` structural-only; `value` not an
+  `initAttribute`; boolean attrs default false; **light vs shadow DOM** (path bindings break in
+  shadow); no `on<Event>` callback props.
+- Edge cases, async settling, form-association, error/failure paths.
+- **Done when:** the changed behavior has been **driven end-to-end** (see the next section),
+  not just unit-tested.
+
+### 2. Efficiency
+- Surgical updates, not rebuilds; id-paths for in-place list mutation; bulk-mutate-raw-then
+  `touch()`-once for large updates.
+- Bundle size: gzip delta printed; **no new runtime dep in a core library**; peers `external`;
+  never `sideEffects:false` on an element-registering lib.
+- Hot paths: no revalidation in internals (`safety none` interior, validate at the edge);
+  high-frequency handlers throttled/debounced; heavy deps lazy-loaded; big work off the main thread.
+- **Done when:** bundle-size delta is known and no O(N) regression sits on a hot path.
+
+### 3. DRYness (reuse & simplification)
+- Duplicated non-trivial logic that should be one shared helper; reuse what the stack already
+  provides (`dom.ts`, `throttle`/`debounce`, bindings, `StyleSheet()`/`vars` — never raw CSS
+  strings) instead of reimplementing.
+- New code that re-solves a solved problem, or a copy-paste that drifted.
+- Over-abstraction is also a smell — DRY, not premature generalization.
+- **Done when:** no copy-pasted logic remains and every new helper earns its place.
+
+### 4. Documentation accuracy & up-to-dateness
+- **Regenerate and diff-check generated docs**: `bun run build` (or the doc generator) then
+  `git diff --exit-code` over `docs/`, `llms.txt`, `version.ts`, `examples.md`, `API.md` — a
+  dirty tree means shipped docs are stale.
+- Inline `/*# … */` doc-comments match the changed public API; live-example fences still valid
+  (only `html`/`css`/`js`/`test` execute — a stray ` ```js ` for a non-runnable snippet runs).
+- `CHANGELOG.md` has an entry for this version; README / `CLAUDE.md` / `AGENTS.md` reflect the
+  change; if a **durable cross-project practice** changed, update the shared KB (and grep the
+  cross-cutting docs for parallel mentions — see `../CONTRIBUTING.md`).
+- Deprecations warn once and name their replacement.
+- **Done when:** docs regenerate clean and the public-API surface is documented.
+
+### 5. Test coverage
+- New behavior has tests; every bug fix ships a **failing-first regression test**.
+- Right tier: pure logic extracted and unit-tested; DOM via Happy DOM with `await updates()`;
+  integration/E2E actually starts its target; type-level tests in `*.types.ts` under `tsc`.
+- Security-critical code (VM/runtime, capability registry, RBAC) held to its high coverage bar.
+- No skip-guarded tests passing vacuously (green ≠ ran); no Bun-only imports leaked into Playwright.
+- **Done when:** changed lines are covered, criticals hit target, and the suite is green
+  (the release build runs tests and exits non-zero on failure).
+
+### 6. Developer experience (DX)
+- API ergonomics: emitted types are accurate (no required→optional `.d.ts` drift), inference is
+  good, and no re-introduced footgun (`on<Event>`, `value`-as-attribute, boolean-defaulting-true).
+- Error messages are actionable; assignment-strictness / monadic errors used where apt.
+- Conventions honored: `handle<Event>` callbacks; deprecations keep old names working + warn once.
+- The "point an agent at it and it works" test: `CLAUDE.md`/`AGENTS.md` current, gotchas
+  written down, and `bun install` → `bun start` / `bun test` / `bun run build` succeed from a
+  **fresh clone** (TLS certs, single lockfile).
+- **Done when:** a new dev or agent could adopt the change from the docs alone.
+
+### Triage & gate
+- Dedupe the union of findings and rank by severity.
+- **Unresolved correctness (and security) findings block the release.** Efficiency / DRY / DX /
+  coverage findings that are not regressions may be filed to `TODO.md` and scheduled — but say
+  so explicitly; a silently-dropped finding reads as "reviewed and fine."
+- Record anything durable back into the practice docs so the next release starts ahead.
+
+— seen in: tosijs, tosijs-ui, tjs-lang (release discipline); tooling: `/code-review`, `/code-review ultra`
+
 ## Verify end-to-end — don't approve on tests + typecheck alone
 
 - **Drive the real flow before you call it done.** Happy-DOM unit tests can't see real

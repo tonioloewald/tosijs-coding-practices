@@ -8,6 +8,16 @@ artifacts are committed to git so they must be regenerated, never hand-edited.
 For where the built site goes (GitHub Pages / Firebase / Cloudflare), see
 [deployment](./deployment.md). This doc is about **packaging, versioning, tagging, and publishing**.
 
+## Before a minor or major release: run the comprehensive review
+
+For any **minor or major** bump, run the six-lens
+[comprehensive pre-release review](review.md#comprehensive-pre-release-review-minor--major)
+**first** — correctness, efficiency, DRYness, documentation accuracy, test coverage, and
+developer experience, each as an independent pass over `git diff vLAST..HEAD`. Unresolved
+correctness/security findings block the release; file the rest to `TODO.md`. Patches get a
+lighter correctness + docs pass. Only start the flow below once that review is clean or its
+open findings are consciously deferred.
+
 ## Cutting a release (canonical flow)
 
 1. **Bump `version`** in `package.json` (semver) — this is the single source of truth (below).
