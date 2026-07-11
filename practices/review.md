@@ -70,6 +70,12 @@ repro is a question, not a defect. **Adversarially verify** before acting on or 
 - **Done when:** docs regenerate clean and the public-API surface is documented.
 
 ### 5. Test coverage
+- **Run the suite and read the output** — reviewing coverage without running it is guessing.
+- **Every failing or skipped test is in scope — never dismiss one as "pre-existing," "flaky,"
+  or "not caused by this change."** A change easily slips out of context and causes a
+  downstream failure that then gets waved away as someone else's. Fix it if easy; if not,
+  flag it (failing test + suspected cause) and **still schedule the fix** in `TODO.md` — lower
+  priority is fine, dropping it is not.
 - New behavior has tests; every bug fix ships a **failing-first regression test**.
 - Right tier: pure logic extracted and unit-tested; DOM via Happy DOM with `await updates()`;
   integration/E2E actually starts its target; type-level tests in `*.types.ts` under `tsc`.
