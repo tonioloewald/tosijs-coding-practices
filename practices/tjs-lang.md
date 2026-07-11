@@ -136,8 +136,10 @@ The VM is **capability-based (zero IO by default) and fuel-metered** — every a
 - Playground examples are markdown-with-code-blocks under `guides/examples/{tjs,ajs}/`, not
   raw `.tjs` files — after editing run `bun run docs` and commit the regenerated
   `demo/docs.json`.
-- Deploy the playground with `bun run deploy` (demo→`.demo/`, then `firebase deploy`); Cloud
-  Functions self-host TJS (`functions/src/*.tjs` emitted via `tjs emit`).
+- Deploy the playground with **`bun run deploy:hosting`** (hosting only — demo→`.demo/`, then
+  `firebase deploy --only hosting`). Use `bun run deploy` **only when Cloud Functions changed** —
+  it additionally runs `functions:deploy`, so a bare `deploy` needlessly redeploys functions on
+  every site refresh. Cloud Functions self-host TJS (`functions/src/*.tjs` emitted via `tjs emit`).
 
 ### lukko
 
