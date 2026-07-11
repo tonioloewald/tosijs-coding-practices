@@ -19,6 +19,11 @@ task.
 4. **Contribute back.** When you learn something durable that would help the next agent in
    *any* project — a gotcha, a fixed footgun, a better default — add it to the right doc
    per `CONTRIBUTING.md`. Practices earn their place by being reused, not by being clever.
+5. **Treat these as living documents.** They are not graven in stone. Don't rewrite them
+   unprompted in the middle of an unrelated task — but *do* speak up: **voice concerns, flag
+   inconsistencies or anything that reads as wrong or out of date, and suggest improvements**
+   as you work. Continuous improvement is the goal; silence when something looks off is the
+   only real failure.
 
 Precedence when guidance conflicts: **the local project's `CLAUDE.md`/`AGENTS.md` wins**
 over this repo (it knows its own exceptions); this repo wins over generic model priors.

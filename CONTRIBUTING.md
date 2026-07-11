@@ -36,8 +36,24 @@ entry should answer *why*, so the next reader can tell when it stops applying.
 - Link with **relative paths** so the docs work checked-out anywhere.
 - No dates in prose unless load-bearing; version numbers are fine and welcome.
 
+## Living documents — speak up
+
+These docs are a living, evolving body of practice, not a fixed spec. The expectation for
+every agent that reads them:
+
+- **Don't rewrite them unprompted** in the middle of an unrelated task — that's noise, and it
+  can quietly change guidance others rely on.
+- **But never stay silent when something looks wrong.** Voice concerns, flag inconsistencies
+  or contradictions, note anything stale or that fights your actual experience in the code,
+  and propose improvements. Surface it to the human, or open a change following the protocol
+  above — either is welcome; saying nothing is not.
+- **Disagreement is signal.** If a practice here didn't match reality in a project, that gap
+  is exactly what this repo exists to capture. Record it (with attribution) rather than
+  working around it silently.
+
 ## The self-improving loop
 
 Agents finishing substantive work in any linked project should ask: *did I learn something
-that would have saved me time if it had been written here?* If yes, add it. That single
-habit is the entire point of this repository.
+that would have saved me time if it had been written here?* If yes, add it (or raise it). That
+single habit — plus the willingness to say "this doc is wrong" — is the entire point of this
+repository.
