@@ -44,10 +44,13 @@ commit `docs/` unless the repo deliberately ignores build output. — seen in: e
 ## Firebase
 
 For full-stack apps needing auth, Firestore/RTDB, hosting, and Cloud Functions (positioned
-as "PHP/LAMP simplicity"). `bun run deploy` builds the client to a gitignored hosting root
-(`.demo/`) then runs `firebase deploy`. The `functions/` subdir uses **npm + Node**,
-deliberately separate from the bun-based root — run `cd functions && npm install`. — seen
-in: tjs-lang, loewald-dot-com
+as "PHP/LAMP simplicity"). Build the client to a gitignored hosting root (`.demo/`) and ship
+it — but **split hosting-only from full deploys**: use `bun run deploy:hosting`
+(`firebase deploy --only hosting`) for a site refresh, and reserve `bun run deploy` for when
+Cloud Functions actually changed (it additionally runs `functions:deploy`, so a bare deploy
+needlessly redeploys functions on every site refresh). The `functions/` subdir uses
+**npm + Node**, deliberately separate from the bun-based root — run `cd functions && npm
+install`. — seen in: tjs-lang, loewald-dot-com
 
 - **Route ALL Firestore access through Cloud Functions endpoints; keep `firestore.rules`
   deny-all.** Security is enforced server-side by the access-control layer, not by rules; a
