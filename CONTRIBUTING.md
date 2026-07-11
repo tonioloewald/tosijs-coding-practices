@@ -23,8 +23,12 @@ entry should answer *why*, so the next reader can tell when it stops applying.
 2. **Write it as guidance**, not narrative. Prefer: *do X because Y; the trap is Z.*
 3. **Attribute it.** End the entry with `— seen in: project-a, project-b`. This is how we
    tell a battle-tested pattern from a guess.
-4. **Deduplicate.** If it overlaps an existing entry, sharpen that entry instead of adding
-   a parallel one. Contradictions are bugs — resolve them, don't stack them.
+4. **Deduplicate — and grep for the parallel mention.** If it overlaps an existing entry,
+   sharpen that entry instead of adding a parallel one. Contradictions are bugs — resolve
+   them, don't stack them. In particular, **when you correct a project-specific entry, grep
+   the cross-cutting docs for the same fact** (`deployment.md`, `performance.md`,
+   `code-quality.md`, `00-stack.md` often restate a project detail from a broader angle) and
+   fix every copy in the same change — a fix that leaves a stale twin is a new inconsistency.
 5. **Keep the stack honest.** If a project legitimately diverges from the assumed stack
    (`practices/00-stack.md`), record the divergence and the reason under that doc's
    "Known divergences" — do not quietly rewrite the default.
