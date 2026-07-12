@@ -2,18 +2,26 @@
 
 Executable versions of the practices in this repo.
 
-## `pre-release-review` — the six-lens release-gate review
+## `pre-release-review` — the eight-lens release-gate review
 
 The runnable form of [`practices/review.md` → Comprehensive pre-release
 review](../practices/review.md#comprehensive-pre-release-review-minor--major). Two pieces:
 
-- **`pre-release-review.workflow.js`** — a Claude Code `Workflow` harness. It fans out six
-  independent lens reviewers (correctness, efficiency, DRYness, docs, test coverage, DX) over
+- **`pre-release-review.workflow.js`** — a Claude Code `Workflow` harness. It fans out eight
+  independent lens reviewers (correctness, efficiency, DRYness, docs, test coverage, DX, ecosystem health, practices self-review) over
   `git diff <last-tag>...HEAD`, adversarially verifies every finding, and triages the survivors
   into a `GO` / `GO_WITH_FOLLOWUPS` / `BLOCK` report. Reviewers are read-only.
 - **`pre-release-review.SKILL.md`** — a `/pre-release-review` skill that wraps the harness:
   figures out the base tag and bump level, runs the workflow, presents the report, and applies
-  the gate (block on blockers, file follow-ups to `TODO.md`).
+  the gate (block on blockers, then **route follow-ups by lens** — `TODO.md` for lenses 1–6,
+  `UPSTREAM.md` / the upstream repo for **ecosystem** findings, the shared practices repo for
+  **self-review** findings).
+
+Lenses 1–6 review the change. **Lenses 7–8 are the compounding ones**: *ecosystem &
+abstraction health* asks whether work is happening in the wrong layer (are we hand-rolling
+around a missing seam upstream? nascent anti-patterns? friction we've normalized?), and
+*practices self-review* asks whether this release contradicted or outdated our own documented
+practices. If they return nothing, be suspicious — it usually means nobody looked.
 
 ### Install (per developer, user-level so it works in every repo)
 

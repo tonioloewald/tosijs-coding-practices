@@ -1,9 +1,9 @@
 export const meta = {
   name: 'pre-release-review',
   description:
-    'Six-lens adversarial pre-release review of the diff since the last release: correctness, efficiency, DRYness, docs, test coverage, developer experience',
+    'Eight-lens adversarial pre-release review: correctness, efficiency, DRYness, docs, test coverage, developer experience, ecosystem/abstraction health, and practices self-review',
   phases: [
-    { title: 'Review', detail: 'six independent lens reviewers over the diff' },
+    { title: 'Review', detail: 'eight independent lens reviewers over the diff' },
     { title: 'Verify', detail: 'adversarially verify each finding' },
     { title: 'Triage', detail: 'dedupe, rank, GO / BLOCK recommendation' },
   ],
@@ -15,7 +15,9 @@ const base = (args && args.baseRef) || 'main'
 const bump = (args && args.bump) || 'minor'
 const diffCmd = (args && args.scope) || `git diff ${base}...HEAD`
 
-// ---- the six lenses (criteria mirror practices/review.md) -------------------
+// ---- the eight lenses (criteria mirror practices/review.md) -----------------
+// 1-6 look AT THE CHANGE. 7-8 look outward (the tools we depend on) and inward
+// (our own practices) — the compounding ones.
 const LENSES = [
   {
     key: 'correctness',
@@ -45,7 +47,27 @@ const LENSES = [
   {
     key: 'dx',
     title: 'Developer experience',
-    checks: `API ergonomics: emitted types accurate (no required->optional .d.ts drift), good inference, no re-introduced footgun (on<Event>, value-as-attribute, boolean-defaulting-true). Error messages actionable; assignment-strictness / monadic errors used where apt. Conventions: handle<Event> callbacks; deprecations keep old names working + warn once. The "point an agent at it and it works" test: CLAUDE.md/AGENTS.md current, gotchas documented, and \`bun install\` -> \`bun start\`/\`bun test\`/\`bun run build\` succeed from a fresh clone (TLS certs, single lockfile).`,
+    checks: `The DX we PROVIDE. API ergonomics: emitted types accurate (no required->optional .d.ts drift), good inference, no re-introduced footgun (on<Event>, value-as-attribute, boolean-defaulting-true). Error messages actionable; assignment-strictness / monadic errors used where apt. Conventions: handle<Event> callbacks; deprecations keep old names working + warn once. The "point an agent at it and it works" test: CLAUDE.md/AGENTS.md current, gotchas documented, and \`bun install\` -> \`bun start\`/\`bun test\`/\`bun run build\` succeed from a fresh clone (TLS certs, single lockfile).`,
+  },
+  {
+    key: 'ecosystem',
+    title: 'Ecosystem & abstraction health',
+    checks: `Look UP and OUT, not down. Lens 6 asks "is the DX we PROVIDE good?" — you ask "is the DX we CONSUME good, and is this code quietly paying for it being bad?" Hunt for:
+- **Work happening in the wrong layer:** boilerplate or workarounds that exist here only because an upstream tool (tosijs, tosijs-ui, tjs-lang, tosijs-schema, the site builder, haltija) lacks a seam. If several consumers each hand-roll the same thing, that is ONE missing library affordance, not N local problems.
+- **Nascent anti-patterns:** a clever workaround one copy-paste away from becoming convention; a pattern spreading because the right way is too hard; code fighting the observant model (reaching for a re-render because a binding was awkward to express).
+- **Compensating complexity:** defensive unwrapping, sanitizing inputs the upstream should have handled, indirection routing around a limitation, a version pin that dodges a bug instead of fixing it.
+- **Normalized friction:** loop steps we've stopped noticing (manual regeneration, port collisions, cert setup, two lockfiles, a script renamed to dodge a builtin). Familiarity is not the same as fine.
+For each finding, name the UPSTREAM tool and the seam/affordance that is missing, and propose the upstream fix. Recommendation should say where it goes: UPSTREAM.md and/or the upstream repo. Do not accept a silent workaround.`,
+  },
+  {
+    key: 'practices',
+    title: 'Practices & process self-review',
+    checks: `The review reviews itself. Read the shared practices — the repo at https://github.com/tonioloewald/tosijs-coding-practices (or the sibling checkout ../tosijs-coding-practices, or this project's CLAUDE.md/AGENTS.md pointer) — and ask:
+- Did this release **contradict, outdate, or vindicate** a documented practice? A practice that didn't match reality is a BUG IN THE KNOWLEDGE BASE — say so and propose the correction (with attribution), don't route around it.
+- What did we learn here that **would have saved time if it had been written down**? Propose the entry and which doc it belongs in.
+- Did the **process** hold — did a lens miss something that bit us, is a lens dead weight, did the gate work?
+- Are this project's own CLAUDE.md / AGENTS.md still accurate after the change?
+Findings here are proposed CHANGES TO THE PRACTICES (or to this repo's agent docs), not to the shipping code. Severity is usually minor/major, rarely a blocker. Returning zero findings is suspicious — it usually means nobody looked.`,
   },
 ]
 
@@ -184,7 +206,7 @@ phase('Triage')
 let gaps = null
 if (bump === 'major') {
   gaps = await agent(
-    `${READONLY}\n\nYou are the completeness critic for a MAJOR release review. The six lenses (correctness, efficiency, DRYness, docs, test coverage, DX) have run over \`${diffCmd}\`. Inspect the diff and repo and name what was NOT adequately reviewed — an untouched-but-affected subsystem, an unverified claim, a public-API surface or migration path nobody checked. Be specific and short.`,
+    `${READONLY}\n\nYou are the completeness critic for a MAJOR release review. The eight lenses (correctness, efficiency, DRYness, docs, test coverage, DX, ecosystem/abstraction health, practices self-review) have run over \`${diffCmd}\`. Inspect the diff and repo and name what was NOT adequately reviewed — an untouched-but-affected subsystem, an unverified claim, a public-API surface or migration path nobody checked. Be specific and short.`,
     { label: 'completeness-critic', phase: 'Triage', schema: GAPS_SCHEMA, agentType: 'general-purpose' }
   )
 }
@@ -204,8 +226,13 @@ Produce a triaged report:
 - Recommendation: BLOCK if any confirmed blocker (or unresolved correctness/security) remains; GO_WITH_FOLLOWUPS if only non-blocking findings remain (list them as TODO items to file); GO if clean.
 - Never silently drop a finding — deferred ones must appear as explicit follow-ups.
 - **A failing test is never dismissed as "pre-existing" or "not caused by this change."** Any red/skipped test in the coverage findings must appear in the report — fixed if easy, otherwise flagged as a follow-up that is still scheduled, never waved away.
+- **ROUTE BY LENS — findings do not all belong in the same place.** Put each follow-up under the right destination heading:
+  - lenses correctness/efficiency/dryness/docs/coverage/dx -> fix now, or file to this repo's \`TODO.md\`.
+  - lens **ecosystem** -> this repo's \`UPSTREAM.md\` and/or a fix/issue in the UPSTREAM repo (name the tool and the missing seam).
+  - lens **practices** -> a change to the shared \`tosijs-coding-practices\` repo (name the doc), and/or this repo's CLAUDE.md/AGENTS.md.
+- **ecosystem and practices findings rarely BLOCK** — they compound. Do not let them drag the verdict to BLOCK unless something is actively broken; but never drop them either.
 
-reportMarkdown must be a complete, ready-to-read report: a one-line verdict, a per-lens summary, the blockers, then the follow-ups (as checkbox TODO lines), then any completeness gaps.`,
+reportMarkdown must be a complete, ready-to-read report: a one-line verdict, a per-lens summary, the blockers, then follow-ups as checkbox TODO lines **grouped by destination** (\`TODO.md\` / \`UPSTREAM.md\` + upstream repo / shared practices), then any completeness gaps.`,
   { label: 'triage', phase: 'Triage', schema: REPORT_SCHEMA, agentType: 'general-purpose' }
 )
 

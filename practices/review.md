@@ -16,14 +16,19 @@
 
 Before any **minor or major** version bump, run a structured multi-lens review — not one
 blended pass. Blending dilutes every lens; a reviewer told to "check everything" checks
-nothing deeply. Run the **six lenses below as independent passes**, each scoped to the diff
+nothing deeply. Run the **eight lenses below as independent passes**, each scoped to the diff
 since the last release (`git diff vLAST..HEAD`) plus the code it touches (for a **major**,
 review whole affected subsystems, not just the diff). This maps directly onto the tooling:
 one focused `/code-review high` per lens, or `/code-review ultra` / a `Workflow` fan-out with
-one reviewer agent per lens in parallel, then triage the union.
+one reviewer agent per lens in parallel, then triage the union. Runnable version:
+[`/pre-release-review`](../tools/README.md).
 
-**Scale to the bump:** patch → a quick correctness + docs pass. Minor → all six. Major → all
-six plus a **completeness critic** ("what subsystem/claim/lens did we *not* review?").
+Lenses 1–6 look **at the change**. Lenses 7–8 look **outward and inward** — at the tools we
+depend on, and at our own practices. Those two are the compounding ones: skipping them is how
+a stack quietly accretes workarounds and a knowledge base goes stale.
+
+**Scale to the bump:** patch → a quick correctness + docs pass. Minor → all eight. Major →
+all eight plus a **completeness critic** ("what subsystem/claim/lens did we *not* review?").
 
 Each lens returns **ranked findings with a concrete failure scenario**; a finding without a
 repro is a question, not a defect. **Adversarially verify** before acting on or filing anything.
@@ -94,11 +99,54 @@ repro is a question, not a defect. **Adversarially verify** before acting on or 
   **fresh clone** (TLS certs, single lockfile).
 - **Done when:** a new dev or agent could adopt the change from the docs alone.
 
+### 7. Ecosystem & abstraction health — the tools we *depend on*
+Look up and out, not just down. Lens 6 asks "is the DX we **provide** good?" — this one asks
+"is the DX we **consume** good, and is this code quietly paying for it being bad?"
+
+- **Is work happening in the wrong layer?** Boilerplate or workarounds that exist here only
+  because an upstream tool (tosijs, tosijs-ui, tjs-lang, tosijs-schema, the site builder,
+  haltija) lacks a seam. If several consumers each hand-roll the same thing, that is **one
+  missing library affordance, not N local problems** — fix it upstream.
+- **Nascent anti-patterns.** A clever workaround that's one copy-paste away from becoming
+  convention; a pattern spreading because the right way is too hard; code fighting the
+  observant model (reaching for a re-render because a binding was awkward to express).
+- **Compensating complexity.** Defensive unwrapping, sanitizing inputs the upstream should
+  have handled, indirection that exists to route around a limitation, a version pin that
+  dodges a bug instead of fixing it.
+- **Normalized friction.** Loop steps we've stopped noticing because we're used to them:
+  manual regeneration, port collisions, cert setup, two lockfiles, a script renamed to dodge
+  a builtin. Familiarity is not the same as fine.
+- **Action:** log it in the repo's `UPSTREAM.md` (Context + concrete Suggestion; mark
+  `✅ RESOLVED` with the fixing version) **and/or** open the fix in the upstream repo.
+  Silently working around it is exactly the failure this lens exists to catch.
+- **Done when:** every workaround in the diff is either justified or logged upstream.
+
+### 8. Practices & process self-review — are *we* still right?
+The review reviews itself. Practices are living documents, and a release is when they get
+tested against reality.
+
+- Did this release **contradict, outdate, or vindicate** a documented practice? A practice
+  that didn't match reality is a **bug in the knowledge base** — fix it (with attribution),
+  don't route around it.
+- What did we learn that **would have saved time if it had been written down**? Add it.
+- Did the **process** hold? Did a lens miss something that bit us; is a lens dead weight; did
+  the gate work? Adjust the lenses and criteria — including this list.
+- Are this project's own `CLAUDE.md` / `AGENTS.md` still accurate after the change?
+- **Done when:** the shared practices are updated, or explicitly confirmed still correct, and
+  any process gap is filed.
+
 ### Triage & gate
 - Dedupe the union of findings and rank by severity.
 - **Unresolved correctness (and security) findings block the release.** Efficiency / DRY / DX /
   coverage findings that are not regressions may be filed to `TODO.md` and scheduled — but say
   so explicitly; a silently-dropped finding reads as "reviewed and fine."
+- **Route by lens — these findings do not all belong in the same place:**
+  - **Lenses 1–6** → fix now, or file to this repo's `TODO.md`.
+  - **Lens 7** → the repo's `UPSTREAM.md`, and/or a fix/issue in the *upstream* repo.
+  - **Lens 8** → a change to `tosijs-coding-practices` (and grep the cross-cutting docs for
+    parallel mentions — see `../CONTRIBUTING.md`).
+- **Lenses 7 and 8 rarely block a release** — they compound instead. Treat "no findings" from
+  either with suspicion: it usually means nobody looked.
 - Record anything durable back into the practice docs so the next release starts ahead.
 
 — seen in: tosijs, tosijs-ui, tjs-lang (release discipline); tooling: `/code-review`, `/code-review ultra`

@@ -10,11 +10,15 @@ For where the built site goes (GitHub Pages / Firebase / Cloudflare), see
 
 ## Before a minor or major release: run the comprehensive review
 
-For any **minor or major** bump, run the six-lens
+For any **minor or major** bump, run the eight-lens
 [comprehensive pre-release review](review.md#comprehensive-pre-release-review-minor--major)
-**first** — correctness, efficiency, DRYness, documentation accuracy, test coverage, and
-developer experience, each as an independent pass over `git diff vLAST..HEAD`. Unresolved
-correctness/security findings block the release; file the rest to `TODO.md`. Patches get a
+**first** — correctness, efficiency, DRYness, documentation accuracy, test coverage,
+developer experience, **ecosystem & abstraction health**, and **practices self-review** — each
+as an independent pass over `git diff vLAST..HEAD`. Runnable: [`/pre-release-review`](../tools/README.md).
+
+Unresolved correctness/security findings **block** the release. Route the rest by lens:
+`TODO.md` for lenses 1–6, `UPSTREAM.md` / the upstream repo for ecosystem findings, and the
+shared practices repo for self-review findings — never silently drop one. Patches get a
 lighter correctness + docs pass. Only start the flow below once that review is clean or its
 open findings are consciously deferred.
 
