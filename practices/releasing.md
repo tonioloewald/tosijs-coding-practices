@@ -152,6 +152,10 @@ Every session, in order:
    git push
    git status   # MUST show "up to date with origin"
    ```
+   > **Exception — the `tosijs-coding-practices` repo: `git pull --no-rebase` (merge), never
+   > `--rebase`.** Its history must be append-only, because a rebase linearizes away a concurrent
+   > edit — and there, a collision between two agents *is the signal* worth preserving. See its
+   > `CONTRIBUTING.md`.
 4. **Clean up** — clear stashes, prune stale remote branches.
 5. **Verify** — everything committed AND pushed.
 6. **Hand off** — leave context for the next session.
