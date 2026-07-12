@@ -78,6 +78,21 @@ Core libraries target small gzip footprints and **zero runtime dependencies**.
   tosijs-schema
 - For web-page performance (Core Web Vitals, LCP/INP/CLS, render-blocking, layout shift),
   measure before optimizing. Don't guess at hotspots.
+- **Hunting a leak in a build/CLI process: watch RSS, not the JS heap.** Native memory (Bun's
+  bundler, happy-dom, `@resvg/resvg-js`, any FFI) is invisible to `heapUsed` and to every JS heap
+  profiler, so a heap snapshot will tell you everything is fine while the process eats the
+  machine. Loop the suspect step N times, call `Bun.gc(true)` each iteration (so anything left is
+  genuinely retained), and print `process.memoryUsage().rss` — a leak shows as monotonic RSS
+  growth with a flat heap. Then bisect by running the suspect step in a child process: if the
+  parent goes flat, you've found it. That is exactly how the `Bun.build()` leak
+  ([oven-sh/bun#34053](https://github.com/oven-sh/bun/issues/34053)) was located after it took a
+  machine down at 136GB RSS. — seen in: tosijs-ui
+- **Long-lived processes need a memory ceiling.** A per-iteration leak that is harmless in a
+  one-shot CLI is fatal in a watch/dev server that runs for days. Sample RSS at each iteration and
+  exit with the growth-per-iteration when it crosses a ceiling — a dev server is one keystroke to
+  restart; a swap-thrashed laptop is not. Distinguish *growth* (a leak worth reporting) from a
+  baseline that simply exceeds the ceiling (raise the ceiling) — the advice is opposite, and
+  guessing wrong sends the next person the wrong way. — seen in: tosijs-ui (`memoryLimitMb`)
 
 ## Throttle & debounce
 

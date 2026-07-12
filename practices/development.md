@@ -30,6 +30,22 @@ How to work in a project day-to-day.
 - **A lingering `package-lock.json` / `bun.lockb` is stale — prefer `bun.lock`.** Several repos
   carry two lockfiles; bun is canonical. The exception is a Firebase `functions/` subdir, which
   legitimately runs npm + Node. — seen in: tosijs, tosijs-3d, react-tosijs, loewald-dot-com
+- **🚨 Never call `Bun.build()` inside a long-lived process — shell out to the `bun build` CLI.**
+  Bun's bundler never returns its native arena. RSS grows monotonically per call with no plateau
+  (40 sequential builds of one entry = **+367MB**, still climbing ~5MB/build at the end) while the
+  JS heap stays flat — so `Bun.gc()` can't reclaim it and no heap profiler will show it. Anything
+  that bundles more than once is exposed: dev servers, watch modes, SSG rebuild loops, test
+  harnesses that bundle fixtures. This is not theoretical — **a ~2-day `tosijs-ui` watch session
+  reached 136GB RSS and took the machine down.** Filed as
+  [oven-sh/bun#34053](https://github.com/oven-sh/bun/issues/34053). A child process gives the
+  memory back to the OS on exit: the same 15 bundles leave the parent **+0.5MB** instead of
+  +192MB. The same reasoning applies to any native-heavy build step you run repeatedly (happy-dom,
+  `@resvg/resvg-js`) — put it in a child. — seen in: tosijs-ui
+- **⚠️ If you consume `tosijs-ui/site`, update to ≥ 1.6.22 as a priority.** Every dev server built
+  on it called `Bun.build()` in-process once per rebuild, so it leaked until that release (fixed
+  there: bundle + ePub moved to child processes, plus a memory watchdog that exits with the
+  growth-per-rebuild rather than thrash the machine). Baseline RSS 503MB → 150MB, per-rebuild
+  growth 26–59MB → ~2.7MB. — seen in: tosijs-ui, and every doc site built on it
 
 ## The dev loop
 
