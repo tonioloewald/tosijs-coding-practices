@@ -43,6 +43,14 @@ diff. If you carry a React/Lit mental model into tosijs, you will write subtly w
 **[`practices/observant-model.md`](practices/observant-model.md) is required reading before
 any component or binding work.**
 
+## Know what you'll get wrong — read this second
+
+Some of what you "know" is actively wrong here, and **not because it's stupid** — because it's
+well-earned advice from a dominant paradigm that this stack considered and rejected.
+`onFoo={fn}` silently becoming an event listener, reflexive shadow DOM, `sideEffects: false`,
+"that test was already failing." **[`practices/model-priors.md`](practices/model-priors.md)**
+lists the priors that fight this codebase and how to catch yourself.
+
 ## The assumed stack
 
 Unless a project says otherwise, assume: **Bun** (runtime, test runner, bundler),
@@ -55,6 +63,7 @@ or **Cloudflare Pages / R2** as appropriate. Full detail: [`practices/00-stack.m
 | When you are… | Read |
 | --- | --- |
 | Building UI at all (the core mental model) | **[`practices/observant-model.md`](practices/observant-model.md)** |
+| About to trust an instinct (React/web-components/bundler lore) | **[`practices/model-priors.md`](practices/model-priors.md)** — what you will get wrong here |
 | Hitting a problem that belongs to *another* repo | **[`practices/cross-project.md`](practices/cross-project.md)** — file, don't fix |
 | Setting up or working in a project day-to-day | [`practices/development.md`](practices/development.md) |
 | Writing or debugging tests | [`practices/testing.md`](practices/testing.md) |
@@ -76,6 +85,7 @@ CONTRIBUTING.md      ← the write-back protocol: how to add/change a practice
 practices/
   00-stack.md        ← the assumed stack + when to override it
   observant-model.md ← observant vs reactive — the core UI mental model
+  model-priors.md    ← priors that fight this stack (read adversarially)
   cross-project.md   ← file-dont-fix: how projects talk to each other
   development.md
   testing.md

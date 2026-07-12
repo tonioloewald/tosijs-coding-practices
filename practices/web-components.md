@@ -56,11 +56,27 @@ The stack disagrees on the default, and the reason matters:
 - Apps (kith-email, and the norm in practice): **default to Light DOM** — **path bindings do
   NOT work inside shadow DOM**, so a shadow-DOM default silently breaks tosijs data binding.
 
+**Why the platform pushes you to shadow DOM — and why we don't.** Shadow DOM is rarely a
+considered choice; it's the default every custom-elements tutorial opens with. But it carries a
+**real perf cost**, and its style encapsulation is **usually undesirable** — you generally *want*
+your design system's cascade and CSS custom properties to reach in. The reason people accept the
+whole bundle anyway is that **`<slot>` only works inside shadow DOM**: composition is held
+hostage to encapsulation you didn't want. **tosijs refused that trade and reimplemented slot
+composition for light DOM** (`<tosi-slot>` / `xinSlot()`), so you get composition *without* being
+forced into shadow DOM.
+
 **Rule of thumb:** author in **Light DOM by default**; reach for shadow DOM only when you truly
 need CSS/DOM isolation (e.g. rendering untrusted email HTML, which is also DOMPurify-sanitized).
 Set `role` in `initAttributes` to opt into light DOM. In light DOM, use `xinSlot()` (a bare
 `slot()` silently becomes `<xin-slot>`/`<tosi-slot>`); use `slot()` only in shadow-DOM
 components.
+
+**The footgun in the fix — know it.** Light-DOM slotting inserts a **real element** into the
+tree, so **a slotted element's `parentElement` is the `<tosi-slot>`**, not the host or the
+logical parent you expect. Anything that walks the tree sees the wrapper: `parentElement`,
+`closest()`, and direct-child CSS selectors (`>`). This is the honest cost of fixing composition
+without shadow DOM — and it's cheaper than what it replaced. Don't write parent-walking logic
+that assumes the slotted child is a direct child of the host.
 
 — seen in: tosijs (shadow default), kith-email (light default, binding reason), tosijs-ui (slot vs xinSlot), tosijs-3d
 
