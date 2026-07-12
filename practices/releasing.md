@@ -192,8 +192,18 @@ and PR bodies follow the harness's co-author/attribution footer conventions.
   An un-stapled DMG is Gatekeeper-rejected even when the inner app is fine.
 
 ### haltija (npm + Electron DMG)
-- Bump BOTH `package.json` and `apps/desktop/package.json`, then the fixed sequence: build →
-  `bun test src/` 100% green → commit → annotated tag → push commits AND tag →
-  `gh release create --prerelease` → `npm publish --tag beta`. DMG notarization is on-demand,
-  not part of the beta loop; set `APPLE_API_KEY_ID` before overwriting `APPLE_API_KEY` or
-  notarization fails with a JSON parse error.
+- Bump BOTH `package.json` and `apps/desktop/package.json` (the build stamps `src/version.ts`
+  from the root one), then the fixed sequence: build → `bun test src/` 100% green → commit →
+  annotated tag → push commits AND tag → `gh release create` → `npm publish`.
+- **A schema change must be committed with its rebuild.** `bun run build` regenerates `API.md`,
+  `DOCS.md`, `llms.txt`, `bin/hints.json`, and `apps/mcp/src/endpoints.json` from
+  `src/api-schema.ts`; the `docs-drift` CI workflow re-runs the build and fails if any of them
+  differ. Same idea as [Regenerate generated files, then verify they're in
+  sync](#regenerate-generated-files-then-verify-theyre-in-sync), enforced in CI.
+- **Betas take the same sequence with two deltas**: `gh release create --prerelease` and
+  `npm publish --tag beta` (see [Tagging](#tagging) — the dist-tag is not optional). The flags
+  cut both ways: pass them on a *stable* release and the version lands under the `beta`
+  dist-tag, so `npm install haltija` keeps serving the previous release and nobody gets the fix.
+  Decide stable-vs-beta before you type either command.
+- DMG notarization is on-demand, not part of either loop; set `APPLE_API_KEY_ID` before
+  overwriting `APPLE_API_KEY` or notarization fails with a JSON parse error.
