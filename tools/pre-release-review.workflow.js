@@ -47,18 +47,28 @@ const LENSES = [
   {
     key: 'dx',
     title: 'Developer experience',
-    checks: `The DX we PROVIDE. API ergonomics: emitted types accurate (no required->optional .d.ts drift), good inference, no re-introduced footgun (on<Event>, value-as-attribute, boolean-defaulting-true). Error messages actionable; assignment-strictness / monadic errors used where apt. Conventions: handle<Event> callbacks; deprecations keep old names working + warn once. The "point an agent at it and it works" test: CLAUDE.md/AGENTS.md current, gotchas documented, and \`bun install\` -> \`bun start\`/\`bun test\`/\`bun run build\` succeed from a fresh clone (TLS certs, single lockfile).`,
+    checks: `The DX we PROVIDE. API ergonomics: emitted types accurate (no required->optional .d.ts drift), good inference, no re-introduced footgun (on<Event>, value-as-attribute, boolean-defaulting-true). Error messages actionable; assignment-strictness / monadic errors used where apt. Conventions: handle<Event> callbacks; deprecations keep old names working + warn once. The "point an agent at it and it works" test: CLAUDE.md/AGENTS.md current, gotchas documented, and \`bun install\` -> \`bun start\`/\`bun test\`/\`bun run build\` succeed from a fresh clone (TLS certs, single lockfile).
+**BREAKING CHANGES — check all four.** If this release removes or changes public API: (1) is the break JUSTIFIED (does it buy something a deprecation couldn't? an incidental break, made because the old API was in the way of a refactor, is the kind consumers resent); (2) does the VERSION reflect it; (3) is there a CHANGELOG ENTRY NAMING EXACTLY WHAT BROKE — a release that removes public API with no changelog entry is a trap, and an easy one to ship because the code still compiles; (4) are there MIGRATION NOTES (ecosystem convention: a \`Migration.md\` shipped in \`docPaths\`) telling a consumer precisely what to change, before -> after. Prefer the deprecation path; if you break, say why.`,
   },
   {
     key: 'ecosystem',
-    title: 'Ecosystem & abstraction health',
-    checks: `Look UP and OUT, not down. Lens 6 asks "is the DX we PROVIDE good?" — you ask "is the DX we CONSUME good, and is this code quietly paying for it being bad?" Hunt for:
+    title: 'Ecosystem & abstraction health (BOTH directions)',
+    checks: `This lens runs in TWO DIRECTIONS AND BOTH HALVES ARE MANDATORY. Reviewers reliably do 7a and skip 7b — DO NOT. Run both and report both, as separate sections of your findings.
+
+=== 7a. OUTGOING — are we paying for someone else's missing seam? ===
+Look UP and OUT, not down. Lens 6 asks "is the DX we PROVIDE good?" — you ask "is the DX we CONSUME good, and is this code quietly paying for it being bad?" Hunt for:
 - **Work happening in the wrong layer:** boilerplate or workarounds that exist here only because an upstream tool (tosijs, tosijs-ui, tjs-lang, tosijs-schema, the site builder, haltija) lacks a seam. If several consumers each hand-roll the same thing, that is ONE missing library affordance, not N local problems.
 - **Nascent anti-patterns:** a clever workaround one copy-paste away from becoming convention; a pattern spreading because the right way is too hard; code fighting the observant model (reaching for a re-render because a binding was awkward to express).
 - **Compensating complexity:** defensive unwrapping, sanitizing inputs the upstream should have handled, indirection routing around a limitation, a version pin that dodges a bug instead of fixing it.
 - **Normalized friction:** loop steps we've stopped noticing (manual regeneration, port collisions, cert setup, two lockfiles, a script renamed to dodge a builtin). Familiarity is not the same as fine.
-ALSO CHECK THE INCOMING DIRECTION: run \`gh issue list -R tonioloewald/<this-repo> --state open\` (resolve the repo from \`git remote get-url origin\`) and report whether this release ignores a standing consumer ask, or silently fixes/breaks one (which should be closed/noted with the version).
-For each outgoing finding, name the UPSTREAM tool and the missing seam/affordance, and propose the upstream fix. The recommendation must be to **FILE A GITHUB ISSUE on the upstream repo** (the channel) and mirror it in this repo's UPSTREAM.md with the issue URL — NEVER to go edit the upstream repo directly (agents stay in their own repo; that requires human signoff). Do not accept a silent workaround.`,
+For each outgoing finding, name the UPSTREAM tool and the missing seam/affordance, and propose the upstream fix. The recommendation must be to **FILE A GITHUB ISSUE on the upstream repo** (the channel) and mirror it in this repo's UPSTREAM.md with the issue URL — NEVER to go edit the upstream repo directly (agents stay in their own repo; that requires human signoff). Do not accept a silent workaround.
+
+=== 7b. INCOMING — what have our consumers filed against US? ===
+ENUMERATE, DO NOT GLANCE. This is not a footnote; it is half the lens. Resolve the repo from \`git remote get-url origin\`, then run:
+  gh issue list -R tonioloewald/<this-repo> --state open
+- GIVE EVERY OPEN ISSUE A DISPOSITION. For each, state which: FIXED BY THIS RELEASE (-> close it naming the version, AND put it in the release notes), STILL OPEN (-> say so), or STALE (-> close it). An issue this release silently closes can REFRAME WHAT THE RELEASE IS — e.g. a library migration that also happens to unblock a downstream port is not just a library migration, and the notes must say so.
+- CROSS-CHECK EVERY WORKAROUND FROM 7a AGAINST THE ISSUE LIST. Is there already an issue for it? A TEST LOOSENED, OR COMPLEXITY ADDED, TO ROUTE AROUND A BUG WE FILED AGAINST OURSELVES is the signature failure of this half — 7a flags the SHAPE of it and will not connect it to the open issue unless you deliberately do.
+Report 7b findings even when they are not defects in the diff (e.g. "issue #N has been fixed since 1.6.11 and is still open — close it").`,
   },
   {
     key: 'practices',

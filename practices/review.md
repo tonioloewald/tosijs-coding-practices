@@ -94,14 +94,30 @@ repro is a question, not a defect. **Adversarially verify** before acting on or 
   good, and no re-introduced footgun (`on<Event>`, `value`-as-attribute, boolean-defaulting-true).
 - Error messages are actionable; assignment-strictness / monadic errors used where apt.
 - Conventions honored: `handle<Event>` callbacks; deprecations keep old names working + warn once.
+- **Breaking changes are justified, documented, and migratable.** If this release removes or
+  changes public API, all four must hold: (1) the break **buys something a deprecation
+  couldn't** — an *incidental* break, made because the old API was in the way of a refactor, is
+  the kind consumers resent; (2) the **version** reflects it; (3) there is a **CHANGELOG entry
+  naming exactly what broke** — *a release that removes public API with no CHANGELOG entry is a
+  trap*; (4) there are **migration notes** (ecosystem convention: a `Migration.md` shipped in
+  `docPaths`) telling a consumer precisely what to change, before → after. Prefer the
+  deprecation path; if you break, say why. — seen in: tosijs (`Migration.md`), tosijs-ui (1.7
+  dropped `<tosi-code>`'s pre-1.7 ACE props)
 - The "point an agent at it and it works" test: `CLAUDE.md`/`AGENTS.md` current, gotchas
   written down, and `bun install` → `bun start` / `bun test` / `bun run build` succeed from a
   **fresh clone** (TLS certs, single lockfile).
 - **Done when:** a new dev or agent could adopt the change from the docs alone.
 
-### 7. Ecosystem & abstraction health — the tools we *depend on*
-Look up and out, not just down. Lens 6 asks "is the DX we **provide** good?" — this one asks
-"is the DX we **consume** good, and is this code quietly paying for it being bad?"
+### 7. Ecosystem & abstraction health — the tools we depend on, *and the ones that depend on us*
+
+This lens runs in **two directions, and both halves are mandatory.** Agents reliably do the
+outgoing half and skip the incoming half — **do not.** Run 7a and 7b as separate passes and
+report both.
+
+#### 7a. Outgoing — are we paying for someone else's missing seam?
+
+Look up and out. Lens 6 asks "is the DX we **provide** good?" — this asks "is the DX we
+**consume** good, and is this code quietly paying for it being bad?"
 
 - **Is work happening in the wrong layer?** Boilerplate or workarounds that exist here only
   because an upstream tool (tosijs, tosijs-ui, tjs-lang, tosijs-schema, the site builder,
@@ -116,17 +132,35 @@ Look up and out, not just down. Lens 6 asks "is the DX we **provide** good?" —
 - **Normalized friction.** Loop steps we've stopped noticing because we're used to them:
   manual regeneration, port collisions, cert setup, two lockfiles, a script renamed to dodge
   a builtin. Familiarity is not the same as fine.
-- **Check what's incoming, too.** This lens runs in both directions — see what *your*
-  consumers have filed against you: `gh issue list -R tonioloewald/<this-repo> --state open`.
-  Is this release silently ignoring a standing ask, or does it fix one (→ close it, naming the
-  version)? A release is the natural moment to pay that debt.
 - **Action — file, don't fix.** You do **not** go edit the upstream repo (see
   [`cross-project.md`](cross-project.md)). File a **GitHub issue on the upstream repo** —
   that's the channel — and mirror it in this repo's `UPSTREAM.md` with the issue URL. An
   `UPSTREAM.md` entry with no filed issue is a complaint nobody will ever read. Silently
-  working around the gap is exactly the failure this lens exists to catch.
-- **Done when:** every workaround in the diff is either justified or **filed upstream as an
-  issue**, and incoming issues have been looked at.
+  working around the gap is exactly the failure this half exists to catch.
+- **Done when:** every workaround in the diff is either justified or **filed upstream as an issue**.
+
+#### 7b. Incoming — what have our consumers filed against *us*?
+
+**Enumerate, don't glance.** This half is not a footnote; it is half the lens.
+
+```bash
+gh issue list -R tonioloewald/<this-repo> --state open
+```
+
+- **Give every open issue a disposition.** For each one, say which: **fixed by this release**
+  (→ close it naming the version, *and put it in the release notes*), **still open** (→ say so),
+  or **stale** (→ close it). An issue this release silently closes can **reframe what the
+  release is** — e.g. a CodeMirror migration that also happens to unblock a downstream port is
+  not a CodeMirror migration, and the notes should say so.
+- **Cross-check every workaround from 7a against the issue list.** *Is there already an issue
+  for this?* **A test loosened, or complexity added, to route around a bug we filed against
+  ourselves is the signature failure of this half** — 7a will flag the *shape* of it and not
+  connect it to the open issue unless you deliberately do.
+- **Done when:** every open incoming issue has a stated disposition, and every workaround found
+  in 7a has been checked against the issue list.
+
+— seen in: tosijs-ui 1.7 review (which found #10 was closed *by* the release, #5/#7 fixed long
+ago and left open, and a loosened `title` assertion routing around our own open #6)
 
 ### 8. Practices & process self-review — are *we* still right?
 The review reviews itself. Practices are living documents, and a release is when they get

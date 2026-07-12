@@ -109,6 +109,24 @@ single quotes, no semicolons, 2-space indent, ES5 trailing commas.
   repos have `.prettierignore` entries for hand-curated files (e.g. tosijs `xin-types.ts`).
 - Reference code as `file_path:line` in notes and reviews — it's clickable.
 
+## Committing: path-limit it, then verify what you actually committed
+
+- **`git add <file> && git commit` does NOT commit only that file.** `git commit` commits the
+  **whole index** — including anything already staged that *you* didn't stage. Path-limit it:
+  ```bash
+  git commit -m "..." -- path/to/file
+  ```
+- **Always verify:**
+  ```bash
+  git show --stat --name-only HEAD
+  ```
+- **Never assume a repo's index is clean**, especially one you didn't start the session in. Run
+  `git status` *before* committing. This is a real incident, not a hypothetical: a one-file docs
+  commit in `tosijs-product` swallowed a dozen pending `demo/`+`dev.ts` deletions that were
+  already staged in that repo's index.
+- **If it happens:** `git reset --soft HEAD~1` restores the index exactly as it was, then
+  re-commit with the pathspec. Verify again.
+
 ## Stay in your repo; check what's been filed against it
 
 - **You work in one repo.** If you hit a problem that belongs to another (tosijs, tosijs-ui,

@@ -59,6 +59,22 @@ downstream agent is waiting on that signal to drop its workaround. See
 - Desktop (Tauri) builds auto-sync `package.json` version into `src-tauri/tauri.conf.json`
   on every build for the same reason — one source of truth, no drift. — seen in: lukko, kith-email
 
+## Breaking changes: justify, document, migrate
+
+Removing or changing public API imposes a cost on every consumer. Before you ship one, all four:
+
+1. **Prefer deprecation over breakage.** Keep the old name working and warn once (see
+   [code-quality.md](code-quality.md)). This stack removes APIs slowly *on purpose*.
+2. **Justify it.** A break should buy something a deprecation can't. An **incidental** break —
+   an API removed because it was in the way of a refactor — is the kind consumers resent.
+3. **CHANGELOG entry naming exactly what broke.** A release that removes public API with **no
+   CHANGELOG entry is a trap** — and it's an easy one to ship, because the code compiles fine.
+4. **Migration notes.** Ecosystem convention is a **`Migration.md`** shipped in `docPaths`.
+   Tell the consumer precisely what to change, before → after.
+
+— seen in: tosijs (`Migration.md` in `docPaths`), tosijs-ui (1.7 dropped `<tosi-code>`'s
+pre-1.7 ACE theme/options props)
+
 ## Build artifacts: ship multiple formats from one entry
 
 Publish a bundler-friendly ESM build **and** a self-contained build, plus types:
