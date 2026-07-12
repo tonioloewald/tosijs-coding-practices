@@ -21,6 +21,13 @@
   commit, and don't fix-and-reformat files you aren't otherwise touching.
 - Respect `.prettierignore`. Some files are hand-laid-out on purpose (e.g. tosijs
   `xin-types.ts`) — reformatting them is a regression. — seen in: tosijs
+- **In markdown prose, never let a wrapped line begin with `+`, `-`, `*`, or `1.`.** Per
+  CommonMark that starts a list, so the marker is swallowed and vanishes from the rendered
+  output: `JSON-Schema\n  + $predicate` renders as a nested bullet reading "`$predicate`
+  as..." — the `+` is simply gone. Keep the operator off column one (rewrap, or put the
+  clause on one line). If Prettier rewrites your `+` bullet to `-`, that's not Prettier
+  breaking your prose — it's Prettier *reporting* that the renderer already ate it. Don't
+  `.prettierignore` the file to silence it. — seen in: tjs-lang (CHANGELOG.md)
 
 ## TypeScript conventions
 
