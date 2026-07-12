@@ -110,4 +110,6 @@ practices/
 
 Bootstrapped from the tosijs ecosystem's accumulated conventions and enriched by
 per-project surveys. Every practice should be traceable to real usage in at least one
-project. See `CONTRIBUTING.md` for how entries are added and kept honest.
+project. See `CONTRIBUTING.md` for how entries are added and kept honest, and
+[`TODO.md`](TODO.md) for open work on the repo itself — chiefly **making the history
+invariant**, since the no-signoff carve-out above rests on it.
