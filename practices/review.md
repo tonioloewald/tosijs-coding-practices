@@ -116,10 +116,17 @@ Look up and out, not just down. Lens 6 asks "is the DX we **provide** good?" —
 - **Normalized friction.** Loop steps we've stopped noticing because we're used to them:
   manual regeneration, port collisions, cert setup, two lockfiles, a script renamed to dodge
   a builtin. Familiarity is not the same as fine.
-- **Action:** log it in the repo's `UPSTREAM.md` (Context + concrete Suggestion; mark
-  `✅ RESOLVED` with the fixing version) **and/or** open the fix in the upstream repo.
-  Silently working around it is exactly the failure this lens exists to catch.
-- **Done when:** every workaround in the diff is either justified or logged upstream.
+- **Check what's incoming, too.** This lens runs in both directions — see what *your*
+  consumers have filed against you: `gh issue list -R tonioloewald/<this-repo> --state open`.
+  Is this release silently ignoring a standing ask, or does it fix one (→ close it, naming the
+  version)? A release is the natural moment to pay that debt.
+- **Action — file, don't fix.** You do **not** go edit the upstream repo (see
+  [`cross-project.md`](cross-project.md)). File a **GitHub issue on the upstream repo** —
+  that's the channel — and mirror it in this repo's `UPSTREAM.md` with the issue URL. An
+  `UPSTREAM.md` entry with no filed issue is a complaint nobody will ever read. Silently
+  working around the gap is exactly the failure this lens exists to catch.
+- **Done when:** every workaround in the diff is either justified or **filed upstream as an
+  issue**, and incoming issues have been looked at.
 
 ### 8. Practices & process self-review — are *we* still right?
 The review reviews itself. Practices are living documents, and a release is when they get
@@ -142,7 +149,9 @@ tested against reality.
   so explicitly; a silently-dropped finding reads as "reviewed and fine."
 - **Route by lens — these findings do not all belong in the same place:**
   - **Lenses 1–6** → fix now, or file to this repo's `TODO.md`.
-  - **Lens 7** → the repo's `UPSTREAM.md`, and/or a fix/issue in the *upstream* repo.
+  - **Lens 7** → a **GitHub issue on the upstream repo** (the channel), mirrored in this repo's
+    `UPSTREAM.md` with the issue URL. Never a direct edit to the upstream repo — see
+    [`cross-project.md`](cross-project.md).
   - **Lens 8** → a change to `tosijs-coding-practices` (and grep the cross-cutting docs for
     parallel mentions — see `../CONTRIBUTING.md`).
 - **Lenses 7 and 8 rarely block a release** — they compound instead. Treat "no findings" from

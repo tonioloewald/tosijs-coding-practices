@@ -77,7 +77,7 @@ pre-release review". This skill is the executable version of it.
 | Lens | Destination |
 | --- | --- |
 | correctness, efficiency, DRYness, docs, coverage, DX | fix now, or this repo's `TODO.md` |
-| **ecosystem & abstraction health** | this repo's `UPSTREAM.md` (Context + Suggestion) and/or a fix/issue in the **upstream** repo (tosijs, tosijs-ui, tjs-lang, …) |
+| **ecosystem & abstraction health** | a **GitHub issue on the upstream repo** (`gh issue create -R tonioloewald/<target>`), mirrored in this repo's `UPSTREAM.md` with the issue URL. **Never edit the other repo** — file, don't fix. Also close any incoming issue this release fixes, naming the version. |
 | **practices & process self-review** | a change to the shared **`tosijs-coding-practices`** repo (and grep its cross-cutting docs for parallel mentions), and/or this repo's `CLAUDE.md`/`AGENTS.md` |
 
 Lenses 7–8 rarely block a release — they **compound**. If they returned no findings, be
@@ -98,6 +98,8 @@ gets waved away as "pre-existing" or "not mine." Treat every failing test as a f
 
 - The reviewers are read-only (they run tests/builds only to observe; they never edit or
   commit). All fixing happens after the review, deliberately.
+- **Stay in this repo.** Ecosystem findings are **filed as issues on the upstream repo**, never
+  fixed by editing it. Wandering into another repo needs a specific reason and human signoff.
 - Scale: `patch` → run it but expect a light pass; `minor` → all eight lenses; `major` → all
   eight + completeness critic + subsystem-level (not just diff) review.
 - To tune cost/depth, edit the bundled `pre-release-review.workflow.js` (lens list, verify

@@ -109,6 +109,20 @@ single quotes, no semicolons, 2-space indent, ES5 trailing commas.
   repos have `.prettierignore` entries for hand-curated files (e.g. tosijs `xin-types.ts`).
 - Reference code as `file_path:line` in notes and reviews — it's clickable.
 
+## Stay in your repo; check what's been filed against it
+
+- **You work in one repo.** If you hit a problem that belongs to another (tosijs, tosijs-ui,
+  tjs-lang, tosijs-schema…), **file an issue on it — don't go fix it.** Editing another repo
+  bypasses its tests, conventions, and release gate, and strands changes nobody is watching.
+  If it genuinely can't wait, **ask for signoff first**. Full protocol:
+  [`cross-project.md`](cross-project.md).
+- **When starting substantive work**, see what your consumers have told you:
+  ```bash
+  gh issue list -R tonioloewald/<this-repo> --state open
+  ```
+  Those issues are where your seams are missing. Also skim `TODO.md` (own work) and
+  `UPSTREAM.md` (what you're blocked on upstream).
+
 ## The self-improving habit
 
 When you finish substantive work, ask whether you learned something that would have saved

@@ -28,6 +28,13 @@ task.
 Precedence when guidance conflicts: **the local project's `CLAUDE.md`/`AGENTS.md` wins**
 over this repo (it knows its own exceptions); this repo wins over generic model priors.
 
+## Stay in your repo
+
+An agent working in project A **does not go make changes in project B** — no "quick fixes,"
+no "while I'm here." If the fix belongs to another repo, **file an issue on it, don't fix it**
+(and if it truly can't wait, **ask for signoff, don't assume**). See
+[`practices/cross-project.md`](practices/cross-project.md).
+
 ## Core model — read this first
 
 tosijs is **observant, not reactive.** The DOM is static-by-default and updated by pin-point
@@ -48,6 +55,7 @@ or **Cloudflare Pages / R2** as appropriate. Full detail: [`practices/00-stack.m
 | When you are… | Read |
 | --- | --- |
 | Building UI at all (the core mental model) | **[`practices/observant-model.md`](practices/observant-model.md)** |
+| Hitting a problem that belongs to *another* repo | **[`practices/cross-project.md`](practices/cross-project.md)** — file, don't fix |
 | Setting up or working in a project day-to-day | [`practices/development.md`](practices/development.md) |
 | Writing or debugging tests | [`practices/testing.md`](practices/testing.md) |
 | Linting, formatting, type-safety, naming | [`practices/code-quality.md`](practices/code-quality.md) |
@@ -68,6 +76,7 @@ CONTRIBUTING.md      ← the write-back protocol: how to add/change a practice
 practices/
   00-stack.md        ← the assumed stack + when to override it
   observant-model.md ← observant vs reactive — the core UI mental model
+  cross-project.md   ← file-dont-fix: how projects talk to each other
   development.md
   testing.md
   code-quality.md

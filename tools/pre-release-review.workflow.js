@@ -57,7 +57,8 @@ const LENSES = [
 - **Nascent anti-patterns:** a clever workaround one copy-paste away from becoming convention; a pattern spreading because the right way is too hard; code fighting the observant model (reaching for a re-render because a binding was awkward to express).
 - **Compensating complexity:** defensive unwrapping, sanitizing inputs the upstream should have handled, indirection routing around a limitation, a version pin that dodges a bug instead of fixing it.
 - **Normalized friction:** loop steps we've stopped noticing (manual regeneration, port collisions, cert setup, two lockfiles, a script renamed to dodge a builtin). Familiarity is not the same as fine.
-For each finding, name the UPSTREAM tool and the seam/affordance that is missing, and propose the upstream fix. Recommendation should say where it goes: UPSTREAM.md and/or the upstream repo. Do not accept a silent workaround.`,
+ALSO CHECK THE INCOMING DIRECTION: run \`gh issue list -R tonioloewald/<this-repo> --state open\` (resolve the repo from \`git remote get-url origin\`) and report whether this release ignores a standing consumer ask, or silently fixes/breaks one (which should be closed/noted with the version).
+For each outgoing finding, name the UPSTREAM tool and the missing seam/affordance, and propose the upstream fix. The recommendation must be to **FILE A GITHUB ISSUE on the upstream repo** (the channel) and mirror it in this repo's UPSTREAM.md with the issue URL — NEVER to go edit the upstream repo directly (agents stay in their own repo; that requires human signoff). Do not accept a silent workaround.`,
   },
   {
     key: 'practices',
@@ -228,7 +229,7 @@ Produce a triaged report:
 - **A failing test is never dismissed as "pre-existing" or "not caused by this change."** Any red/skipped test in the coverage findings must appear in the report — fixed if easy, otherwise flagged as a follow-up that is still scheduled, never waved away.
 - **ROUTE BY LENS — findings do not all belong in the same place.** Put each follow-up under the right destination heading:
   - lenses correctness/efficiency/dryness/docs/coverage/dx -> fix now, or file to this repo's \`TODO.md\`.
-  - lens **ecosystem** -> this repo's \`UPSTREAM.md\` and/or a fix/issue in the UPSTREAM repo (name the tool and the missing seam).
+  - lens **ecosystem** -> a **GitHub issue filed on the UPSTREAM repo** (name the tool and the missing seam), mirrored in this repo's \`UPSTREAM.md\` with the issue URL. NEVER a direct edit to another repo — agents stay in their own repo unless the human signs off. Also list any incoming open issues this release should have addressed or should now close.
   - lens **practices** -> a change to the shared \`tosijs-coding-practices\` repo (name the doc), and/or this repo's CLAUDE.md/AGENTS.md.
 - **ecosystem and practices findings rarely BLOCK** — they compound. Do not let them drag the verdict to BLOCK unless something is actively broken; but never drop them either.
 

@@ -17,10 +17,21 @@ developer experience, **ecosystem & abstraction health**, and **practices self-r
 as an independent pass over `git diff vLAST..HEAD`. Runnable: [`/pre-release-review`](../tools/README.md).
 
 Unresolved correctness/security findings **block** the release. Route the rest by lens:
-`TODO.md` for lenses 1–6, `UPSTREAM.md` / the upstream repo for ecosystem findings, and the
-shared practices repo for self-review findings — never silently drop one. Patches get a
-lighter correctness + docs pass. Only start the flow below once that review is clean or its
-open findings are consciously deferred.
+`TODO.md` for lenses 1–6, a **GitHub issue on the upstream repo** (mirrored in `UPSTREAM.md`)
+for ecosystem findings, and the shared practices repo for self-review findings — never
+silently drop one. Patches get a lighter correctness + docs pass. Only start the flow below
+once that review is clean or its open findings are consciously deferred.
+
+**Settle your incoming issues.** Before releasing, check what consumers have filed against you
+and act on it — a release is when that debt comes due:
+
+```bash
+gh issue list -R tonioloewald/<this-repo> --state open
+```
+
+Fix what this release should fix, and **close each fixed issue naming the version** — a
+downstream agent is waiting on that signal to drop its workaround. See
+[`cross-project.md`](cross-project.md).
 
 ## Cutting a release (canonical flow)
 
