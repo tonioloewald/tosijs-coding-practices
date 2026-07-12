@@ -35,6 +35,13 @@ no "while I'm here." If the fix belongs to another repo, **file an issue on it, 
 (and if it truly can't wait, **ask for signoff, don't assume**). See
 [`practices/cross-project.md`](practices/cross-project.md).
 
+**This repo is the exception — no signoff needed to write a practice back into it.** Recording
+what you learned, from whichever project taught it to you, is the whole point. The rule above
+protects *code* repos (tests, release gates, API seams you haven't read); none of that exists
+here — it's prose under git, so a bad edit is obvious in the diff and cheap to revert. Just
+follow [`CONTRIBUTING.md`](CONTRIBUTING.md) (sharpen an existing entry rather than stacking a
+parallel one; cite where you learned it) and **commit it here** rather than leaving a dirty tree.
+
 ## Core model — read this first
 
 tosijs is **observant, not reactive.** The DOM is static-by-default and updated by pin-point

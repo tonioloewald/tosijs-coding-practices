@@ -27,6 +27,20 @@ exactly what you'd change and why, and get a yes. Then do it *properly in that r
 branch, its conventions, its tests, its own commit — not as a footnote to your current task.
 Signoff for one change is not standing permission for the next.
 
+**THIS repo (`tosijs-coding-practices`) is a standing exception — you do not need signoff to
+write a practice back into it.** Contributing what you learned, from whichever project taught it
+to you, is the entire point of the repo; "file an issue instead" would only add latency to
+knowledge that is already in hand. Note that *every reason the rule is strict is a property of
+code repos*, and none of them hold here: there are no tests, no build, no release gate, and no
+API seam to get wrong — it is prose under git, so a bad edit shows up plainly in the diff and is
+cheap to revert. Its history is the safety net.
+
+What still applies, though: follow [`CONTRIBUTING.md`](../CONTRIBUTING.md) — find the right doc,
+**sharpen an existing entry rather than stacking a parallel one** (contradictions are bugs), and
+cite the projects it was learned in. And **commit it here**; don't strand a dirty tree for the
+next agent. The point of the carve-out is to remove friction from *recording* a lesson, not to
+license drive-by edits.
+
 **What you do instead: file an issue.** That is the channel.
 
 ## The channel: GitHub Issues on the target repo

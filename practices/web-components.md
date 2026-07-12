@@ -78,6 +78,30 @@ logical parent you expect. Anything that walks the tree sees the wrapper: `paren
 without shadow DOM — and it's cheaper than what it replaced. Don't write parent-walking logic
 that assumes the slotted child is a direct child of the host.
 
+**It fails SILENTLY — so know the remedy before you need it.** Nothing throws. The walk simply
+lands on the wrapper, so a child looking for its host quietly finds *nothing* and does *nothing*.
+You get no error and no blip — just a feature that doesn't happen. (In tosijs-3d this cost hours:
+a nested `<tosi-b3d-radar>` found no platform and every nested radar-blip reported a null
+position, so the radar produced zero tracks and the HUD drew zero contacts, with nothing in the
+console.) **Any "find the component I'm nested in" lookup must skip the wrapper:**
+
+```ts
+/** Nearest ancestor that isn't a slot wrapper — i.e. the parent you *meant*. */
+export function semanticParent(el: HTMLElement): HTMLElement | null {
+  let node = el.parentElement
+  while (node != null && node.tagName === 'TOSI-SLOT') node = node.parentElement
+  return node
+}
+```
+
+Note which lookups are affected: only **one-level** ones (`parentElement`, a `>` selector).
+Searches that walk **all the way up** to find an ancestor with some capability (a
+`findOwner()`-style loop) are immune — they pass straight through the wrapper. That asymmetry is
+why the bug hides: the owner lookup keeps working while the parent lookup silently doesn't.
+
+There is **no clean workaround**, and don't go hunting for one: the slot is a real DOM node, so
+`parentElement` is honestly reporting what's there. Skipping it *is* the fix.
+
 — seen in: tosijs (shadow default), kith-email (light default, binding reason), tosijs-ui (slot vs xinSlot), tosijs-3d
 
 ## Attributes & properties
