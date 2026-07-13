@@ -27,7 +27,24 @@
   as..." — the `+` is simply gone. Keep the operator off column one (rewrap, or put the
   clause on one line). If Prettier rewrites your `+` bullet to `-`, that's not Prettier
   breaking your prose — it's Prettier *reporting* that the renderer already ate it. Don't
-  `.prettierignore` the file to silence it. — seen in: tjs-lang (CHANGELOG.md)
+  `.prettierignore` the file to silence it. — seen in: tjs-lang (CHANGELOG.md, TODO.md —
+  it recurs)
+- **Turn off Prettier's *embedded* formatting for markdown, not Prettier itself.** Prettier
+  reformats fenced code **inside** `.md`, which mangles hand-laid-out examples: two separate
+  ` ```js ` lines `'5' == 5` and `[1] == 1` become the single nonsense expression
+  `;('5' == (5)[1]) == 1` (ASI guards). The surgical fix is a config override, not
+  `.prettierignore` on your docs:
+
+  ```json
+  "overrides": [
+    { "files": "*.md", "options": { "embeddedLanguageFormatting": "off" } }
+  ]
+  ```
+
+  Code fences are then left exactly as written, while Prettier still normalizes markdown
+  prose — which is what catches the swallowed-bullet bug above. Banishing Prettier from
+  markdown entirely would hide that class of defect instead of fixing it. (Note the value
+  is `"off"`; `"ignore"` is not valid and Prettier will error out.) — seen in: tjs-lang
 
 ## TypeScript conventions
 
