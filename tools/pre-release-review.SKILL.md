@@ -1,11 +1,11 @@
 ---
 name: pre-release-review
-description: Run the eight-lens comprehensive pre-release review before a minor or major version bump — correctness, efficiency, DRYness, documentation accuracy, test coverage, developer experience, ecosystem/abstraction health, and practices self-review — as independent adversarially-verified passes over the diff since the last release, ending in a GO / GO-with-followups / BLOCK recommendation. Use when preparing a release, cutting a version, or when the user asks for a release review / pre-release check. Part of the shared tosijs-coding-practices process (practices/review.md).
+description: Run the nine-lens comprehensive pre-release review before a minor or major version bump — correctness, efficiency, DRYness, documentation accuracy, test coverage, developer experience, ecosystem/abstraction health, practices self-review, and blast radius (state outside the repo) — as independent adversarially-verified passes over the diff since the last release, ending in a GO / GO-with-followups / BLOCK recommendation. Use when preparing a release, cutting a version, or when the user asks for a release review / pre-release check. Part of the shared tosijs-coding-practices process (practices/review.md).
 ---
 
 # Pre-release review
 
-A structured, multi-lens release-gate review. It runs **eight independent reviews** over the
+A structured, multi-lens release-gate review. It runs **nine independent reviews** over the
 diff since the last release, **adversarially verifies** each finding, and returns a triaged
 report with a **GO / GO_WITH_FOLLOWUPS / BLOCK** recommendation.
 
@@ -57,7 +57,7 @@ pre-release review". This skill is the executable version of it.
      args: { baseRef: "<tag>", bump: "<patch|minor|major>" }
    })
    ```
-   It fans out eight lens reviewers in parallel, verifies each finding adversarially, then
+   It fans out nine lens reviewers in parallel, verifies each finding adversarially, then
    triages. It runs in the background and notifies you when done.
 
 6. **When it completes, present `reportMarkdown`** to the user verbatim (it's the deliverable),
@@ -100,7 +100,7 @@ gets waved away as "pre-existing" or "not mine." Treat every failing test as a f
   commit). All fixing happens after the review, deliberately.
 - **Stay in this repo.** Ecosystem findings are **filed as issues on the upstream repo**, never
   fixed by editing it. Wandering into another repo needs a specific reason and human signoff.
-- Scale: `patch` → run it but expect a light pass; `minor` → all eight lenses; `major` → all
-  eight + completeness critic + subsystem-level (not just diff) review.
+- Scale: `patch` → run it but expect a light pass; `minor` → all nine lenses; `major` → all
+  nine + completeness critic + subsystem-level (not just diff) review.
 - To tune cost/depth, edit the bundled `pre-release-review.workflow.js` (lens list, verify
   strategy, models).

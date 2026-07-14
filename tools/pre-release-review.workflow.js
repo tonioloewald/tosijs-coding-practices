@@ -1,9 +1,9 @@
 export const meta = {
   name: 'pre-release-review',
   description:
-    'Eight-lens adversarial pre-release review: correctness, efficiency, DRYness, docs, test coverage, developer experience, ecosystem/abstraction health, and practices self-review',
+    'Nine-lens adversarial pre-release review: correctness, efficiency, DRYness, docs, test coverage, developer experience, ecosystem/abstraction health, practices self-review, and blast radius',
   phases: [
-    { title: 'Review', detail: 'eight independent lens reviewers over the diff' },
+    { title: 'Review', detail: 'nine independent lens reviewers over the diff' },
     { title: 'Verify', detail: 'adversarially verify each finding' },
     { title: 'Triage', detail: 'dedupe, rank, GO / BLOCK recommendation' },
   ],
@@ -15,9 +15,11 @@ const base = (args && args.baseRef) || 'main'
 const bump = (args && args.bump) || 'minor'
 const diffCmd = (args && args.scope) || `git diff ${base}...HEAD`
 
-// ---- the eight lenses (criteria mirror practices/review.md) -----------------
-// 1-6 look AT THE CHANGE. 7-8 look outward (the tools we depend on) and inward
-// (our own practices) — the compounding ones.
+// ---- the nine lenses (criteria mirror practices/review.md) ------------------
+// 1-6 look AT THE CHANGE, and 9 at what the change touches BEYOND THE REPO
+// (global binaries, $HOME, other processes, ports — state with no test suite and
+// no rollback). 7-8 look outward (the tools we depend on) and inward (our own
+// practices) — the compounding ones.
 const LENSES = [
   {
     key: 'correctness',
@@ -79,6 +81,28 @@ Report 7b findings even when they are not defects in the diff (e.g. "issue #N ha
 - Did the **process** hold — did a lens miss something that bit us, is a lens dead weight, did the gate work?
 - Are this project's own CLAUDE.md / AGENTS.md still accurate after the change?
 Findings here are proposed CHANGES TO THE PRACTICES (or to this repo's agent docs), not to the shipping code. Severity is usually minor/major, rarely a blocker. Returning zero findings is suspicious — it usually means nobody looked.`,
+  },
+  {
+    key: 'blast-radius',
+    title: 'Blast radius (state outside the repo)',
+    checks: `Lenses 1-6 review the code. You review the FOOTPRINT — everything this change writes, spawns, binds, or kills that OUTLIVES THE PROCESS and is shared with software we do not own. That state has no test suite, no code review and no rollback. It is where a tool stops being wrong in its own repo and starts being wrong ON THE USER'S MACHINE.
+
+FAST EXIT: if the diff writes nothing outside the repo, spawns nothing, binds nothing and kills nothing, say so in one line and return NO findings. Do not manufacture findings — on a pure library change this lens is correctly quiet.
+
+Otherwise ENUMERATE the footprint (grep the diff for: homedir(), os.homedir, '~/', /usr/local, .local/bin, XDG_, process.kill, spawn, execSync, lsof, Bun.serve, listen, writeFileSync to paths outside the repo) and interrogate each:
+
+- **Global binaries & PATH** (~/.local/bin, /usr/local/bin, shell rc files): ONE binary, EVERY project. If N versions of the tool can each install it, ask WHICH ONE WINS — "last process to boot" is a race, not a policy. Never clobber a symlink (it is a deliberate install; overwriting reverts someone's tooling under them).
+- **Home-dir / XDG state** (~/.config, ~/.cache, dotdirs, registries, lockfiles): does it survive uninstall? Can a stale entry outlive its writer, and what reads it afterwards?
+- **Other processes** — anything spawned, signalled or killed. KILLING IS A POLICY, NOT A FIX: state the predicate, and state how you IDENTIFY the victim.
+  * The predicate: "older than me" is almost always WRONG — it never terminates, and two peers on adjacent versions kill each other forever. Key it on what makes the other process HARMFUL (e.g. below the version that fixed the harm) so it self-terminates.
+  * The identification: BE ADVERSARIAL ABOUT HOW THE PID IS RESOLVED. Port-to-pid lookups are a classic trap — \`lsof -i :PORT\` matches sockets whose LOCAL **OR REMOTE** port is PORT, so it returns CONNECTED CLIENTS as well as the listener, and a long-lived client (a browser) usually sorts FIRST by pid. Killing pids[0] then SIGTERMs the user's browser while the actual target survives and the log cheerfully reports success. Require \`-sTCP:LISTEN\`, and sanity-check the process identity (\`ps -p PID -o comm=\`) before signalling. NEVER signal a pid you have not positively identified.
+  * When it cannot act, it must COMPLAIN, not fail silently — an unfixed hazard the user does not know about is worse than a loud one.
+- **Ports/sockets**: a well-known default port is shared state; squatting or reclaiming it affects whoever else wanted it.
+- **THE TEST SUITE'S OWN FOOTPRINT — the sharpest edge on this lens.** Ask explicitly: DOES RUNNING THE TESTS DO ANY OF THE ABOVE? A SPAWNED process re-reads the real config path and the real \$HOME — an in-process \`dir\` option or DI seam does NOT contain it. Destructive startup behavior (killing, installing to ~/.local/bin) runs in EVERY test-spawned server unless a test explicitly disables it: grep for the opt-out env var and confirm the test spawns actually set it. This corrupts the developer's own environment, so it presents as "my tools got weird", never as a red test. CHECK THIS EVEN IF THE DIFF DOES NOT TOUCH TESTS.
+
+Ask of each: WHO ELSE CAN THIS SURPRISE, AND CAN THEY UNDO IT? Prefer additive and reversible; where you cannot, be loud, and document the behavior and its opt-out somewhere the USER can see (README / --help / CHANGELOG — note that CLAUDE.md is usually NOT shipped to users).
+
+Findings that touch the user's machine — a global binary, a kill policy, a test that writes to \$HOME — are BLOCKERS, not nits. A change that is correct in-repo and hostile on the machine has not passed review.`,
   },
 ]
 
@@ -217,7 +241,7 @@ phase('Triage')
 let gaps = null
 if (bump === 'major') {
   gaps = await agent(
-    `${READONLY}\n\nYou are the completeness critic for a MAJOR release review. The eight lenses (correctness, efficiency, DRYness, docs, test coverage, DX, ecosystem/abstraction health, practices self-review) have run over \`${diffCmd}\`. Inspect the diff and repo and name what was NOT adequately reviewed — an untouched-but-affected subsystem, an unverified claim, a public-API surface or migration path nobody checked. Be specific and short.`,
+    `${READONLY}\n\nYou are the completeness critic for a MAJOR release review. The nine lenses (correctness, efficiency, DRYness, docs, test coverage, DX, ecosystem/abstraction health, practices self-review, blast radius) have run over \`${diffCmd}\`. Inspect the diff and repo and name what was NOT adequately reviewed — an untouched-but-affected subsystem, an unverified claim, a public-API surface or migration path nobody checked. Be specific and short.`,
     { label: 'completeness-critic', phase: 'Triage', schema: GAPS_SCHEMA, agentType: 'general-purpose' }
   )
 }

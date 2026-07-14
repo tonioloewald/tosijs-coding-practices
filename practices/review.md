@@ -16,19 +16,20 @@
 
 Before any **minor or major** version bump, run a structured multi-lens review — not one
 blended pass. Blending dilutes every lens; a reviewer told to "check everything" checks
-nothing deeply. Run the **eight lenses below as independent passes**, each scoped to the diff
+nothing deeply. Run the **nine lenses below as independent passes**, each scoped to the diff
 since the last release (`git diff vLAST..HEAD`) plus the code it touches (for a **major**,
 review whole affected subsystems, not just the diff). This maps directly onto the tooling:
 one focused `/code-review high` per lens, or `/code-review ultra` / a `Workflow` fan-out with
 one reviewer agent per lens in parallel, then triage the union. Runnable version:
 [`/pre-release-review`](../tools/README.md).
 
-Lenses 1–6 look **at the change**. Lenses 7–8 look **outward and inward** — at the tools we
-depend on, and at our own practices. Those two are the compounding ones: skipping them is how
-a stack quietly accretes workarounds and a knowledge base goes stale.
+Lenses 1–6 look **at the change**, and lens 9 at **what the change touches beyond the repo**.
+Lenses 7–8 look **outward and inward** — at the tools we depend on, and at our own practices.
+Those two are the compounding ones: skipping them is how a stack quietly accretes workarounds
+and a knowledge base goes stale.
 
-**Scale to the bump:** patch → a quick correctness + docs pass. Minor → all eight. Major →
-all eight plus a **completeness critic** ("what subsystem/claim/lens did we *not* review?").
+**Scale to the bump:** patch → a quick correctness + docs pass. Minor → all nine. Major →
+all nine plus a **completeness critic** ("what subsystem/claim/lens did we *not* review?").
 
 Each lens returns **ranked findings with a concrete failure scenario**; a finding without a
 repro is a question, not a defect. **Adversarially verify** before acting on or filing anything.
@@ -42,8 +43,22 @@ repro is a question, not a defect. **Adversarially verify** before acting on or 
   `initAttribute`; boolean attrs default false; **light vs shadow DOM** (path bindings break in
   shadow); no `on<Event>` callback props.
 - Edge cases, async settling, form-association, error/failure paths.
+- **Walk the mode & flag matrix.** New behavior gets verified on the happy path its author had
+  in mind — that path works; the ones *adjacent* to it are where the bug is. So enumerate every
+  mode the feature can run in (http/https/both, headless/desktop, dev/prod) and every flag that
+  can select or override it, and ask what the new code does in each. Two shapes recur:
+  - **A default that is a lie in another mode.** A value that is only meaningful because the
+    default path sets it — but the other path never does, and it keeps a stale default that is
+    now *wrong* rather than merely unset.
+  - **A new message or check placed before the input it depends on.** Argument parsing, config
+    merging and validation have an order; code inserted "near the top" can read a flag that
+    hasn't been parsed yet and confidently say the opposite of what the run then does.
 - **Done when:** the changed behavior has been **driven end-to-end** (see the next section),
-  not just unit-tested.
+  not just unit-tested — and driven in **more than one mode** if it supports more than one.
+
+— seen in: haltija (1.4.0: an https-only server kept `PORT`'s http default and advertised a
+port it wasn't listening on; a new warning was emitted before `--port` was parsed, so
+`hj --port N` told the user to use `--port`)
 
 ### 2. Efficiency
 - Surgical updates, not rebuilds; id-paths for in-place list mutation; bulk-mutate-raw-then
@@ -176,13 +191,61 @@ tested against reality.
 - **Done when:** the shared practices are updated, or explicitly confirmed still correct, and
   any process gap is filed.
 
+### 9. Blast radius — what does this touch *outside* the repo?
+Lenses 1–6 review the code. This one reviews the **footprint**: everything the change writes,
+spawns, binds, or kills that outlives the process and is shared with software we don't own.
+That state has no test suite, no code review, and no rollback — and it is where a tool stops
+being wrong *in its own repo* and starts being wrong *on the user's machine*.
+
+**Fast exit:** if the diff writes nothing outside the repo, spawns nothing, binds nothing, and
+kills nothing, say so in one line and return no findings. Do not manufacture findings. On a
+pure library change this lens is cheap and quiet, and that's correct.
+
+Otherwise, enumerate the footprint and interrogate each item:
+
+- **Global binaries & `PATH`** (`~/.local/bin`, `/usr/local/bin`, shell rc files). One binary,
+  every project. If N versions of the tool can each install it, ask *which one wins* — "last
+  process to boot" is a race, not a policy. Never clobber a symlink: it is a deliberate install
+  and overwriting it reverts someone's tooling under them.
+- **Home-directory & XDG state** (`~/.config/*`, `~/.cache/*`, app dotdirs, registries, lockfiles).
+  Does it survive uninstall? Can a stale entry outlive the process that wrote it, and what
+  reads it afterwards?
+- **Other processes** — anything spawned, signalled, or killed. **Killing is a policy, not a
+  fix: state the predicate.** "Older than me" is almost always the wrong one — it never
+  terminates, and two peers on adjacent versions will kill each other forever. Key the rule on
+  *what makes the other process harmful* (a version below the release that fixed the harm), so
+  it self-terminates once the harmful population is gone. And when it can't act, it must
+  **complain rather than fail silently** — an unfixed hazard the user doesn't know about is
+  worse than a loud one.
+- **Ports and sockets.** A well-known default port is shared state; squatting or reclaiming it
+  affects whoever else wanted it.
+- **THE TEST SUITE'S OWN FOOTPRINT.** Ask explicitly: *does running the tests write to any of
+  the above?* A spawned process re-reads the real config path — an in-process `dir` option or
+  DI seam does **not** contain it. This is the sharpest edge on this lens: it silently corrupts
+  the developer's own environment, so it presents as "my tools got weird," never as a red test.
+  Every path a test can write to must be redirectable by env var, and pointed at a temp dir.
+
+Ask of each: **who else can this surprise, and can they undo it?** Prefer additive and
+reversible; where you can't, be loud. A change that is correct in-repo and hostile on the
+machine has not passed review.
+
+- **Done when:** the footprint is enumerated, each item has an owner and a policy, and the test
+  suite provably touches none of it.
+
+— seen in: haltija (1.4.0 installs a shared `hj` into `~/.local/bin`, keeps a registry in
+`~/.haltija/`, binds a well-known port, and kills legacy servers; its test suite was silently
+registering spawned servers into the developer's *real* registry, where they out-ranked the
+developer's own dev server and hijacked their CLI)
+
 ### Triage & gate
 - Dedupe the union of findings and rank by severity.
 - **Unresolved correctness (and security) findings block the release.** Efficiency / DRY / DX /
   coverage findings that are not regressions may be filed to `TODO.md` and scheduled — but say
   so explicitly; a silently-dropped finding reads as "reviewed and fine."
 - **Route by lens — these findings do not all belong in the same place:**
-  - **Lenses 1–6** → fix now, or file to this repo's `TODO.md`.
+  - **Lenses 1–6 and 9** → fix now, or file to this repo's `TODO.md`. (Lens 9 findings that
+    touch the user's machine — a global binary, a kill policy — are correctness findings for
+    triage purposes, not nits: they block.)
   - **Lens 7** → a **GitHub issue on the upstream repo** (the channel), mirrored in this repo's
     `UPSTREAM.md` with the issue URL. Never a direct edit to the upstream repo — see
     [`cross-project.md`](cross-project.md).
