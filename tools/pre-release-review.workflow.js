@@ -4,16 +4,33 @@ export const meta = {
     'Nine-lens adversarial pre-release review: correctness, efficiency, DRYness, docs, test coverage, developer experience, ecosystem/abstraction health, practices self-review, and blast radius',
   phases: [
     { title: 'Review', detail: 'nine independent lens reviewers over the diff' },
-    { title: 'Verify', detail: 'adversarially verify each finding' },
+    { title: 'Verify', detail: 'adversarially verify decision-changing findings (blockers always; majors unless depth=fast)' },
     { title: 'Triage', detail: 'dedupe, rank, GO / BLOCK recommendation' },
   ],
 }
 
 // ---- inputs -----------------------------------------------------------------
-// args: { baseRef?: string, bump?: 'patch'|'minor'|'major', scope?: string }
+// args: { baseRef?, bump?: 'patch'|'minor'|'major', scope?, depth?: 'fast'|'full' }
 const base = (args && args.baseRef) || 'main'
 const bump = (args && args.bump) || 'minor'
 const diffCmd = (args && args.scope) || `git diff ${base}...HEAD`
+
+// How deep to VERIFY. Verification is ~70% of this workflow's cost, and measurement across
+// six real runs of this exact gate showed the money was being spent in the wrong place:
+//   - refute rate is LOWEST on blockers (3%) and HIGHEST on minor/nit (11%);
+//   - but a finding's truth only matters when it changes the release decision. A blocker's
+//     truth gates the tag — a false blocker wastes a whole fix cycle, so verifying it is
+//     cheap insurance on a rare, expensive error. A minor/nit is a follow-up either way, so
+//     verifying it changes nothing and is pure waste.
+// So we NEVER adversarially verify minor/nit — they ship reported-but-unverified — and we
+// scale how much of the rest we verify:
+//   full (default, pre-tag): verify blocker + major.   ~35% cheaper than verify-everything.
+//   fast (iterating):        verify blocker only.       ~62% cheaper — run it every iteration.
+// The lens set does NOT shrink in either mode: lenses are cheap (~0.3 MB each) and are where
+// the value is (blast-radius alone found 8 blockers). Cutting lenses would cut value, not cost.
+const depth = (args && args.depth) || 'full'
+const VERIFY_SEVERITIES = depth === 'fast' ? ['blocker'] : ['blocker', 'major']
+const shouldVerify = (f) => VERIFY_SEVERITIES.includes(f.severity)
 
 // ---- the nine lenses (criteria mirror practices/review.md) ------------------
 // 1-6 look AT THE CHANGE, and 9 at what the change touches BEYOND THE REPO
@@ -224,25 +241,45 @@ const reviewed = await pipeline(
     }),
   (result, lens) =>
     parallel(
-      (result && result.findings ? result.findings : []).map((f) => () =>
-        agent(verifyPrompt(f, lens), {
+      (result && result.findings ? result.findings : []).map((f) => () => {
+        const tagged = { ...f, lens: lens.key }
+        // Only spend an adversarial verification where the verdict can change the release
+        // decision (see VERIFY_SEVERITIES above). Everything else ships reported-but-unverified.
+        if (!shouldVerify(f)) return Promise.resolve({ ...tagged, verdict: null })
+        return agent(verifyPrompt(f, lens), {
           label: `verify:${lens.key}`,
           phase: 'Verify',
           schema: VERDICT_SCHEMA,
           agentType: 'general-purpose',
-        }).then((v) => ({ ...f, lens: lens.key, verdict: v }))
-      )
+        }).then((v) => ({ ...tagged, verdict: v }))
+      })
     )
 )
 
-const survived = reviewed
+const all = reviewed
   .flat()
   .filter(Boolean)
-  .filter((f) => f.verdict && f.verdict.verdict !== 'refuted')
-  .map((f) => ({ ...f, severity: (f.verdict && f.verdict.adjustedSeverity) || f.severity }))
+  .map((f) => ({
+    ...f,
+    severity: (f.verdict && f.verdict.adjustedSeverity) || f.severity,
+    verified: !!f.verdict,
+    refuted: !!(f.verdict && f.verdict.verdict === 'refuted'),
+  }))
+
+// Findings that stand: everything not refuted. Unverified findings (minor/nit, and majors in
+// fast mode) are kept and marked, so nothing silently vanishes.
+const survived = all.filter((f) => !f.refuted)
+
+// Refuted findings are NOT discarded. A finding a competent reviewer raised in good faith is
+// valuable even when it's literally wrong: the usual reason a careful reader believed a false
+// thing is that the truth is undiscoverable — a docs, naming, or surfacing gap. That
+// second-order finding is real, and throwing it away because the first-order claim was
+// "strictly speaking wrong" is the exact waste this step exists to avoid. Triage mines them.
+const refuted = all.filter((f) => f.refuted)
 
 const blockerCount = survived.filter((f) => f.severity === 'blocker').length
-log(`${survived.length} findings survived verification (${blockerCount} blockers)`)
+const verifiedCount = survived.filter((f) => f.verified).length
+log(`${survived.length} findings (${blockerCount} blockers; ${verifiedCount} adversarially verified, ${survived.length - verifiedCount} reported-but-unverified — depth=${depth})`)
 
 // ---- phase 3: completeness critic (major only) + triage/report ---------------
 phase('Triage')
@@ -257,10 +294,14 @@ if (bump === 'major') {
 const report = await agent(
   `${READONLY}
 
-You are the release manager triaging a pre-release review of THIS repo (base \`${base}\`, ${bump} bump).
+You are the release manager triaging a pre-release review of THIS repo (base \`${base}\`, ${bump} bump, verify depth=${depth}).
 
-Verified findings (JSON):
+Findings (JSON). Each has a \`verified\` flag: true = adversarially verified (a skeptic tried to refute it and failed); false = reported by the lens but NOT independently verified. By design we only spend verification where it changes the release decision — every blocker is verified; ${depth === 'fast' ? 'majors and below are not' : 'majors are too; minor/nit are not'}. An unverified finding is a lead, not a confirmed defect: never let one drive the verdict, and MARK IT as unverified in the report (e.g. "(unverified)") so the reader knows to sanity-check it before acting.
 ${JSON.stringify(survived, null, 2)}
+${refuted.length ? `
+Findings a skeptic REFUTED (the first-order claim is false — do NOT report these as defects):
+${JSON.stringify(refuted.map((f) => ({ title: f.title, lens: f.lens, why_refuted: f.verdict && f.verdict.reasoning })), null, 2)}
+Do not discard these. Feedback offered in good faith is valuable even when wrong: a careful reviewer believing a false thing is usually evidence that the truth is UNDISCOVERABLE. For each, ask "what would make a competent reader believe this?" — the answer is often a real docs / naming / surfacing gap. Surface any such second-order finding (usually minor) as a follow-up, phrased as the discoverability fix, not the refuted claim. If a refutation reveals no gap (the reviewer simply erred), drop it silently — judgement, not a quota.` : ''}
 ${gaps ? `\nCompleteness gaps (major release):\n${JSON.stringify(gaps.gaps, null, 2)}` : ''}
 
 Produce a triaged report:

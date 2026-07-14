@@ -37,13 +37,25 @@ downstream agent is waiting on that signal to drop its workaround. See
 
 1. **Bump `version`** in `package.json` (semver) — this is the single source of truth (below).
 2. **Add a `CHANGELOG.md` entry** under the new version (Keep a Changelog format), where one exists.
-3. **Build** — run the project's build (usually `bun run build`). It runs tests, stamps
-   `version.ts`, and regenerates `dist/` (+ `docs/` for doc-site projects). If the build runs
-   tests and any fail, it exits non-zero — do not ship. — seen in: tosijs, tosijs-ui, tosijs-schema
-4. **Commit everything**, including regenerated `dist/`/`docs/`, with a `vX.Y.Z: <summary>` message.
-5. **Tag** `vX.Y.Z` (see tagging below).
-6. **Push** commits and tags: `git push && git push --tags`.
-7. **Publish** the npm package: `npm publish` (the `files` field controls the tarball — usually
+3. **Run the tests. Explicitly. The build does not run them.**
+
+   This step used to read *"run `bun run build` — it runs tests… exits non-zero, do not ship."*
+   **That was false**, and it was the most dangerous sentence in this file. In tosijs-ui,
+   `"build": "bun bin/dev.ts --build-only"` compiles and exits 0 without running a single test.
+   An agent cutting a release by the book saw a green build and believed the suite had passed
+   when it never ran — which is how the Playwright lane sat **red across 23 tags in ~4 weeks**.
+
+   So: **name every lane and run every lane.** A project with three test lanes has three
+   commands, and a green build is evidence about none of them. Check what `build` actually does
+   before you trust it (`grep '"build"' package.json`), and if a lane is not in CI, it will rot
+   silently — run it locally before every release, no exceptions.
+
+4. **Build** — run the project's build (usually `bun run build`). It stamps `version.ts` and
+   regenerates `dist/` (+ `docs/` for doc-site projects). — seen in: tosijs, tosijs-ui, tosijs-schema
+5. **Commit everything**, including regenerated `dist/`/`docs/`, with a `vX.Y.Z: <summary>` message.
+6. **Tag** `vX.Y.Z` (see tagging below).
+7. **Push** commits and tags: `git push && git push --tags`.
+8. **Publish** the npm package: `npm publish` (the `files` field controls the tarball — usually
    just `dist/`, `LICENSE`, `README.md`).
 
 > **Stop the dev server before you build/commit.** `bun start` continuously rewrites

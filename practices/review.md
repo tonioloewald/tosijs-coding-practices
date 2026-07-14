@@ -7,9 +7,15 @@
   cloud review of the branch or a PR — it is user-triggered and billed.
 - **`/security-review`** for changes with a security surface (auth, capability VMs, network
   sync, untrusted input, deployment config).
-- These projects have **no CI** — no `.github/` workflows anywhere in the ecosystem. Tests,
-  lint, build, and publish are all local/manual. So review IS the gate: `bun run build`
-  runs tests first and exits non-zero on failure — run it, don't assume a pipeline will.
+- **CI is partial, and you must know exactly which lanes it covers.** This file used to say
+  there was *"no CI — no `.github/` workflows anywhere in the ecosystem"*. That is false
+  (tosijs-ui has `ci.yml`; haltija has three workflows; see `00-stack.md`), and the falsehood
+  was load-bearing: a reader who believes there is no CI never asks **"which lanes does CI
+  actually run?"** — which is the exact question that catches a rotted lane. tosijs-ui's CI runs
+  the unit + e2e lanes and **not** the haltija doc-test lane, and that lane sat red for a month.
+  It is also false that `bun run build` runs tests — in tosijs-ui it does not (see
+  `releasing.md`). **Enumerate the lanes, check which are gated, and run the ungated ones by
+  hand.** An ungated lane always rots.
   — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, kith-email, react-tosijs
 
 ## Comprehensive pre-release review (minor & major)
@@ -31,8 +37,30 @@ and a knowledge base goes stale.
 **Scale to the bump:** patch → a quick correctness + docs pass. Minor → all nine. Major →
 all nine plus a **completeness critic** ("what subsystem/claim/lens did we *not* review?").
 
+**Verify where the verdict changes the decision, not everywhere.** Adversarial verification is
+the expensive part — in measured runs of the automated gate it was ~70% of total cost — and
+spending it uniformly is waste. A finding's truth only matters when it *gates the release*: a
+**blocker**'s truth decides whether you tag, so a false blocker costs a whole wasted fix cycle
+— verify it. A **minor/nit** is a follow-up whether or not it's real, so verifying it changes
+nothing. Measured refute rates make the point sharper still: refutation is *lowest* on blockers
+(~3%) and *highest* on minor/nit (~11%) — i.e. verification is least necessary exactly where
+it's most often spent. So: **always verify blockers; verify majors before a tag but skip them
+while iterating; never adversarially verify minor/nit** — ship those reported-but-unverified and
+clearly marked. Do **not** economize by cutting lenses instead: lenses are cheap and are where
+the value is (blast-radius alone caught multiple release-blocking bugs). The knob is verification
+depth, not lens count. — seen in: haltija (1.4.0 release gate)
+
+**A refuted finding is not waste — it's a discoverability signal.** Feedback offered in good
+faith is valuable even when it's literally wrong. When a careful reviewer (or user) claims "X is
+broken" / "you can't do Y" and the claim is false, the usual reason they believed it is that the
+truth is **undiscoverable** — a docs, naming, or surfacing gap. Rejecting the report because,
+strictly speaking, it's wrong is worse than not reviewing at all: you've paid for the signal and
+thrown it away. So for every refuted finding ask *"what would make a competent reader believe
+this?"* and file the second-order finding (usually a minor docs/DX fix) if there is one. Drop it
+only when the reviewer simply erred and no gap exists — judgement, not a quota.
+
 Each lens returns **ranked findings with a concrete failure scenario**; a finding without a
-repro is a question, not a defect. **Adversarially verify** before acting on or filing anything.
+repro is a question, not a defect. Verify per the rule above before acting on or filing anything.
 
 ### 1. Correctness
 - Observant correctness: new state paths actually observed/bound (no manual re-render sneaking

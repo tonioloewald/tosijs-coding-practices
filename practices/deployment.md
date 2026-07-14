@@ -7,7 +7,9 @@ Pick a host by project shape. Four targets recur across the ecosystem:
 - **Cloudflare Pages / R2 / Workers** — static asset CDNs and edge compute.
 - **Tauri DMG** — desktop apps; "deploy" means code-sign + notarize, not a web host.
 
-There is **no CI in this ecosystem** — every deploy is a hand-run local command. GitHub
+There is **no CI _deploy_ in this ecosystem** — every deploy is a hand-run local command.
+(There *is* CI on some repos, for tests: tosijs-ui and haltija both have workflows. Don't read
+"no CI deploy" as "no CI"; see [review](./review.md) on knowing which lanes are gated.) GitHub
 Pages auto-redeploys from `main`'s `/docs` on push; everything else (Firebase deploy,
 `wrangler`, `npm publish`, DMG notarize) you run yourself. See [releasing](./releasing.md)
 for the version-stamp + npm-publish flow. — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, kith-email, loewald-dot-com

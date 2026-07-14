@@ -65,6 +65,18 @@ Core libraries target small gzip footprints and **zero runtime dependencies**.
   editors/engines (e.g. CodeMirror) rather than eagerly bundling them; inject shared
   styles/listeners on first use (`ensureMenu`/`ensureTooltipStyles`/`ensureFloatListeners`),
   not at import. — seen in: tosijs-ui
+- **⚠️ A dynamic import is only lazy in a format that can CODE-SPLIT. `--format iife` cannot.**
+  This entry used to cite tosijs-ui's CodeMirror import as the exemplar of the rule above — and
+  tosijs-ui 1.7 is the counter-example. `import('./code-editor-cm')` is a real lazy chunk for ESM
+  consumers (3.4KB) and is **flattened straight into the bundle** for the IIFE, which tripled:
+  **121KB → 388KB gzip**, essentially all CodeMirror. The IIFE is the *most-loaded* artifact
+  (every generated doc page, the CDN `<script>` path), so the regression landed on exactly the
+  consumers the lazy import was supposed to protect.
+
+  **So: measure the artifact your users actually load, not the one where the optimisation
+  works.** An agent who checks the ESM entry sees a flat number and ships a 3.2x regression.
+  Print the gzip delta for *every* emitted artifact, and treat a dynamic import inside an IIFE
+  as eager until you have measured otherwise. — seen in: tosijs-ui 1.7
 - Bun is the bundler. Ship ESM as the primary artifact; provide IIFE/CJS only where a
   consumer needs them.
 

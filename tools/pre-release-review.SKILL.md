@@ -54,11 +54,23 @@ pre-release review". This skill is the executable version of it.
    ```
    Workflow({
      scriptPath: "/Users/tonioloewald/.claude/skills/pre-release-review/pre-release-review.workflow.js",
-     args: { baseRef: "<tag>", bump: "<patch|minor|major>" }
+     args: { baseRef: "<tag>", bump: "<patch|minor|major>", depth: "full" }
    })
    ```
-   It fans out nine lens reviewers in parallel, verifies each finding adversarially, then
-   triages. It runs in the background and notifies you when done.
+   It fans out nine lens reviewers in parallel, verifies the decision-changing findings
+   adversarially, then triages. Runs in the background; notifies you when done.
+
+   **`depth` controls cost, and it's the knob to reach for when iterating.** Verification is
+   ~70% of the run, so it scales by how much it verifies, NOT by cutting lenses (all nine run
+   either way — they're cheap and they're where the value is):
+   - `depth: "fast"` — verify **blockers only**; majors and below ship reported-but-unverified.
+     ~60% cheaper. This is the **every-iteration** check: "am I about to embarrass myself?"
+   - `depth: "full"` (default) — verify **blocker + major**. The **pre-tag** gate. ~35% cheaper
+     than the old verify-everything behavior; minor/nit are never adversarially verified.
+
+   A run you're going to repeat several times during a release should be `fast`; the one right
+   before you cut the tag should be `full`. If cost is making you skip the review entirely, use
+   `fast` — a cheap review that runs beats a thorough one that doesn't.
 
 6. **When it completes, present `reportMarkdown`** to the user verbatim (it's the deliverable),
    then state the `recommendation` plainly.
@@ -100,7 +112,7 @@ gets waved away as "pre-existing" or "not mine." Treat every failing test as a f
   commit). All fixing happens after the review, deliberately.
 - **Stay in this repo.** Ecosystem findings are **filed as issues on the upstream repo**, never
   fixed by editing it. Wandering into another repo needs a specific reason and human signoff.
-- Scale: `patch` → run it but expect a light pass; `minor` → all nine lenses; `major` → all
+- Scale: `patch` → light pass; `minor` → all nine lenses; `major` → all
   nine + completeness critic + subsystem-level (not just diff) review.
 - To tune cost/depth, edit the bundled `pre-release-review.workflow.js` (lens list, verify
   strategy, models).
