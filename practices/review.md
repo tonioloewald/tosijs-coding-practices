@@ -197,6 +197,38 @@ spawns, binds, or kills that outlives the process and is shared with software we
 That state has no test suite, no code review, and no rollback — and it is where a tool stops
 being wrong *in its own repo* and starts being wrong *on the user's machine*.
 
+**Machine scope is not automatically a smell — and this lens is not a campaign to eliminate it.**
+Some problems are *intrinsically* machine-scoped: "which version of this shared CLI does every
+shell on this box run?" cannot be answered by a per-project fix, and a tool that refuses to look
+outside its own directory simply leaves that problem unsolved. Acting at machine scope is then a
+**feature**, and scoping it down to look tidy is the actual bug. A build that checks the
+machine's health rather than only its own is doing more, not overreaching.
+
+So don't ask *"does this touch global state?"* — ask **"is this done right?"** Done right means:
+
+1. **Scoped to real harm.** Act only on what is actually causing the problem, identified
+   positively — never "everything that matches," never "everything older than me."
+2. **Ask before you take.** If the thing you want to stop can be *asked* to stop, ask it. Prefer
+   a request over a signal, a version query over a byte-compare. Every place we *inferred*
+   (a pid from a port, a version from file size) turned out to be a bug; every place we *asked*
+   was correct by construction.
+3. **Self-terminating.** Key the rule on the condition that makes something harmful, so it stops
+   firing once that condition is gone. A rule keyed on "older than me" never terminates.
+4. **Never clobber a deliberate choice.** A symlink, a pinned version, a hand-edited config: a
+   human put that there on purpose.
+5. **Reversible, with an opt-out** that is documented where the *affected* person will see it.
+6. **Accountable — the one people skip.** Leave a receipt: an append-only log of every
+   machine-scope action, with timestamp, version, and **the directory of the project that
+   triggered it**, and announce on **stderr** (harnesses swallow stdout). This matters most when
+   your tool is a **transitive dependency**: someone runs *another* project's test script, that
+   spawns you, and you touch their machine — and they have never heard of you, never read your
+   README, and never ran your `--help`. There must always be an answer to *"what did this thing
+   do to my machine, and which project caused it?"* Unaccountable global action is the thing to
+   forbid; global action is not.
+
+— seen in: haltija (1.4.0 installs a shared `hj` and stops other haltija servers, both machine-scope
+by design; `src/machine-log.ts` is the receipt)
+
 **Fast exit:** if the diff writes nothing outside the repo, spawns nothing, binds nothing, and
 kills nothing, say so in one line and return no findings. Do not manufacture findings. On a
 pure library change this lens is cheap and quiet, and that's correct.

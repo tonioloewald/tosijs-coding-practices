@@ -87,6 +87,14 @@ Findings here are proposed CHANGES TO THE PRACTICES (or to this repo's agent doc
     title: 'Blast radius (state outside the repo)',
     checks: `Lenses 1-6 review the code. You review the FOOTPRINT — everything this change writes, spawns, binds, or kills that OUTLIVES THE PROCESS and is shared with software we do not own. That state has no test suite, no code review and no rollback. It is where a tool stops being wrong in its own repo and starts being wrong ON THE USER'S MACHINE.
 
+MACHINE SCOPE IS NOT AUTOMATICALLY A SMELL, AND YOU ARE NOT HERE TO ELIMINATE IT. Some problems are intrinsically machine-scoped ("which version of this shared CLI does every shell on this box run?") and CANNOT be solved per-project; a tool that refuses to look outside its own directory just leaves them unsolved. Acting at machine scope is then a FEATURE, and scoping it down to look tidy is the actual bug. Do not file "this touches global state" as a finding on its own. Ask instead: IS IT DONE RIGHT? Done right =
+  (1) SCOPED TO REAL HARM — act only on what is actually causing the problem, positively identified; never "everything that matches", never "everything older than me";
+  (2) ASK, DON'T INFER — if the thing can be ASKED to stop, ask it; prefer a request over a signal, a version query over a byte-compare. Inferred values (a pid from a port, a version from file size) are where the bugs are;
+  (3) SELF-TERMINATING — keyed on the condition that makes something harmful, so it stops firing once that condition is gone;
+  (4) NEVER CLOBBERS A DELIBERATE CHOICE — a symlink, a pin, a hand-edited config;
+  (5) REVERSIBLE, with an opt-out documented where the AFFECTED person will see it;
+  (6) ACCOUNTABLE — the one everyone skips. An append-only receipt of every machine-scope action (timestamp, version, AND the cwd of the project that triggered it), announced on STDERR (harnesses swallow stdout). This matters most when the tool is a TRANSITIVE DEPENDENCY: someone runs ANOTHER project's test script, it spawns this tool, and it touches their machine — and they have never heard of it. There must always be an answer to "what did this do to my machine, and which project caused it?" UNACCOUNTABLE global action is what you forbid; global action is not.
+
 FAST EXIT: if the diff writes nothing outside the repo, spawns nothing, binds nothing and kills nothing, say so in one line and return NO findings. Do not manufacture findings — on a pure library change this lens is correctly quiet.
 
 Otherwise ENUMERATE the footprint (grep the diff for: homedir(), os.homedir, '~/', /usr/local, .local/bin, XDG_, process.kill, spawn, execSync, lsof, Bun.serve, listen, writeFileSync to paths outside the repo) and interrogate each:
