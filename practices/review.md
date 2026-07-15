@@ -238,11 +238,35 @@ tested against reality.
 - **Done when:** the shared practices are updated, or explicitly confirmed still correct, and
   any process gap is filed.
 
-### 9. Blast radius — what does this touch *outside* the repo?
+### 9. Blast radius — what does this change PROPAGATE outside the repo, cost *or* benefit?
 Lenses 1–6 review the code. This one reviews the **footprint**: everything the change writes,
 spawns, binds, or kills that outlives the process and is shared with software we don't own.
 That state has no test suite, no code review, and no rollback — and it is where a tool stops
 being wrong *in its own repo* and starts being wrong *on the user's machine*.
+
+**Blast radius has a sign, and the amplitude multiplies whichever sign it has.** A change with
+wide reach is not automatically bad — reach *is* leverage. A bug in a widely-used library is
+catastrophic for the exact same reason an improvement in it is enormously valuable: the
+amplitude is large either way. So this lens runs in **two directions** (like lens 7):
+
+- **Positive blast radius — harm that propagates.** The default worry, and the rest of this
+  lens: state mutated outside the repo, processes touched, the machine changed. Interrogate it
+  with the checklist below.
+- **Negative blast radius — benefit that propagates.** *This is what a library is for:* do a
+  thing well in one place and every consumer gets it for free on the next update. Ask whether
+  the change **captured** that leverage or **leaked** it. A local fix to a general problem is a
+  leak — the next consumer re-hits it. **Duplication is a leak too, and worse than untidy: it
+  severs the propagation path.** When the same logic lives in two places, a fix reaches only
+  one; if the *tested* copy is the one that doesn't ship, improvements propagate to *nobody*.
+  That is the real cost DRY (lens 3) is guarding — not repetition, but the loss of the very
+  propagation that justifies having a shared thing. Also weigh **propagation cost**: a benefit
+  consumers get by merely updating is true negative blast radius; one that demands every
+  consumer change their code (a breaking change, a migration) is leverage with friction — ask
+  whether it could have been delivered without the friction.
+
+— seen in: haltija (1.4.0 fixed "ask, don't infer" once, in extracted tested modules → correct
+everywhere; but the cwd-routing rule duplicated into `bin/hj.mjs` is a live leak — the tested
+copy in `src/sessions.ts` ships to no one)
 
 **Machine scope is not automatically a smell — and this lens is not a campaign to eliminate it.**
 Some problems are *intrinsically* machine-scoped: "which version of this shared CLI does every

@@ -101,8 +101,11 @@ Findings here are proposed CHANGES TO THE PRACTICES (or to this repo's agent doc
   },
   {
     key: 'blast-radius',
-    title: 'Blast radius (state outside the repo)',
-    checks: `Lenses 1-6 review the code. You review the FOOTPRINT — everything this change writes, spawns, binds, or kills that OUTLIVES THE PROCESS and is shared with software we do not own. That state has no test suite, no code review and no rollback. It is where a tool stops being wrong in its own repo and starts being wrong ON THE USER'S MACHINE.
+    title: 'Blast radius (what propagates outside the repo — cost or benefit)',
+    checks: `Lenses 1-6 review the code. You review what this change PROPAGATES beyond the repo. Blast radius has a SIGN, and the amplitude multiplies whichever sign it has: a bug in a widely-used library is catastrophic for the same reason an improvement in it is enormously valuable. Run BOTH directions.
+
+=== A. POSITIVE BLAST RADIUS — harm that propagates (the footprint) ===
+Everything this change writes, spawns, binds, or kills that OUTLIVES THE PROCESS and is shared with software we do not own. That state has no test suite, no code review and no rollback. It is where a tool stops being wrong in its own repo and starts being wrong ON THE USER'S MACHINE.
 
 MACHINE SCOPE IS NOT AUTOMATICALLY A SMELL, AND YOU ARE NOT HERE TO ELIMINATE IT. Some problems are intrinsically machine-scoped ("which version of this shared CLI does every shell on this box run?") and CANNOT be solved per-project; a tool that refuses to look outside its own directory just leaves them unsolved. Acting at machine scope is then a FEATURE, and scoping it down to look tidy is the actual bug. Do not file "this touches global state" as a finding on its own. Ask instead: IS IT DONE RIGHT? Done right =
   (1) SCOPED TO REAL HARM — act only on what is actually causing the problem, positively identified; never "everything that matches", never "everything older than me";
@@ -112,7 +115,14 @@ MACHINE SCOPE IS NOT AUTOMATICALLY A SMELL, AND YOU ARE NOT HERE TO ELIMINATE IT
   (5) REVERSIBLE, with an opt-out documented where the AFFECTED person will see it;
   (6) ACCOUNTABLE — the one everyone skips. An append-only receipt of every machine-scope action (timestamp, version, AND the cwd of the project that triggered it), announced on STDERR (harnesses swallow stdout). This matters most when the tool is a TRANSITIVE DEPENDENCY: someone runs ANOTHER project's test script, it spawns this tool, and it touches their machine — and they have never heard of it. There must always be an answer to "what did this do to my machine, and which project caused it?" UNACCOUNTABLE global action is what you forbid; global action is not.
 
-FAST EXIT: if the diff writes nothing outside the repo, spawns nothing, binds nothing and kills nothing, say so in one line and return NO findings. Do not manufacture findings — on a pure library change this lens is correctly quiet.
+=== B. NEGATIVE BLAST RADIUS — benefit that propagates (leverage) ===
+This is what a library is FOR: do a thing well in one place, and every consumer gets it for free on the next update. Ask whether this change CAPTURED that leverage or LEAKED it:
+  - A LOCAL fix to a GENERAL problem is a leak — the next consumer re-hits it. Was the fix made at the layer where everyone benefits, or patched where it happened to bite?
+  - DUPLICATION is a leak, and worse than untidy: it SEVERS THE PROPAGATION PATH. When the same logic lives in two places a fix reaches only one — and if the TESTED copy is the one that doesn't ship, improvements propagate to NOBODY. (This is the real cost DRY guards; report it here, from the propagation angle, when a change adds or leaves such a copy on a path that matters.)
+  - PROPAGATION COST: a benefit consumers get by merely updating is true negative blast radius; one that forces every consumer to change code (a breaking change, a migration) is leverage with friction — ask whether it could have shipped without the friction.
+Not every change has a B-half finding; a pure internal refactor may capture leverage cleanly. But a change that fixes a bug LOCALLY that other consumers will hit, or that hand-copies a shared policy, has leaked leverage — say so.
+
+FAST EXIT (applies to the A-half): if the diff writes nothing outside the repo, spawns nothing, binds nothing and kills nothing, say so in one line and return no A-half findings. Do not manufacture footprint findings — on a pure library change the A-half is correctly quiet. (Still run the B-half.)
 
 Otherwise ENUMERATE the footprint (grep the diff for: homedir(), os.homedir, '~/', /usr/local, .local/bin, XDG_, process.kill, spawn, execSync, lsof, Bun.serve, listen, writeFileSync to paths outside the repo) and interrogate each:
 

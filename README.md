@@ -10,6 +10,32 @@ task.
 
 > One index (this file) → a small set of focused practice docs. Nothing else to discover.
 
+## The organizing idea: negative blast radius
+
+Everything here — the tools, the practices, this repo — is trying to have **negative blast
+radius**: to do a thing well in one place and propagate the improvement to everything downstream
+for little or no cost. Blast radius has a *sign*. Positive is harm that spreads; zero is the
+isolated, defensive ideal most code aspires to; **negative is reach that makes its environment
+better** — which is precisely what a library is *for*. High amplitude is not the enemy; the wrong
+sign is.
+
+The mature move, visible across the stack, is the shift **from self-preservation to
+environment-healing**:
+
+- **tosijs-ui**'s build system went from *"don't let me explode"* to *"check whether anything is
+  exploding."*
+- **haltija** went from *"is the current version working?"* to *"are there signs of existing
+  failure?"* — it retires stale servers and repairs the shared CLI it finds around it.
+- **this repo** is the same idea applied to *knowledge*: a lesson learned once in one project (a
+  footgun, a fixed bug, a better default) becomes a durable practice every other project inherits
+  for free. It is collective, structured memory across projects — negative blast radius on what we
+  know, not just on what we ship.
+
+When you review or design, ask it of your own change (lens 9 in [`review.md`](practices/review.md)
+makes this concrete): did it *capture* that leverage, or *leak* it? A local fix to a general
+problem leaks it. Duplicated logic leaks it — worse, it severs the propagation path, so a fix
+reaches no one.
+
 ## How to use this (agents, read this section)
 
 1. **Start here.** This README is the index. Every practice lives in `practices/`.
