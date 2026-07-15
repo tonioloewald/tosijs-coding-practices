@@ -50,6 +50,25 @@ clearly marked. Do **not** economize by cutting lenses instead: lenses are cheap
 the value is (blast-radius alone caught multiple release-blocking bugs). The knob is verification
 depth, not lens count. — seen in: haltija (1.4.0 release gate)
 
+**Key on the severity you'd _act_ on, not the label the finder typed.** The tiers above proxy
+the real test — "does this finding's truth change the release decision?" — with the reported
+severity, and that proxy has one blind spot: severity is assigned *before* verification, in the
+one direction the economics don't cover. Over-rating is self-correcting (a false major is cheap
+to wave off, and finders rarely under-rate — the 3%-vs-11% asymmetry is exactly that). But a real
+blocker mislabeled "minor" then never gets verified and sits in the follow-up pile forever, wrong
+*and* buried. So treat **"I'm not sure this minor isn't actually a blocker" as itself a trigger to
+verify** — uncertainty about severity is a decision-changing question, which is the header's own
+test. Verifying to *find out* how bad something is costs the same as verifying to confirm it.
+
+**The "clearly marked" on shipped-unverified findings is load-bearing, not a nicety — it is what
+makes the economics work.** At an ~11% refute rate, roughly one in nine shipped nits is wrong; if
+they don't read as *conspicuously unvetted*, the reader stops trusting the report and re-verifies
+everything by hand, which spends exactly the cost the tiering just saved. Mark every unverified
+finding as such at the point it appears (not only in a preamble), so a false one reads as "an
+unchecked lead", never as "a vetted defect". (This is *adversarial* verification — spawning
+skeptics — that we're skipping; inline sanity-reading a finding as you triage it is free and still
+expected. "Unverified" means "no skeptic ran", not "nobody looked.")
+
 **A refuted finding is not waste — it's a discoverability signal.** Feedback offered in good
 faith is valuable even when it's literally wrong. When a careful reviewer (or user) claims "X is
 broken" / "you can't do Y" and the claim is false, the usual reason they believed it is that the
