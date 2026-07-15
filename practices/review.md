@@ -24,7 +24,12 @@ Before any **minor or major** version bump, run a structured multi-lens review �
 blended pass. Blending dilutes every lens; a reviewer told to "check everything" checks
 nothing deeply. Run the **nine lenses below as independent passes**, each scoped to the diff
 since the last release (`git diff vLAST..HEAD`) plus the code it touches (for a **major**,
-review whole affected subsystems, not just the diff). This maps directly onto the tooling:
+review whole affected subsystems, not just the diff). **Scope that diff to source** —
+`git diff vLAST..HEAD -- . ':(exclude)dist' ':(exclude)docs' ':(exclude)*.map'` — for every
+lens *except lens 4*. A release that re-bundles a dependency can churn thousands of lines of
+generated `dist/`/`docs/`, and feeding that bundle to eight lenses is pure cost: it is not a
+change any of them review. Only **lens 4** reads the generated tree, and only to assert it
+regenerates clean. This maps directly onto the tooling:
 one focused `/code-review high` per lens, or `/code-review ultra` / a `Workflow` fan-out with
 one reviewer agent per lens in parallel, then triage the union. Runnable version:
 [`/pre-release-review`](../tools/README.md).
@@ -268,6 +273,31 @@ amplitude is large either way. So this lens runs in **two directions** (like len
 everywhere; but the cwd-routing rule duplicated into `bin/hj.mjs` is a live leak — the tested
 copy in `src/sessions.ts` ships to no one)
 
+**A tool you RUN can heal what it touches — negative blast radius you GENERATE, not just
+propagate.** A library's negative blast radius is passive: fix it once, consumers get it on
+update. A build / dev-server / review tool has an active form, and it is the higher aspiration:
+every run *encounters* the rest of the stack — the bundler, the framework, the machine, other
+projects' processes — and each encounter can leave that thing better than it found it. **The goal
+is that using the tool makes the whole system less fragile.** Two moves turn an encounter into
+that:
+
+- **Surface and route; don't absorb.** When the tool hits a defect in something it doesn't own,
+  the reflex is a local workaround — which buries the signal and guarantees the next consumer
+  re-hits it. Instead file it upstream and keep the workaround *until the fix ships*, then delete
+  it. A worked-around dependency bug is a leak; a filed-and-fixed one is a repair that reaches
+  everyone.
+- **Feed the lesson back into the shared guard.** When a build or review catches a bug, encode
+  the *class* of it where the tool will re-apply it automatically — a lens prompt, a preflight
+  check, a KB entry — so the next run anywhere catches it without anyone remembering to look. A
+  one-off catch helps one release; a hardened guard helps every release after, in every project.
+
+— seen in: tosijs-ui 1.7 — running the doc-site build surfaced the `Bun.build` native-arena leak
+(oven-sh/bun#34053, filed, fix in flight); adopting the components surfaced the `parts`-proxy
+poisoning (tosijs#13 → fixed in 1.6.9, so the bug is now impossible for *every* tosijs component,
+and both our hand-rolls were deleted); and the review that caught `killStrayServer` SIGKILLing
+connected clients fed that exact port-to-pid trap into the pre-release-review tool's own
+blast-radius lens — so the next review of any project catches it by construction.
+
 **Machine scope is not automatically a smell — and this lens is not a campaign to eliminate it.**
 Some problems are *intrinsically* machine-scoped: "which version of this shared CLI does every
 shell on this box run?" cannot be answered by a per-project fix, and a tool that refuses to look
@@ -357,6 +387,19 @@ developer's own dev server and hijacked their CLI)
 - **Lenses 7 and 8 rarely block a release** — they compound instead. Treat "no findings" from
   either with suspicion: it usually means nobody looked.
 - Record anything durable back into the practice docs so the next release starts ahead.
+
+**One review per release; re-review only the delta.** The review runs *once*, against
+`vLAST..HEAD`. Fixing its findings produces new diff — and re-running the whole review over that
+diff is a treadmill with no fixed point: each fix draws fresh nits, which you fix, which is fresh
+diff. Making each pass cheaper just spins the treadmill faster. So: a fix's own correctness is
+checked **inline** (you wrote it, you read it), and any *new* nit it surfaces is the **next**
+release's input — filed to `TODO.md`, not fed back into this gate. Re-run a lens only when a
+**blocker** fix materially reshaped the subsystem that lens covers, and then only over that fix's
+diff. **`GO-with-followups` is a stopping state, not a lap counter:** taking it — file the
+non-blockers, tag — *is* the discipline. Re-reviewing instead of shipping is the anti-pattern this
+rule exists to kill, and it is the specific reason a slow review gets abandoned: a gate that never
+declares itself done gets skipped entirely, which is strictly worse than a gate that ships with
+followups. — seen in: tosijs-product (0.6.x)
 
 — seen in: tosijs, tosijs-ui, tjs-lang (release discipline); tooling: `/code-review`, `/code-review ultra`
 

@@ -10,11 +10,12 @@ For where the built site goes (GitHub Pages / Firebase / Cloudflare), see
 
 ## Before a minor or major release: run the comprehensive review
 
-For any **minor or major** bump, run the eight-lens
+For any **minor or major** bump, run the nine-lens
 [comprehensive pre-release review](review.md#comprehensive-pre-release-review-minor--major)
 **first** — correctness, efficiency, DRYness, documentation accuracy, test coverage,
-developer experience, **ecosystem & abstraction health**, and **practices self-review** — each
-as an independent pass over `git diff vLAST..HEAD`. Runnable: [`/pre-release-review`](../tools/README.md).
+developer experience, **ecosystem & abstraction health**, **practices self-review**, and
+**blast radius** — each as an independent pass over `git diff vLAST..HEAD`. Runnable:
+[`/pre-release-review`](../tools/README.md).
 
 Unresolved correctness/security findings **block** the release. Route the rest by lens:
 `TODO.md` for lenses 1–6, a **GitHub issue on the upstream repo** (mirrored in `UPSTREAM.md`)
@@ -32,6 +33,26 @@ gh issue list -R tonioloewald/<this-repo> --state open
 Fix what this release should fix, and **close each fixed issue naming the version** — a
 downstream agent is waiting on that signal to drop its workaround. See
 [`cross-project.md`](cross-project.md).
+
+## Which number moves: version by narrative, not by semver's letter
+
+Semver's *letter* says any backwards-compatible new functionality is a minor. Followed
+literally, that inflates the version number: every small forward step becomes a release
+milestone, and a library sprints through minors that mark nothing a human would call a release.
+This stack versions by **narrative** instead — the number should tell a consumer *what happened*,
+not *that the API grew by one function*.
+
+- **Patch** — incremental additive work that breaks nothing: a new export, a small feature, a
+  doc or dependency fix. **This is the default, even when it enlarges the public API.** You
+  accrete patches while building *toward* something.
+- **Minor** — a **coherent body** of new functionality landing together (the "something" the
+  patches were building toward), **and/or a breaking change**.
+- **Major** — reserved per the project's own threshold (pre-1.0 libraries often carry breaks in
+  minors; say so in the project's `CLAUDE.md`).
+
+The failure mode is cutting a minor because a change is *technically* additive. Don't. If you're
+unsure, it's a patch — a minor is a claim that a chapter closed. — seen in: tosijs-product (six
+helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was the wrong call)
 
 ## Cutting a release (canonical flow)
 

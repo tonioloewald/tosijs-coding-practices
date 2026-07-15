@@ -2,13 +2,13 @@
 
 Executable versions of the practices in this repo.
 
-## `pre-release-review` — the eight-lens release-gate review
+## `pre-release-review` — the nine-lens release-gate review
 
 The runnable form of [`practices/review.md` → Comprehensive pre-release
 review](../practices/review.md#comprehensive-pre-release-review-minor--major). Two pieces:
 
-- **`pre-release-review.workflow.js`** — a Claude Code `Workflow` harness. It fans out eight
-  independent lens reviewers (correctness, efficiency, DRYness, docs, test coverage, DX, ecosystem health, practices self-review) over
+- **`pre-release-review.workflow.js`** — a Claude Code `Workflow` harness. It fans out nine
+  independent lens reviewers (correctness, efficiency, DRYness, docs, test coverage, DX, ecosystem health, practices self-review, blast radius) over
   `git diff <last-tag>...HEAD`, adversarially verifies every finding, and triages the survivors
   into a `GO` / `GO_WITH_FOLLOWUPS` / `BLOCK` report. Reviewers are read-only.
 - **`pre-release-review.SKILL.md`** — a `/pre-release-review` skill that wraps the harness:
