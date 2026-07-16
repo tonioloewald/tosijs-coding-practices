@@ -71,6 +71,16 @@ helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was th
    before you trust it (`grep '"build"' package.json`), and if a lane is not in CI, it will rot
    silently — run it locally before every release, no exceptions.
 
+   A second instance of the same trap: tjs-lang's fast lane (`test:fast`) sets
+   `SKIP_LLM_TESTS=1 SKIP_BENCHMARKS=1`, so the benchmark and LLM tiers only run in the full
+   `bun test`. A vector-search benchmark silently drifted to a **27× flake** — it asserted a 3×
+   ratio on a single sub-millisecond measurement — because nothing ran that lane between
+   releases. The fix was two-fold: repair the benchmark (time 50 iterations, not one), and stop
+   trusting convention — make the full-suite run a **hard, enforced** pre-tag gate (see
+   [Tagging](#tagging)). The lanes your fast loop skips are exactly the ones that rot, so the
+   release gate must run the *whole* suite, and enforcement beats discipline. — seen in:
+   tosijs-ui, tjs-lang
+
 4. **Build** — run the project's build (usually `bun run build`). It stamps `version.ts` and
    regenerates `dist/` (+ `docs/` for doc-site projects). — seen in: tosijs, tosijs-ui, tosijs-schema
 5. **Commit everything**, including regenerated `dist/`/`docs/`, with a `vX.Y.Z: <summary>` message.
@@ -159,6 +169,24 @@ otherwise follow the existing tag style in that repo, don't mix.
 For npm **pre-releases**, `npm publish --tag beta` is mandatory — without the dist-tag npm marks
 the beta as `latest` and a bare `npm install <pkg>` pulls it. Pair it with
 `gh release create --prerelease`. — seen in: haltija
+
+### Enforcing the full-suite gate at the tag (pre-push hook)
+
+Discipline ("run every lane before you tag") rots; enforcement doesn't. But **git has no
+`git tag` hook** — there is no client-side hook that fires when a tag is created. The tag's
+push is the enforceable moment, and it's the right one: publishing happens from the pushed tag,
+so gating the tag's *arrival at the remote* gates the release. You can create a local tag
+freely; you just can't ship one with a red suite.
+
+A `.githooks/pre-push` (wired via `git config core.hooksPath .githooks` in the `prepare` script)
+does it. `pre-push` receives one line per pushed ref on **stdin** — `<local-ref> <local-sha>
+<remote-ref> <remote-sha>` — so the hook: (1) reads stdin; (2) runs the full suite only if a
+line's local ref matches `refs/tags/*` **and** its local sha isn't all-zero (all-zero = a tag
+*delete*, skip it); (3) exits 0 immediately for branch/`main` pushes, leaving normal development
+untouched. If the suite needs an external service (tjs-lang's needs a local LLM server), the hook
+**preflights reachability** and refuses early with a clear message rather than dumping a wall of
+failures. Escape hatch: `git push --no-verify`, and **only** for a tag whose suite you've already
+run green another way — never to dodge a real failure. — seen in: tjs-lang (`.githooks/pre-push`)
 
 ## Who pushes and publishes — check before you act
 

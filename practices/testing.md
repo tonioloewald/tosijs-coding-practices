@@ -89,6 +89,35 @@ Unit, integration, and browser/E2E tests have different runners and must not ble
   negative). Running that file under `bun test` is a category error — it asserts compile-time
   failures. — seen in: tosijs-schema
 
+## Testing model-dependent code (LLMs): three lanes by what each proves
+
+"LLM tests" tend to congeal into one slow, non-deterministic bucket that gets `SKIP`-ed
+exactly when it matters — so the code you own goes untested and the model behavior you care
+about goes unmeasured. Split them by **what each actually proves**:
+
+1. **The client you own → deterministic, and in the normal loop.** Your HTTP/SDK wrapper —
+   request shape, response parsing, error mapping — has nothing to do with what the model
+   *says*. Test it against a **fixture server** (a real localhost socket returning canned
+   responses; inject the base URL), so it's fast and needs no live model. Leaving this to run
+   *only* when the model is up is backwards: it's the part most likely to break on an API-shape
+   drift, and the part a model can't help you verify.
+2. **A live smoke → the irreducible "still works against reality."** One or two tests that
+   actually hit the model and assert **shape** (a non-empty string, a vector of plausible
+   length), never content. This is the only thing that needs a live model in the gate; keep it
+   tiny (share one audit/handshake across the cases).
+3. **Model *behavior* → an advisory lane, measured as a rate, never a hard gate.** Whether the
+   model can do the thing (write valid code, classify, follow the format) is non-deterministic
+   and un-mockable — a mock just re-tests your parser. Run **N samples against a pinned model**
+   and assert nothing on the rate: **report** a success rate vs a bar and let it inform, don't
+   block. A bad model afternoon is variance, not a code regression, and a non-deterministic hard
+   gate trains everyone to `--no-verify`.
+
+**Anti-pattern to name and kill: the k-of-n retry mask.** `withRetry({ maxAttempts: 3,
+minSuccesses: 1 })` "passes" at a **33%** success rate — it cannot tell a healthy 90% from a
+degraded 35%. If you are retrying to hide flakiness, you have converted a measurement into a
+coin flip. When the thing under test is inherently probabilistic, **measure the probability**
+(lane 3) instead of retrying until it's green. — seen in: tjs-lang
+
 ## Integration / E2E needs a live target — start it yourself
 
 Integration and browser tests do **not** auto-start their dependency:
@@ -154,6 +183,10 @@ playground UI, not via CLI. — seen in: tjs-lang
 - Normal loop is `bun run test:fast` (`SKIP_LLM_TESTS=1 SKIP_BENCHMARKS=1`); full `bun test`
   needs a local LM Studio chat+embedding server. Attack scenarios live in `src/use-cases/`
   (e.g. `malicious-actor.test.ts`); aim ~98% lines on `src/vm/runtime.ts`, 80%+ overall.
+- The model-dependent tests follow the three-lane split above: deterministic client coverage
+  (`src/batteries/llm-transport.test.ts`, fixture server, in `test:fast`); a live smoke
+  (`models.integration.test.ts`, in the gate); and AJS grokkability as an advisory rate lane
+  (`bun run test:grok`, behind `RUN_GROK_TESTS`, pinned model, never blocks).
 
 ### tosijs-schema
 - Keep an explicit `src/coverage.test.ts` targeting hand-audited edge cases (`s.null` vs
