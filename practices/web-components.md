@@ -180,6 +180,46 @@ hours.
 - Opening delimiter is `/*#`, closing is just `*/`. Numbered headings control ordering;
   `parent`/`order` metadata builds the nav tree.
 
+## Components in markdown, and in no-JS outputs (ePub/print)
+
+- **A custom element with content on the same line gets wrapped in a `<p>` — and the parser then
+  guts it.** CommonMark opens a raw-HTML block for an *arbitrary* tag only when its open tag
+  stands **alone on its line** (block type 7); a *known* block tag like `<div>` opens one whatever
+  follows (type 6). So `<my-el><div>…</div></my-el>` on one line parses as a paragraph — and since
+  a `<div>` may not live inside a `<p>`, the HTML parser **hoists the element's children out of
+  it**, leaving it hollow and its content a sibling. This fails **silently**: the page still looks
+  right, but `this.innerHTML` is `''`, so any light-DOM fallback or enhance-what-you-find logic
+  reads nothing. Verified against marked:
+
+  | markdown | result |
+  | --- | --- |
+  | `<my-el><div>x</div></my-el>` on one line | `<p><my-el>…` — **broken** |
+  | `<my-el>` alone on its line, content below | raw HTML — ok |
+  | `<div>` wrapper, no blank line inside | raw HTML — ok |
+  | `<div>` wrapper **with a blank line** inside | `<p><my-el>…` — **broken** |
+
+  **Do:** open a generated block with a real `<div>`, and keep **no blank line** inside it — a
+  blank line ends the raw-HTML block and drops back to markdown. — seen in: foresight-2026
+
+- **If an output has no JS, a component cannot be the source of truth — it can only enhance.**
+  The doc-system's ePub ships **zero JS**: no bundle, no `<script>` in any chapter. A page whose
+  content is only `<my-thing>` is an empty shell in the book however well it works on the site,
+  and **bundling it into the iife does not help** — a book never runs it. (Print-to-PDF *does*,
+  since it renders in a browser; don't reason about the two outputs as one.) **Do:** render a
+  **static substrate** at build time and have the component upgrade what it finds — and restore
+  the substrate if its own fetch fails, rather than replacing it with an error message. The
+  substrate is what the book reads; the component is a progressive enhancement over it. Keep the
+  projection (columns, fields) in **one module imported by both** the build and the browser so the
+  two can't drift. — seen in: foresight-2026
+
+- **`buildSite`'s `prebuild` hook is the seam for that** — it runs *before* doc extraction, so
+  whatever it writes into your source docs flows into the site **and** the book. Two traps: it
+  writes into a **watched** path, so a `build` while the dev server is up makes them fight — the
+  dev server still holds the generator module it loaded **at startup**, and will regenerate your
+  block with stale code, silently reverting the edit (restart it after touching the generator).
+  And guard the writer with an *only write if the bytes changed* check, or the watcher rebuilds
+  forever. — seen in: foresight-2026
+
 ## Project-specific practices
 
 ### react-tosijs
