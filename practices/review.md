@@ -27,7 +27,7 @@ since the last release (`git diff vLAST..HEAD`) plus the code it touches (for a 
 review whole affected subsystems, not just the diff). **Scope that diff to source** —
 `git diff vLAST..HEAD -- . ':(exclude)dist' ':(exclude)docs' ':(exclude)*.map'` — for every
 lens *except lens 4*. A release that re-bundles a dependency can churn thousands of lines of
-generated `dist/`/`docs/`, and feeding that bundle to eight lenses is pure cost: it is not a
+generated `dist/`/`docs/`, and feeding that bundle to nine lenses is pure cost: it is not a
 change any of them review. Only **lens 4** reads the generated tree, and only to assert it
 regenerates clean. This maps directly onto the tooling:
 one focused `/code-review high` per lens, or `/code-review ultra` / a `Workflow` fan-out with

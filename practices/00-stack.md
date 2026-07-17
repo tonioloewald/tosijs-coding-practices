@@ -35,6 +35,13 @@ The core libraries (tosijs, tosijs-ui, tjs-lang) aim for **zero runtime dependen
 small gzip footprints. Prefer web standards and small in-repo utilities over pulling a
 package. A new runtime dependency in a core library is a decision to justify, not a default.
 
+**Known divergence — tosijs-ui (as of 1.7):** 12 `@codemirror/*` packages are hard runtime
+`dependencies`. CodeMirror can't be a naive optional peer — the editor, its language modes, and
+the tjs extension must all share ONE `@codemirror/state` instance, and a separately-resolved
+copy silently no-ops. **Do not "fix" this by demoting them to peers** (it breaks tjs
+highlighting/autocomplete). The gate on a new runtime dep there is the printed gzip delta, not
+the dependency count.
+
 ## Deployment target by project
 
 The "pick per project" choice, as actually made across the ecosystem:
@@ -61,5 +68,5 @@ Where a project departs from the defaults, and why. Format: `project — what di
 - **loewald-dot-com** — all Firestore access routed through **Cloud Functions RBAC** (`firestore.rules` deny-all); root Bun, `functions/` npm+Node 20 — the "PHP/LAMP simplicity via Firebase" thesis; the client never touches the Firestore SDK.
 - **lukko** — **tjs-lang is central**: VM atoms double as capability tokens — the security model and tool/DSL system are unified (the project's thesis).
 - **editor2 / kith-email / lukko / react-tosijs** — **plain TypeScript, no `.tjs`** — the TJS superset isn't needed for a standard component/integration library or (yet) these apps.
-- **Nearly all** — **no CI**; local quality gates + a "Landing the Plane" push discipline substitute for it (see [`releasing.md`](releasing.md)). Exceptions: haltija (3 GitHub Actions incl. Docs-Drift), tosijs-ui (minimal tsc+test), tjs-lang (git pre-push hook).
+- **Nearly all** — **no CI**; local quality gates + a "Landing the Plane" push discipline substitute for it (see [`releasing.md`](releasing.md)). Exceptions: haltija (3 GitHub Actions incl. Docs-Drift), tosijs-ui (GitHub Actions: `tsc` + unit lane + a Chromium E2E job; Firefox/WebKit only in the manual local lane), tjs-lang (git pre-push hook).
 - **Nearly all libraries** — **Prettier pinned to v2.8.8** — a deliberate/stale pin; upgrading would reformat the tree. Watch it before assuming Prettier 3 behavior.

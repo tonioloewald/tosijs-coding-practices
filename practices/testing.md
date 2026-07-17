@@ -125,8 +125,11 @@ Integration and browser tests do **not** auto-start their dependency:
 - Spin up the real thing rather than mocking: spawn the actual binary on a dedicated test port
   and poll a status endpoint (`fetch('/status')`) until ready. Catches real wire/protocol
   regressions. — seen in: haltija
-- Playwright tests need the **HTTPS dev server already running** — the config won't launch it,
-  and it fails silently otherwise. — seen in: tosijs-ui
+- E2E should **own its target**: a dedicated test port, `reuseExistingServer: false`, and any
+  dev-only overlay disabled — so it never adopts (or asserts against) a differently-configured
+  dev server a developer happens to have running. Tests reference `baseURL`, never a hard-coded
+  port. — seen in: tosijs-ui (Playwright config spins up its own server on 8799 with the haltija
+  dev overlay off; a reused shared server would inject a DOM CI never sees)
 - Emulator-backed tests run **compiled** code — rebuild (`cd functions && bun run build`) and
   restart the emulator after editing, or you're testing stale output. — seen in: loewald-dot-com
 
