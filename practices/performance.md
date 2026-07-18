@@ -88,6 +88,25 @@ Core libraries target small gzip footprints and **zero runtime dependencies**.
   is speed/size, keep a `bench.ts` that runs the same workloads through you and the
   baselines (e.g. Zod, TypeBox) so regressions vs. the field surface immediately. — seen in:
   tosijs-schema
+- **Benchmarking a footgun-pave: three tiers, and correct baselines must be PROVEN
+  equivalent before you time anything.** When a feature replaces a hand-rolled pattern,
+  a single "vs the old way" number is meaningless because "the old way" is really two
+  ways. Report the full cost story:
+  1. **The status quo** — the fast-but-wrong idioms the feature exists to kill (e.g.
+     shallow spread that drops nested defaults; `Object.assign(defaults, …)` that
+     corrupts the shared default object). Time them, but **label them incorrect and
+     demonstrate the wrongness by test** in the same file — their speed is what "just
+     accepting the footgun" buys, and the demonstrated breakage is what it costs.
+  2. **The clean, correct hand-roll** — what a careful developer writes (fresh-output
+     per-shape merge, corruption-proof overlay). This is the real bar: the feature's
+     premium over THIS number is the honest price of paving.
+  3. **The feature itself.**
+  Before timing, assert tiers 2 and 3 produce **identical results on every workload** —
+  a baseline only counts if it does the same job, and the agreement check itself finds
+  bugs (in tjs-lang it exposed payload keys named after `Object.prototype` members
+  dodging validation via `in`). The deliverable is one honest sentence: "costs X ns vs
+  the footgun's Y and the careful hand-roll's Z — and buys validation + incorruptible
+  defaults." — seen in: tjs-lang (dictionary-defaults Spike B)
 - For web-page performance (Core Web Vitals, LCP/INP/CLS, render-blocking, layout shift),
   measure before optimizing. Don't guess at hotspots.
 - **Hunting a leak in a build/CLI process: watch RSS, not the JS heap.** Native memory (Bun's
