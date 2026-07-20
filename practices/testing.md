@@ -13,6 +13,10 @@ bun test src/foo.test.ts    # one file
 bun test src/               # unit tier only (when integration lives elsewhere)
 ```
 
+- **Never scope the unit lane with a `*.test.ts` glob** (`bun test src/*.test.ts`). A glob matches
+  only the top-level files and silently skips every test in a subdirectory — no error, exit 0, a
+  green run that never ran. A bare directory (`bun test src/`) or bare `bun test` **recurses**; use
+  those. In tosijs-ui the glob form skipped ~126 tests across whole features. — seen in: tosijs-ui
 - `bun run build` runs `bun test` first and exits non-zero on failure — a red suite blocks
   the release build. Don't rely on separate CI; most repos here have none. — seen in: tosijs, haltija
 - Capture noisy runs once, query many times: `bun test 2>&1 | tee /tmp/test-results.txt`
