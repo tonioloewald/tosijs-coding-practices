@@ -30,7 +30,10 @@ const diffCmd = (args && args.scope) || `git diff ${base}...HEAD`
 // the value is (blast-radius alone found 8 blockers). Cutting lenses would cut value, not cost.
 const depth = (args && args.depth) || 'full'
 const VERIFY_SEVERITIES = depth === 'fast' ? ['blocker'] : ['blocker', 'major']
-const shouldVerify = (f) => VERIFY_SEVERITIES.includes(f.severity)
+// Key on the severity you'd ACT on, not just the label the finder typed: a reviewer who is
+// unsure a "minor" isn't really a blocker sets severityUncertain, and that uncertainty is
+// itself a decision-changing question — so it triggers verification too (review.md).
+const shouldVerify = (f) => VERIFY_SEVERITIES.includes(f.severity) || f.severityUncertain === true
 
 // ---- the nine lenses (criteria mirror practices/review.md) ------------------
 // 1-6 look AT THE CHANGE, and 9 at what the change touches BEYOND THE REPO
@@ -165,6 +168,10 @@ const FINDINGS_SCHEMA = {
             description: 'concrete inputs/state -> wrong outcome; for non-correctness lenses, the concrete cost/risk',
           },
           recommendation: { type: 'string', description: 'what to do about it' },
+          severityUncertain: {
+            type: 'boolean',
+            description: 'true if you are not confident the severity label is right (e.g. "this minor might really be a blocker") — uncertain findings get verified regardless of label',
+          },
         },
       },
     },
@@ -224,7 +231,7 @@ Scope: run \`${diffCmd}\` and \`git diff --stat ${base}...HEAD\` to see everythi
 Review ONLY through the ${lens.title} lens:
 ${lens.checks}
 
-Report concrete, ranked findings. Each finding needs a real failure scenario (or, for non-correctness lenses, the concrete cost/risk) and an actionable recommendation. Prefer a few high-signal findings over an exhaustive dump; if the diff is clean on this lens, return an empty findings array. Severity: blocker (must fix before release) / major / minor / nit.`
+Report concrete, ranked findings. Each finding needs a real failure scenario (or, for non-correctness lenses, the concrete cost/risk) and an actionable recommendation. Prefer a few high-signal findings over an exhaustive dump; if the diff is clean on this lens, return an empty findings array. Severity: blocker (must fix before release) / major / minor / nit. If you are not confident in a severity label — especially "this minor might really be a blocker" — set severityUncertain: true so it gets adversarially verified regardless of the label.`
 
 const verifyPrompt = (f, lens) =>
   `${READONLY}
