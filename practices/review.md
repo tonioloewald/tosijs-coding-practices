@@ -105,12 +105,26 @@ repro is a question, not a defect. Verify per the rule above before acting on or
   - **A new message or check placed before the input it depends on.** Argument parsing, config
     merging and validation have an order; code inserted "near the top" can read a flag that
     hasn't been parsed yet and confidently say the opposite of what the run then does.
+- **The instrument must not lie.** For any tool that does remote control, inspection, or
+  measurement, the failure that costs the user the most is not an error or a timeout — it's a
+  **plausible-but-wrong answer** returned with the same confidence as a right one. A backgrounded
+  browser tab *answers* `querySelectorAll(...).length` with `0` (rAF/timers frozen), which reads
+  as "broken" when it means "asleep." A command routed by *focus* looks identical to one routed by
+  *your intent*. When a result can be right-looking and wrong, it must carry the caveat that makes
+  it interpretable — distinguish "not mounted yet" from "broken," "focus chose this" from "you
+  chose this" — and prefer an **attached warning over a bare value**. Two discipline points that
+  keep the caveat honest: key it on a signal the subject actually reports (a tab's own
+  `visibilitychange`, not a staleness proxy that also fires for an idle-but-healthy subject — a
+  false caveat is its own lie); and don't *guess* the right answer to avoid warning (ranking tabs
+  by "origin looks like the cwd project" would pick confidently and wrongly — a warning you can
+  justify beats a correction you can't).
 - **Done when:** the changed behavior has been **driven end-to-end** (see the next section),
   not just unit-tested — and driven in **more than one mode** if it supports more than one.
 
 — seen in: haltija (1.4.0: an https-only server kept `PORT`'s http default and advertised a
 port it wasn't listening on; a new warning was emitted before `--port` was parsed, so
-`hj --port N` told the user to use `--port`)
+`hj --port N` told the user to use `--port`. 1.5.0: a hidden tab and a focus-chosen tab each
+returned a confident wrong answer until the result was made to carry a warning — #2/#3)
 
 ### 2. Efficiency
 - Surgical updates, not rebuilds; id-paths for in-place list mutation; bulk-mutate-raw-then
@@ -409,6 +423,13 @@ followups. — seen in: tosijs-product (0.6.x)
   layout, scroll metrics, `offsetWidth`, `:scope >`, or rAF timing, so a green suite still
   hides runtime breakage. Get agent eyes on the running HTTPS dev page.
   — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, react-tosijs
+- **A printed or documented remedy is a testable claim — drive it.** When code or docs tell the
+  user "do X to fix this" (an escape-hatch flag, a fallback command, a "use `--window`" hint),
+  run X *in the exact shape the message gives it*, in the mode that triggers the message. The
+  remedy rots silently: it's the path nobody exercises because it only appears when something's
+  already wrong. — seen in: haltija (the `hj --window <id>` escape hatch the docs pointed at was
+  itself broken for releases; the fix landed the same release that started printing "use
+  `--window`" — a near-miss caught only by driving the printed remedy)
 - **Use haltija + the `hj` CLI** to navigate/eval/screenshot the live page (`hj eval` to
   inspect component state, `hj screenshot` to see it), not the Claude-in-Chrome extension.
   Enable per-project with `haltijaDev: true` in the site config (localhost-gated, never
