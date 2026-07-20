@@ -68,6 +68,24 @@ How to work in a project day-to-day.
   `bun start` connects to *production* Firebase; use `bun start-emulated` + `bun seed` for
   isolated local work. Know your target before you write data. — seen in: loewald-dot-com
 
+## Spawning background processes: capture the PID, tear them down
+
+- **A backgrounded child (`&`) does not die with the shell that spawned it.** When the parent
+  shell exits or is killed — a tool-call timeout, an interrupted task — the child is reparented
+  to PID 1 and keeps running: a CPU-pegging or memory-holding orphan nobody is watching. macOS
+  has no `PR_SET_PDEATHSIG`, so nothing reaps it for you.
+- **`kill $(jobs -p)` silently no-ops in zsh** — the agent Bash tool's shell. `jobs -p` inside a
+  command substitution runs in a subshell that can't see the parent's background jobs, so it
+  prints nothing, `kill` gets no arguments, and a trailing `2>/dev/null` hides the "not enough
+  arguments" error. It happens to work in bash, which is exactly how the bug hides.
+- **Capture each PID at spawn instead:** `pids=""; for …; do cmd & pids="$pids $!"; done; …;
+  kill $pids 2>/dev/null`. `$!` is reliable in both shells. For interruption-safety (no
+  `trap … EXIT` survives a SIGKILL), spawn in a process group and `kill -- -$pgid`.
+- This is the *authoring* side of [`review.md`](review.md) lens 9's "killing is a policy" rule:
+  don't leak the processes you spawn, and make the cleanup survive an interrupted run.
+— seen in: a pre-release-review load test spun up 8 `yes > /dev/null` CPU hogs, ran tests under
+  contention, then leaked all 8 for over an hour because its `kill $(jobs -p)` no-oped under zsh
+
 ## Generated files are committed — build before you commit
 
 - **Run `bun run build` before committing so tracked generated files match source.** `dist/`,

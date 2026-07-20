@@ -42,6 +42,27 @@ copy silently no-ops. **Do not "fix" this by demoting them to peers** (it breaks
 highlighting/autocomplete). The gate on a new runtime dep there is the printed gzip delta, not
 the dependency count.
 
+## Bun is mid-rewrite — pin it, treat a major bump as a migration
+
+Bun **1.4.0 is a ground-up rewrite from Zig to Rust** (AI-generated, merged upstream). The whole
+toolchain — runtime, test runner, bundler — assumes Bun, so this is the stack's single largest
+upstream risk.
+
+- **1.3.14 is the last Zig release; 1.4.0 is the first Rust build.** npm `latest` and `canary`
+  are both frozen on the Zig line while the default branch churns — no incremental builds ship to
+  npm, so 1.4.0 arrives as one big-bang discontinuity, not a canary-hardened rollout.
+- **Pin Bun; treat the eventual `latest` bump as a major migration.** You won't float onto 1.4.x
+  by surprise today (`package.json` / CI / `bun upgrade` resolve 1.3.14), but validate the full
+  suite in isolation before adopting, and let others hit the edge cases first — the QA is
+  contested (AI-generated at very high velocity; test-conformance is the only signal).
+- **Upstream fixes may never reach a channel you consume.** Bun fixes the stack depends on
+  (`Bun.build` arena oven-sh/bun#34054, test-runner OOM #34179) sit as open PRs against the
+  now-legacy Zig tree. Don't wait on them; re-verify against 1.4.0 and re-file against the Rust
+  tree if the bug survives. See [`cross-project.md`](cross-project.md).
+- Same shape as the Prettier-v2 pin under "Known divergences," one tier down: the tool you build
+  *on* can move under you, and a pin is a considered position, not neglect.
+— seen in: the machine-killing bun OOMs (oven-sh/bun#34178) that motivated the tosijs-ui dev guard
+
 ## Deployment target by project
 
 The "pick per project" choice, as actually made across the ecosystem:

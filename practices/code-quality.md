@@ -103,6 +103,26 @@ Note the TJS gotcha: a colon value like `function foo(x: 'default')` is an **exa
 required param whose type widens to `string`), *not* a string-literal type. — seen in:
 tjs-lang
 
+## Recursive structural ops must be cycle- and shared-ref-safe
+
+Deep-equal, deep-clone, format/serialize, and any hand-rolled tree walk must handle **shared
+references (DAGs), not just true cycles.**
+
+- **`JSON.stringify` guards cycles but not DAGs.** A graph that shares one child twice per level
+  (`{a: n, b: n}`, N deep) has O(N) nodes but a 2^N *unfolded* tree; `JSON.stringify` re-expands
+  every shared reference and blows up exponentially — it throws only on a genuine cycle. Under
+  bun/JSC there's no max-string cap to save you: it allocates into the gigabytes and OOMs the
+  machine. A naive `deepEqual` has the same shape in *time*.
+- **Fix: memoize, and bound the output.** For equality, memoize visited pairs
+  (`WeakMap<object, WeakSet<object>>`) and return `true` on a repeat — coinductive, collapses
+  O(2^depth) → O(nodes), and terminates on real cycles too. For formatting, thread a `WeakSet`
+  and emit `[shared]`/`[Circular]` on re-visit, plus a hard output-length cap so even a huge
+  non-shared object truncates instead of allocating unboundedly (what `util.inspect` does).
+- Allocate the memo lazily on the first *nested-object* descent, so flat-object compares — the
+  common case — pay nothing.
+— seen in: tjs-lang#21 — its own `expect`/`deepEqual`/`format` and the user-facing `Is` all blew
+  up on DAGs; same class as bun's assertion-formatter OOM (oven-sh/bun#34178)
+
 ## Naming & idioms
 
 - Match the file you're in. House convention for component callbacks is `handle<Event>`
