@@ -186,6 +186,16 @@ returned a confident wrong answer until the result was made to carry a warning �
 - API ergonomics: emitted types are accurate (no required→optional `.d.ts` drift), inference is
   good, and no re-introduced footgun (`on<Event>`, `value`-as-attribute, boolean-defaulting-true).
 - Error messages are actionable; assignment-strictness / monadic errors used where apt.
+- **Output is signal, not narration — flag log/console spam.** Breadcrumb / happy-path logs
+  (`entering handler`, `processing item`, `reached here`), leftover debug output, and repeated or
+  unaddressed deprecation / retry warnings in the diff. The test for a line: *does it change what
+  a reader would DO?* If not, it's spam — cut it (keep receipts for destructive/rare actions).
+  Worth raising even though it reads as cosmetic: **spam is almost always a symptom** — a debug
+  log left from a bug hunt, a deprecation nobody fixed, retry noise from a flaky dependency — so
+  complaining about it in review drives the *underlying cause* to be fixed. And output is the real
+  UI you debug through: noise trains the team to stop reading it, so the one real line scrolls past
+  unseen (the cry-wolf failure, worn in daily). — seen in: legacy-codebase triage (spam reduction
+  as the first move, because it doubles as recon)
 - Conventions honored: `handle<Event>` callbacks; deprecations keep old names working + warn once.
 - **Breaking changes are justified, documented, and migratable.** If this release removes or
   changes public API, all four must hold: (1) the break **buys something a deprecation
