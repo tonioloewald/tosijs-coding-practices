@@ -24,7 +24,19 @@ Before any **minor or major** version bump, run a structured multi-lens review �
 blended pass. Blending dilutes every lens; a reviewer told to "check everything" checks
 nothing deeply. Run the **nine lenses below as independent passes**, each scoped to the diff
 since the last release (`git diff vLAST..HEAD`) plus the code it touches (for a **major**,
-review whole affected subsystems, not just the diff). **Scope that diff to source** —
+review whole affected subsystems, not just the diff).
+
+**Security-subsystem escalation (applies to _minor_ bumps too).** When a release's diff
+touches a security-critical subsystem — a sandbox/VM, capability or tool boundary, RBAC,
+a URL/SSRF guard, a regex/ReDoS or other untrusted-input path — escalate **that subsystem**
+to whole-subsystem review depth regardless of bump size. Security holes are latent: they sit
+in already-shipped code, outside the diff, and diff-scoping structurally misses them. (Real
+case: a minor bump's review found five VM-security blockers, four of them latent in the
+_prior_ shipped release, not in the diff — caught only because the reviewer went to major
+depth anyway. And a security release's own new guard shipped with a hole in exactly the input
+type its one test didn't cover.) Corollary: extend lens 5's "never dismiss a finding as
+pre-existing" rule — scoped to tests today — to security-critical subsystem code: a latent
+vuln the diff happens to sit next to is in scope, not "not mine." **Scope that diff to source** —
 `git diff vLAST..HEAD -- . ':(exclude)dist' ':(exclude)docs' ':(exclude)*.map'` — for every
 lens *except lens 4*. A release that re-bundles a dependency can churn thousands of lines of
 generated `dist/`/`docs/`, and feeding that bundle to nine lenses is pure cost: it is not a

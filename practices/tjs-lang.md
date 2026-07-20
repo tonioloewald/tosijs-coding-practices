@@ -77,7 +77,9 @@ The VM is **capability-based (zero IO by default) and fuel-metered** — every a
   (`Capability boundary rejected the return of '<op>'`). A budgeted pre-walk also rejects
   oversized returns before the copy allocates (`membraneMaxBytes` run option, default 4MB) —
   the capability boundary is where guest payload size is capped. Relatedly, guest `methodCall`
-  is **allowlist**-based (standard built-in methods only), not blocklist. — seen in: tjs-lang
+  is **allowlist**-based (standard built-in methods only), not blocklist. In tests, **mock
+  capabilities must return plain data too** — a `Response`-shaped stub with `.json()`/`.text()`
+  is rejected by the membrane; return `{ ok, status, body }`. — seen in: tjs-lang
   (0.12.0 adversarial VM review)
 - **Note the CLI gap:** `tjs run` does NOT inject the `expect` test harness — `test { expect(...) }`
   blocks only pass in the playground UI, not via the CLI. — seen in: tjs-lang

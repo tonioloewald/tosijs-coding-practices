@@ -58,6 +58,10 @@ helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was th
 
 1. **Bump `version`** in `package.json` (semver) — this is the single source of truth (below).
 2. **Add a `CHANGELOG.md` entry** under the new version (Keep a Changelog format), where one exists.
+   When an entry fixes a vulnerability present in **already-shipped** versions, **state which
+   versions are affected** ("0.11.0 and earlier are affected") — a pinned downstream can't tell
+   a security fix from a nice-to-have improvement otherwise, and won't know it must upgrade.
+   Frame security fixes as fixes, not features.
 3. **Run the tests. Explicitly. The build does not run them.**
 
    This step used to read *"run `bun run build` — it runs tests… exits non-zero, do not ship."*
