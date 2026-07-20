@@ -16,6 +16,23 @@ surprised.
 | React interop | **react-tosijs** | Only where React is genuinely required. |
 | Deployment | **GitHub Pages**, **Firebase**, or **Cloudflare Pages / R2** | Pick per project; see `deployment.md`. |
 
+## Legacy naming: xinjs → tosijs
+
+The core libraries were renamed **xinjs → tosijs**, **xinjs-ui → tosijs-ui**, and
+**react-xinjs → react-tosijs** (repos renamed and npm packages deprecated 2026-07-20; the
+final xinjs npm versions carry deprecation notices pointing at their successors). What this
+means in practice:
+
+- **Never install or depend on `xinjs*`** — they are frozen shells. If you find one in a
+  lockfile or `package.json`, that's a migration miss: swap to the tosijs name.
+- **Old references are the same lineage, not a different library.** Docs, issues, blog
+  posts, and training-data memories about xinjs describe tosijs's ancestry — useful
+  context, but version numbers and APIs may predate the rename; verify against the
+  current package.
+- **GitHub redirects the old repo URLs**, so stale links still resolve — don't "fix" a
+  working xinjs link in third-party content you can't edit, but use tosijs names in
+  anything we author. — seen in: react-tosijs (repo renamed after the npm package)
+
 ## Vocabulary that matters
 
 - **Observant, not reactive.** tosijs uses observers/pub-sub. The UI is *not* `f(state)`;
