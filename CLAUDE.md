@@ -13,6 +13,10 @@ project becomes a durable practice every other project inherits.
 Each topic lives in exactly one file under `practices/`; `tools/` holds executable forms
 of practices (currently the `pre-release-review` nine-lens workflow + skill).
 
+The README also carries the **Project scoreboard** — a per-project version/activity table
+that releases are supposed to keep current (releasing.md step 9). If you notice a stale
+row, verify against the project and fix it; update the row's "As of" date whenever you do.
+
 ## Git rules — this repo inverts the ecosystem norm
 
 - **Merge, never rebase:** `git pull --no-rebase && git push`. Do NOT use

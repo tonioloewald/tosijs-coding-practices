@@ -109,6 +109,35 @@ or **Cloudflare Pages / R2** as appropriate. Full detail: [`practices/00-stack.m
 | Building web components | [`practices/web-components.md`](practices/web-components.md) |
 | Writing TJS / safety boundaries / monadic errors | [`practices/tjs-lang.md`](practices/tjs-lang.md) |
 
+## Project scoreboard
+
+The projects linked to this knowledge base, at a glance. **Keep it fresh:**
+
+- **On every release, update your project's row** — it's the last step of the canonical flow
+  in [`practices/releasing.md`](practices/releasing.md).
+- **Any agent that notices a stale row should fix it** — same no-signoff carve-out as any
+  practice edit; normal commit protocol (`git pull --no-rebase && git push`).
+- **"As of" is per-row**: when the row was last verified against reality, not when the
+  project last changed. A row untouched for a month is a row to re-check.
+
+| Project | What it is | Version | Activity | Links | As of |
+| --- | --- | --- | --- | --- | --- |
+| [tosijs](https://github.com/tonioloewald/tosijs) | path-based observant state | 1.7.0-beta.2 | 1.7 beta line: backlog triage, dynamic theming docs | [site](https://tosijs.net) · [changelog](https://github.com/tonioloewald/tosijs/blob/main/CHANGELOG.md) | 2026-07-20 |
+| [tosijs-ui](https://github.com/tonioloewald/tosijs-ui) | web components + the doc-site system | 1.7.0-beta.5 | 1.7 beta line; weekly upstream polls | [site](https://ui.tosijs.net) · [changelog](https://github.com/tonioloewald/tosijs-ui/blob/main/CHANGELOG.md) | 2026-07-20 |
+| [tosijs-schema](https://github.com/tonioloewald/tosijs-schema) | type-by-example schema / validation | 1.4.0 | quiet since 2026-07-11 | — | 2026-07-20 |
+| [tjs-lang](https://github.com/tonioloewald/tjs-lang) | TS dialect: runtime validation, safety boundaries, sandboxed VM | 0.11.0 | 0.12.0 in review — security fixes (SSRF, ReDoS) landed | [playground](https://tjs-platform.web.app) · [changelog](https://github.com/tonioloewald/tjs-lang/blob/main/CHANGELOG.md) | 2026-07-20 |
+| [react-tosijs](https://github.com/tonioloewald/react-xinjs) | React bridge for tosijs state (repo still named `react-xinjs`) | 1.0.3 (npm) | no local checkout; row from npm | [site](https://react.tosijs.net) | 2026-07-20 |
+| [tosijs-3d](https://github.com/tonioloewald/tosijs-3d) | Babylon.js 3D components + doc site | 0.5.0 | docs & tooling polish | [site](https://3d.tosijs.net) · [changelog](https://github.com/tonioloewald/tosijs-3d/blob/main/CHANGELOG.md) | 2026-07-20 |
+| [tosijs-product](https://github.com/tonioloewald/tosijs-product) | scroll-linked animation components | 0.6.3 | changelog corrections | [site](https://product.tosijs.net) · [changelog](https://github.com/tonioloewald/tosijs-product/blob/main/CHANGELOG.md) | 2026-07-20 |
+| [haltija](https://github.com/tonioloewald/haltija) | browser control for AI agents | 1.4.1 | desktop server-spawn port fix | [changelog](https://github.com/tonioloewald/haltija/blob/main/CHANGELOG.md) | 2026-07-20 |
+| [wobbly](https://github.com/tonioloewald/wobbly) | Web-Worker parallel array ops | 0.6.0 | `gm-demo` proves the thesis end-to-end | [changelog](https://github.com/tonioloewald/wobbly/blob/main/CHANGELOG.md) | 2026-07-20 |
+| [editor2](https://github.com/tonioloewald/editor2) | rich-text editor component — no contentEditable | 0.2.1 | quiet since 2026-07-11 | — | 2026-07-20 |
+| [lukko](https://github.com/tonioloewald/lukko) | capability-secured LLM agent middleware | 0.1.0 | early | — | 2026-07-20 |
+| [loewald-dot-com](https://github.com/tonioloewald/tosijs-platform) | Firebase full-stack platform (repo: `tosijs-platform`) | 1.0.6 | quiet since 2026-07-11 | — | 2026-07-20 |
+| [kith-email](https://github.com/tonioloewald/kith-email) *(private)* | email client (Tauri desktop) | 0.8.5 | quiet since 2026-07-11 | — | 2026-07-20 |
+| [static-assets](https://github.com/tonioloewald/static-assets) *(private)* | mirror source for `cdn.tosijs.net` | — | quiet since 2026-07-11 | — | 2026-07-20 |
+| [ariosto](https://github.com/tonioloewald/ariosto) *(private)* | LLM narrative engine | 0.1.0 | v0.1 POC done; findings recorded | — | 2026-07-20 |
+
 ## Repository layout
 
 ```

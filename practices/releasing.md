@@ -88,6 +88,12 @@ helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was th
 7. **Push** commits and tags: `git push && git push --tags`.
 8. **Publish** the npm package: `npm publish` (the `files` field controls the tarball — usually
    just `dist/`, `LICENSE`, `README.md`).
+9. **Update your row in the shared scoreboard** — the "Project scoreboard" table in the
+   practices repo's `README.md`: new version, a one-line activity note, today's date in
+   "As of". This is the practices repo's no-signoff carve-out, so commit directly — but with
+   **`git pull --no-rebase`** (that repo inverts the rebase rule; see its `CONTRIBUTING.md`).
+   Do it even for a beta/patch: a stale scoreboard is worse than none, and the row is how
+   other agents (and the human) see the ecosystem at a glance.
 
 > **Stop the dev server before you build/commit.** `bun start` continuously rewrites
 > `docs/iife.js` on every change and re-dirties the tree between `git add` and `git commit`,
