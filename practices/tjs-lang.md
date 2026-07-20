@@ -68,6 +68,17 @@ The VM is **capability-based (zero IO by default) and fuel-metered** — every a
   a mis-tagged IO atom breaks the guarantee that compiles predicates to native JS. Core IO
   ops live in `EFFECTFUL_CORE_OPS` (runtime.ts); the invariant is guarded by
   `src/vm/atom-effects.test.ts`. — seen in: tjs-lang
+- **Capability returns cross a structured-clone membrane — return plain data only.** Every
+  `effects: 'io'` atom's return is deep-copied through `structuredClone` before it reaches
+  guest state, so a capability cannot hand the guest a live host reference (an object with
+  callable methods it could invoke, or a shared object it could mutate under you). Return
+  **structured-cloneable data** — normalize e.g. a `fetch` `Response` to `{ ok, status, body }`,
+  never the live object; functions / method-carrying objects are rejected with a `MonadicError`
+  (`Capability boundary rejected the return of '<op>'`). A budgeted pre-walk also rejects
+  oversized returns before the copy allocates (`membraneMaxBytes` run option, default 4MB) —
+  the capability boundary is where guest payload size is capped. Relatedly, guest `methodCall`
+  is **allowlist**-based (standard built-in methods only), not blocklist. — seen in: tjs-lang
+  (0.12.0 adversarial VM review)
 - **Note the CLI gap:** `tjs run` does NOT inject the `expect` test harness — `test { expect(...) }`
   blocks only pass in the playground UI, not via the CLI. — seen in: tjs-lang
 
