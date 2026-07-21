@@ -132,7 +132,7 @@ The projects linked to this knowledge base, at a glance. **Keep it fresh:**
 | [tosijs-product](https://github.com/tonioloewald/tosijs-product) | scroll-linked animation components | 0.6.3 | changelog corrections | [site](https://product.tosijs.net) · [changelog](https://github.com/tonioloewald/tosijs-product/blob/main/CHANGELOG.md) | 2026-07-20 |
 | [haltija](https://github.com/tonioloewald/haltija) | browser control for AI agents | 1.5.2 | 1.5.x: `--private` isolated automation instances (+ misc tweaks) | [changelog](https://github.com/tonioloewald/haltija/blob/main/CHANGELOG.md) | 2026-07-20 |
 | [wobbly](https://github.com/tonioloewald/wobbly) | Web-Worker parallel array ops | 0.6.0 | `gm-demo` proves the thesis end-to-end | [changelog](https://github.com/tonioloewald/wobbly/blob/main/CHANGELOG.md) | 2026-07-20 |
-| [editor2](https://github.com/tonioloewald/editor2) | rich-text editor component — no contentEditable | 0.2.1 | quiet since 2026-07-11 | — | 2026-07-20 |
+| [tosijs-editor](https://github.com/tonioloewald/tosijs-editor) | rich-text editor component — no contentEditable (pkg `tosijs-styled-editor`, unpublished; KB attributions say `editor2`) | 0.2.1 | quiet since 2026-07-11 | — | 2026-07-21 |
 | [lukko](https://github.com/tonioloewald/lukko) | capability-secured LLM agent middleware | 0.1.0 | early | — | 2026-07-20 |
 | [loewald-dot-com](https://github.com/tonioloewald/tosijs-platform) | Firebase full-stack platform (repo: `tosijs-platform`) | 1.0.6 | quiet since 2026-07-11 | — | 2026-07-20 |
 | [kith-email](https://github.com/tonioloewald/kith-email) *(private)* | email client (Tauri desktop) | 0.8.5 | quiet since 2026-07-11 | — | 2026-07-20 |
