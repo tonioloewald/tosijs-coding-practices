@@ -179,6 +179,15 @@ hours.
   or ` ```typescript ` for static code.
 - Opening delimiter is `/*#`, closing is just `*/`. Numbered headings control ordering;
   `parent`/`order` metadata builds the nav tree.
+- **Prose-first consumers are design drivers, not edge cases.** The doc-system is intended as a
+  writing-and-publishing environment, not only library docs — the owner's stated model is "what
+  Ulysses should be" (the Mac writing app): a markdown corpus in git, the live site as the editor
+  (edit-in-situ writes back to disk), and the book an artifact of every build (`book` manifest
+  curating corpus → ePub, the Weir serialized-draft model). falling-forward (a novel's story
+  bible; see its divergence entry in [`00-stack.md`](00-stack.md)) and foresight-2026 (an RPG
+  rulebook) were explicitly in mind when the doc-system was built out — when triaging tosijs-ui
+  doc-system features or issues, weigh their needs as first-class requirements, not scope creep.
+  — seen in: falling-forward, foresight-2026
 
 ## Components in markdown, and in no-JS outputs (ePub/print)
 
