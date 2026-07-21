@@ -57,7 +57,9 @@ helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was th
 ## Cutting a release (canonical flow)
 
 1. **Bump `version`** in `package.json` (semver) — this is the single source of truth (below).
-2. **Add a `CHANGELOG.md` entry** under the new version (Keep a Changelog format), where one exists.
+2. **Add a `CHANGELOG.md` entry** under the new version (Keep a Changelog format). Every
+   product ships a changelog (see [`development.md`](development.md) "Baseline artifacts") —
+   if this project doesn't have one yet, create it now and backfill coarsely from git tags.
    When an entry fixes a vulnerability present in **already-shipped** versions, **state which
    versions are affected** ("0.11.0 and earlier are affected") — a pinned downstream can't tell
    a security fix from a nice-to-have improvement otherwise, and won't know it must upgrade.

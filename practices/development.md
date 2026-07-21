@@ -86,6 +86,34 @@ How to work in a project day-to-day.
 — seen in: a pre-release-review load test spun up 8 `yes > /dev/null` CPU hogs, ran tests under
   contention, then leaked all 8 for over an hour because its `kill $(jobs -p)` no-oped under zsh
 
+## Baseline artifacts: every product ships `llms.txt` and a `CHANGELOG.md`
+
+Both are how a project talks to consumers it never meets — and agents are first-class
+consumers here. Every product (anything a consumer installs, deploys, or reads docs for)
+ships both and keeps them current:
+
+- **`CHANGELOG.md`** (Keep a Changelog format). Release notes are the API's history, and the
+  cross-project protocol depends on them — "close the issue naming the version" only helps a
+  downstream agent if the version's changelog says what changed. [`releasing.md`](releasing.md)
+  requires an entry per release; if the file is missing, **create it at the next release**
+  (coarse backfill from git tags is fine).
+- **`llms.txt`** — the LLM-readable index of what the project is and how to use it, served
+  from the deployed site root where a site exists, at the repo root otherwise.
+  - **Doc-site projects get it generated** — `buildSite` (tosijs-ui's doc-system,
+    `make-llms-txt`) emits it; it's covered by the generated-files rule below. Don't
+    hand-edit it.
+  - **Everything else hand-authors it at the repo root** and updates it per "agent-facing
+    docs travel with the code" (below) — when an entry point, command, or endpoint changes,
+    `llms.txt` changes in the same commit. haltija regenerates it from `src/api-schema.ts`
+    with CI drift-gating; that's the strongest form.
+
+A missing `llms.txt` makes every downstream agent re-derive the project from source; a
+missing changelog breaks version-naming in issue closes. Neither is optional because a repo
+is private — private repos have agent consumers too. — raised by the repo owner 2026-07-21;
+at that point 8 of 14 linked projects shipped both, and the sets were identical — the gap
+list (tosijs-schema, editor2, lukko, loewald-dot-com, kith-email, static-assets, ariosto)
+is tracked by issues filed on each.
+
 ## Generated files are committed — build before you commit
 
 - **Run `bun run build` before committing so tracked generated files match source.** `dist/`,
