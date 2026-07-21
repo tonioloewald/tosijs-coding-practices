@@ -97,6 +97,10 @@ only when the reviewer simply erred and no gap exists — judgement, not a quota
 
 Each lens returns **ranked findings with a concrete failure scenario**; a finding without a
 repro is a question, not a defect. Verify per the rule above before acting on or filing anything.
+(That bar applies *inside the review harness*, where verification is cheap and structured — it is
+**not** a certainty bar for telling another repo about a problem. For that, see
+[`cross-project.md`](cross-project.md) "File even when you might be wrong": state your
+uncertainty in the issue and file anyway.)
 
 ### 1. Correctness
 - Observant correctness: new state paths actually observed/bound (no manual re-render sneaking

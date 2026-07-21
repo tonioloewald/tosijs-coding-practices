@@ -79,6 +79,34 @@ EOF
   most others are public. Describe the shape of the problem, not private code.
 - One issue per problem. A grab-bag issue gets triaged into nothing.
 
+## File even when you might be wrong
+
+Agents self-censor here: they hit what looks like an upstream problem, can't *prove* it from
+outside the repo, and file nothing. **Don't.** If you genuinely think you've found a problem,
+file it — uncertainty is a thing to state in the issue, not a reason to withhold it.
+
+- **The economics are asymmetric.** A wrong issue costs the target's maintainer minutes to
+  read and close. An unfiled real problem costs every consumer, indefinitely, and the
+  upstream repo never learns it exists. You need to be wrong *very* often before filing
+  stops paying.
+- **A good-faith wrong issue is still signal** — the same principle as
+  [`review.md`](review.md)'s refuted-findings rule: when a competent agent that read the
+  docs believes "X is broken" and X is fine, at minimum a **communication failure has
+  occurred** — the truth was undiscoverable from where they stood. The issue is precisely
+  how the target repo learns *that*. "Closed: not a bug, but the docs implied it — docs
+  fixed" is a *successful* outcome, not a wasted one.
+- **State your confidence honestly.** "I believe X, but I'm reading from outside this repo
+  and may be missing context — happy to be refuted" is a fine issue body. The template's
+  *Suggestion* field already invites this ("say if you'd be happy to be talked out of it").
+- The bar in [`review.md`](review.md) — "verify before filing" — is about the *review
+  harness*, where adversarial verification is cheap and structured. It is **not** a
+  certainty bar for cross-project filing. From outside the repo, your repro *is* the
+  Context/Workaround you write in the issue; the target repo is where verification can
+  actually happen, and filing is how the question gets there.
+
+— raised by the repo owner after watching agents hesitate to file cross-project issues
+they weren't certain of
+
 ## The three artifacts — don't confuse them
 
 | Artifact | Lives in | Purpose |
