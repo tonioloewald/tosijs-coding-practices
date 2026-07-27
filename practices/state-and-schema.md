@@ -68,10 +68,13 @@ These recur in every app in the ecosystem. Internalize them.
   is possible.
 - **The `xin*` spellings are deprecated; `tosiValue` is not.** tosijs marks `xinValue`
   `@deprecated Use tosiValue instead` — `tosiValue(x)` is the standalone unwrap-any-proxy
-  helper, not a legacy alias. As of **tosijs 1.7 `xinValue` is no longer declared on
-  `XinProps`**, so `proxy.xinValue` still works at runtime but no longer typechecks. A rename
-  that keeps the runtime alias but drops the *type* is invisible to `bun build` — only
-  `tsc --noEmit` catches it, so run one after any framework upgrade. — seen in: loewald-dot-com
+  helper, not a legacy alias. In **tosijs 1.7.0–1.7.5 `xinValue`/`xinPath` were accidentally
+  dropped from `XinProps`** (but kept on `BoxedScalarAPI`), so `proxy.someObject.xinValue`
+  failed `tsc` while `proxy.someScalar.xinValue` didn't — a silent, typecheck-only break
+  ([tosijs#19](https://github.com/tonioloewald/tosijs/issues/19)), **restored in 1.7.6**. The
+  lasting lesson: a rename that keeps the runtime alias but drops the *type* is invisible to
+  `bun build` — only `tsc --noEmit` catches it, so run one after any framework upgrade. — seen
+  in: loewald-dot-com
 
 ## Assignment strictness
 
@@ -86,11 +89,12 @@ These recur in every app in the ecosystem. Internalize them.
 - **Don't nest proxies.** Spreading a proxied object into state (`{ ...proxy }`) can smuggle a
   proxy in; the set/get handlers unwrap defensively but new code can defeat it. Store raw
   values.
-- **A computed property in a `tosi({…})` registration needs `this` *and* a setter.** `tosi()`
-  `Object.assign`s over the literal you pass it, which (1) **invokes the getter during
-  registration** — before `const { data } = tosi({…})` is assigned — and (2) **writes the result
-  back**, which throws on a getter-only property. So a getter that references the outer binding
-  kills the app at module load:
+- **A computed property in a `tosi({…})` registration: use `this`, not the outer binding.**
+  As of **tosijs 1.7.6** getter-only computed properties just work — `tosi()`'s set trap skips
+  accessor properties, so it never invokes a getter during registration and never writes it
+  back. Inside the getter reference **`this`, not the outer `const`**: `this` is the raw literal
+  during registration and the proxy afterward, so it resolves in both phases and stays reactive
+  (`touch()` and list bindings work):
   ```ts
   const { data } = tosi({
     data: {
@@ -101,18 +105,17 @@ These recur in every app in the ecosystem. Internalize them.
         const { files } = this as unknown as { files: Asset[] }
         return filter === '' ? files : files.filter(/* … */)
       },
-      set filtered(_v: Asset[]) {},                             // required: absorbs the write-back
     },
   })
   ```
-  `this` is the raw literal during registration and the proxy afterwards, so it resolves in both
-  phases and stays reactive (`touch()` and list bindings still work). Guarding with
-  `if (typeof data === 'undefined')` does **not** work — `typeof` on a TDZ `const` still throws.
-  Bundlers erase the TDZ, so the thrown error differs by environment (`Cannot access 'data'
-  before initialization` unbundled vs. `Cannot read properties of undefined` in the browser) —
-  don't let that mislead you into hunting an app bug. Class getters on `Component`/
-  `WebComponent` are unaffected; this is only object literals handed to `tosi()`. — seen in:
-  loewald-dot-com (tosijs 1.7)
+  **Before 1.7.6** this crashed: the set trap's shallow-unwrap loop rewrote *every* key,
+  invoking the getter and writing the result back, which throws `Attempted to assign to
+  readonly property` on a getter-only property. The old workaround was a no-op
+  `set filtered(_v){}` to absorb the write-back plus `this` (not the outer `const`, whose TDZ
+  throws during the eager read). On 1.7.6+ neither is needed, but `this` is still the right
+  habit. Class getters on `Component`/`WebComponent` are unaffected; this only ever applied to
+  object literals handed to `tosi()`. — seen in:
+  loewald-dot-com (tosijs 1.7); fixed in tosijs 1.7.6
 - **Deeply async by default.** Set up bindings before data exists; data arriving later
   (fetch/websocket) flows to the UI automatically. Don't gate binding on data presence.
 - **Light DOM vs. shadow DOM affects bindings.** tosijs components *default to shadow DOM*,
