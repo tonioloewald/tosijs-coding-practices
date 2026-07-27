@@ -32,6 +32,31 @@ ecosystem:
 
 — seen in: tosijs, tosijs-ui, tosijs-product, editor2, lukko
 
+## Shipping a component as a blueprint AND a registered element
+
+A [blueprint](https://tosijs.net/blueprint-loader/) is a pure function `(tag, tosijs) =>
+{ type }`. Because it *receives* tosijs instead of importing it, the built module has zero
+imports and can be loaded from a CDN under a tag the consumer chooses. You do not have to pick
+between that and a normal `import 'my-lib'` registration — **write the blueprint as the source
+of truth and hydrate it eagerly for the default tag**, so there is one implementation and two
+shipping shapes.
+
+- **Don't use `makeComponent()` for the eager registration.** It is `async`, so awaiting it
+  turns your class and `elementCreator` exports into promises — a breaking change for every
+  consumer. Export the class-building function from the blueprint module and call it directly
+  with the pieces of `XinFactory` you actually use; `makeComponent()` does the same work, only
+  async. Set `preferredTagName` yourself afterwards (that is all `makeComponent` adds).
+- **Only `import type` from tosijs in the blueprint module** — one value import and the "no
+  copy of tosijs" property is gone, silently. Build it with no `--external` and check the
+  output has no `import` statements.
+- **Declaration emit needs help.** A class declared *inside* a function has no nameable type,
+  so `tsc --declaration` can't describe it. Declare an exported `interface FooElement extends
+  Component<Parts>` (the instance API) and an `interface FooConstructor { new (): FooElement;
+  elementCreator(): ElementCreator<FooElement> }`, and annotate the factory's return type with
+  it. Note `XinComponentSpec.type` is typed as the *instance* type, not the class, so the spec
+  the blueprint returns needs a cast — keep the useful typing on your own factory export.
+— seen in: tosijs-timezone-picker
+
 ## `content()` vs `render()`
 
 The single most-repeated rule in the ecosystem:
@@ -176,7 +201,15 @@ hours.
 - In `/*# … */` doc blocks, only fences tagged ` ```html `, ` ```css `, ` ```js `, or ` ```test `
   become live interactive examples; consecutive tagged fences are grouped into one example.
 - **Never use ` ```js ` for non-runnable snippets** — it will execute. Use a bare ` ``` ` fence
-  or ` ```typescript ` for static code.
+  or ` ```typescript ` for static code. The same applies to ` ```html `: a snippet showing a
+  `<tosi-blueprint src="https://cdn…">` or any other network-touching markup **will run on
+  every page view**. Make those indented blocks or untagged fences.
+- **Live examples hydrate asynchronously — a page screenshotted immediately after load shows
+  empty example boxes.** Nothing errors; the prose and tables are there, the examples just
+  aren't built yet. An agent driving a browser will "confirm" a bug that doesn't exist, then
+  "fix" it by changing whatever it touched last. **Wait (or poll for the rendered element)
+  before judging a doc page**, and treat `querySelector` on example content as racy for the
+  same reason. — seen in: tosijs-timezone-picker
 - Opening delimiter is `/*#`, closing is just `*/`. Numbered headings control ordering;
   `parent`/`order` metadata builds the nav tree.
 - **Prose-first consumers are design drivers, not edge cases.** The doc-system is intended as a
