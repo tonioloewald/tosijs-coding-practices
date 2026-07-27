@@ -204,12 +204,16 @@ hours.
   or ` ```typescript ` for static code. The same applies to ` ```html `: a snippet showing a
   `<tosi-blueprint src="https://cdn…">` or any other network-touching markup **will run on
   every page view**. Make those indented blocks or untagged fences.
-- **Live examples hydrate asynchronously — a page screenshotted immediately after load shows
-  empty example boxes.** Nothing errors; the prose and tables are there, the examples just
-  aren't built yet. An agent driving a browser will "confirm" a bug that doesn't exist, then
-  "fix" it by changing whatever it touched last. **Wait (or poll for the rendered element)
-  before judging a doc page**, and treat `querySelector` on example content as racy for the
-  same reason. — seen in: tosijs-timezone-picker
+- **🚨 Live examples do not build in a BACKGROUND tab — and nothing errors.** The page serves,
+  the bundle loads, the custom elements register, `docs.json` fetches; the examples simply stay
+  unbuilt until the tab is foregrounded, because the browser throttles the callbacks that build
+  them. Every symptom points at your content: it looks like a parse failure, and it reproduces
+  "reliably" as long as the tab stays unfocused. An agent driving a browser will confirm a bug
+  that does not exist and then "fix" whatever it touched last — a change that appears to work
+  only because it happened to run in a focused tab. **Foreground the tab, wait, then measure**
+  (`getBoundingClientRect`, element counts) rather than eyeballing a downscaled screenshot,
+  where pale UI washes out to white and reads as "blank" too. Same rule for any harness that
+  screenshots a background tab. — seen in: tosijs-timezone-picker
 - Opening delimiter is `/*#`, closing is just `*/`. Numbered headings control ordering;
   `parent`/`order` metadata builds the nav tree.
 - **Prose-first consumers are design drivers, not edge cases.** The doc-system is intended as a
