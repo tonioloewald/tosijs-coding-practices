@@ -127,8 +127,27 @@ Removing or changing public API imposes a cost on every consumer. Before you shi
 4. **Migration notes.** Ecosystem convention is a **`Migration.md`** shipped in `docPaths`.
    Tell the consumer precisely what to change, before → after.
 
+**Deprecation aliases only protect the JS import surface.** Three break classes slip past a
+warn-once alias entirely, because nothing resolves them by name at runtime — plan migration
+notes around these specifically:
+
+1. **Custom-element tag names.** Renaming `<xin-select>` → `<tosi-select>` leaves every CSS
+   selector and `document.querySelector('xin-…')` silently matching nothing. In one consumer a
+   stale `querySelector` made an editor handle permanently `null`, so "insert asset into editor"
+   quietly degraded to "copy to clipboard" — no error, anywhere.
+2. **CSS custom properties.** `--xin-tabs-*` → `--tosi-tabs-*` just stops applying. No warning
+   exists for a variable nobody reads.
+3. **A public property whose *type* changes in place.** tosijs-ui 1.7 turned `codeEditor.editor`
+   from an ACE `Editor` into a CodeMirror `EditorView` under the same name — a grep for removed
+   names can't find it, and the alias mechanism has nothing to hang a warning on.
+
+So: **type-only changes and name-identical changes need a CHANGELOG line and a `Migration.md`
+table even more than removals do** — the removals are the ones consumers actually notice. Give
+consumers a mechanical way to find call sites (e.g. "diff your `xin-*` tags against the tags we
+register").
+
 — seen in: tosijs (`Migration.md` in `docPaths`), tosijs-ui (1.7 dropped `<tosi-code>`'s
-pre-1.7 ACE theme/options props)
+pre-1.7 ACE theme/options props; 1.7 `xin-*` → `tosi-*` rename), loewald-dot-com (consumer side)
 
 ## Build artifacts: ship multiple formats from one entry
 

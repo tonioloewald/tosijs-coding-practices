@@ -56,6 +56,17 @@ Core libraries target small gzip footprints and **zero runtime dependencies**.
   ESM with `tosijs`/`tosijs-ui`/`react` external so consumers don't get duplicate framework
   copies. Provide a self-contained IIFE (deps inlined) only for zero-build `<script>` /
   CDN use. — seen in: tosijs-product, react-tosijs, tosijs-styled-editor, lukko
+- **Consuming a lib with an optional peer it `import()`s: install it and turn on
+  `--splitting`.** Bun resolves dynamic-import specifiers at *build* time, so a library's
+  `try { await import('optional-peer') } catch {}` graceful-degradation pattern becomes a hard
+  build failure (`Could not resolve`) — the runtime guard never runs. Two fixes, and the choice
+  is about whether you want the feature: `--external optional-peer` (leaves the specifier, the
+  catch fires, falls back to the lib's CDN path) or install the peer. **If you install it, add
+  `--splitting`** — without it Bun inlines the dynamic import into the entry bundle, defeating
+  the lazy-loading the library deliberately designed. Splitting a tosijs-ui consumer moved
+  tjs-lang, CodeMirror and the TS compiler into lazy chunks and cut the entry bundle from
+  2.36 MB to 1.14 MB. Splitting emits ESM, so the entry must be loaded
+  `<script type="module">` and any CSP needs `'self'` for the chunks. — seen in: loewald-dot-com
 - **Never set `sideEffects:false` in a component library that registers custom elements at
   import.** `elementCreator()` registers elements as an import side effect; `sideEffects:false`
   tree-shakes those registrations to zero. Keep per-component subpath entry points, and
