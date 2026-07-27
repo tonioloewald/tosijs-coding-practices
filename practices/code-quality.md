@@ -141,8 +141,10 @@ references (DAGs), not just true cycles.**
 The stack removes APIs slowly: a deprecated name keeps working and emits a **single**
 `console.warn` per feature (tracked in a `Set`). When you deprecate something, follow that
 pattern — warn once, keep it working, document the replacement. When you *use* the stack,
-prefer the current name (`.tosi.value`/`.value` over `xinValue`/`tosiValue`). — seen in:
-tosijs, haltija
+prefer `.tosi.value` (symbol-keyed, cannot be masked by a data property named `value`) over
+bare `.value`, and either over the deprecated `xin*` spellings. Note `tosiValue()` itself is
+**not** deprecated — see [state-and-schema.md](state-and-schema.md). — seen in: tosijs, haltija,
+loewald-dot-com
 
 ## Project-specific practices
 
