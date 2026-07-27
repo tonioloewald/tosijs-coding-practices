@@ -176,12 +176,32 @@ hours.
 - Reference sub-elements only through the typed **`parts`** system: mark with `{ part: 'name' }`,
   declare a `PartsMap`/`Parts` interface, read via `this.parts.name`. **Never query the shadow
   DOM manually** — it breaks the parts contract.
+- **`parts` semantics (as of tosijs 1.7.8)** — ownership, not structure. Declared parts are
+  captured from the content tree at hydration *before insertion*, so `this.parts.foo` is always
+  **your own** part — never a nested instance's, regardless of nesting depth, `<tosi-slot>`
+  projection, or light/shadow sub-components. A part `render()` replaced re-resolves
+  (self-heals); a part you detached *without replacement* still returns the held node (so an
+  optional element you re-append on demand — segmented's `custom` input — is fine to hold via
+  `parts`); a missing part throws but is **not** cached, so a later access resolves once it
+  exists. Lazily-*added* parts (created after hydration) resolve via querySelector and can be
+  masked by an identically-named part in nested content — declare parts in `content` when you
+  can. History: structural scoping (custom-element boundary, `closest(tag)`, slot boundary) all
+  failed — structure cannot express ownership (tosijs#20/#21; 1.7.6/1.7.7 deprecated).
+- **Never depend on a `render()` running — or being skipped.** Renders coalesce and their
+  timing varies by engine; a "skip the next render" flag is a timing bomb (segmented's
+  highlight bug). Make `render()` idempotent (reconcile in place) and derive interaction state
+  from the live DOM (`input:checked`), which is authoritative.
+- **Interaction paths need real-browser, per-engine tests.** The click → change →
+  `this.value`-commit → render round-trip is exactly where unit DOM (happy-dom) and
+  Chromium-only lanes both lie to you: segmented's stale-value bug shipped green on both and
+  failed on Firefox/WebKit. tosijs's `tests/value-commit.pw.ts` is the pattern: drive a real
+  click per engine and assert the committed value.
 - **Declare arrow-property event handlers BEFORE `content`.** Class fields initialize
   top-to-bottom and `content()` runs at construction, so a handler declared after `content` is
   `undefined` when `content()` wires it. Use arrow properties (not methods) so `this` survives
   being passed as a callback.
 
-— seen in: tosijs-ui, editor2
+— seen in: tosijs-ui, editor2, tosijs (the 1.7.6–1.7.8 parts saga)
 
 ## Other conventions & footguns
 
