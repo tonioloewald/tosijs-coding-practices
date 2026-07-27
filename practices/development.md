@@ -83,6 +83,18 @@ How to work in a project day-to-day.
   `trap … EXIT` survives a SIGKILL), spawn in a process group and `kill -- -$pgid`.
 - This is the *authoring* side of [`review.md`](review.md) lens 9's "killing is a policy" rule:
   don't leak the processes you spawn, and make the cleanup survive an interrupted run.
+- **When the child reparents, or is a GUI/daemon, launcher-side cleanup isn't enough — it must
+  terminate *itself*.** Everything above assumes the launcher outlives the child and reaps it. Two
+  cases break that: (1) a child that **reparents** (a macOS GUI app, or Electron, jumps to launchd
+  shortly after startup — `process.ppid` becomes 1 and a descendant walk at teardown time misses
+  it); (2) a **SIGKILL** of the launcher, which runs no trap. The fix is to make the child watch its
+  spawner and quit on its own: pass the launcher's pid **in an env var** (not `process.ppid`, which
+  the reparent invalidates) and poll it — when it's gone, exit. A GUI/daemon should quit *itself*
+  (`app.quit()`), not be externally killed, so it reaps its **own** helper/child processes — an
+  external tree-kill notoriously leaves those behind. Also: a per-app singleton lock (Electron's
+  `requestSingleInstanceLock`) must be **skipped for isolated/ephemeral instances**, or one orphan
+  blocks every future run. — seen in: haltija 1.5.5 (issue #7, `--private --app`: env-passed
+  `HALTIJA_SPAWNER_PID` + poll + `app.quit()`; lock skipped for private runs)
 — seen in: a pre-release-review load test spun up 8 `yes > /dev/null` CPU hogs, ran tests under
   contention, then leaked all 8 for over an hour because its `kill $(jobs -p)` no-oped under zsh
 
