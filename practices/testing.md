@@ -184,6 +184,33 @@ playground UI, not via CLI. — seen in: tjs-lang
   the browser. If a repo has no `*.test.ts`, that's the intended workflow, not an omission.
   — seen in: react-tosijs
 
+## Dependency-audit gate: fail on high+, exempt with a clock
+
+Gate the suite on `bun audit` (or `npm audit`) at **high+ severity**, but make the exemption
+mechanism time-limited so it can't rot into a permanent silence. A plain "ignore this advisory"
+list is where audit discipline goes to die — nobody ever revisits it. Instead:
+
+- **A dated exemption file** (`audit-exemptions.ts`): each entry is `{ ghsa, package, reason, until }`.
+  The `reason` says why it's acceptable *today* and what the fix path is; the `until` date is a
+  hard clock. **On/after `until`, the exemption lapses** and the advisory fails the gate again —
+  forcing a re-fix or a renewed, re-justified exemption. Quarterly (`until` ≈ +3 months) is a
+  sane default for an upstream-transitive advisory with no fix yet.
+- **A test lane** that runs `bun audit --json`, collects high+ advisories, and fails on any not
+  covered by a *live* (non-expired) exemption. It also **warns when an exemption is dead** (the
+  advisory is no longer reported — upstream fixed it or the dep was dropped) so the list stays
+  honest, and **self-skips offline** (a network blip must not red the suite).
+- **Runs in the full pre-tag gate, skipped by the fast loop** (`SKIP_AUDIT=1`) — same tiering as
+  the other network/slow lanes. Enforce it at tag time (a pushed tag runs the whole suite).
+
+The framing that makes exemptions honest: only exempt what genuinely has no clean path *today*,
+and record *why it doesn't reach a consumer*. Most residual advisories are dev/deploy-only
+transitive (lint/build/deploy tooling) — the **shipped** package's runtime deps usually carry
+none, so consumers were never exposed; say so in the reason. Often the bigger win is upstream of
+the gate: a `bun audit` list is also a prompt to **delete an unused dependency** entirely (a
+vestigial `vitest` alongside `bun:test`, a lib used in one compile-only file) — which removes a
+whole vulnerable chain and sometimes uncovers dead code. — seen in: tosijs-ui (build-gated),
+tjs-lang (test-lane + `audit-exemptions.ts`)
+
 ## Project-specific practices
 
 ### tjs-lang
