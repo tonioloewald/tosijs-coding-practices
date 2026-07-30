@@ -186,6 +186,11 @@ playground UI, not via CLI. — seen in: tjs-lang
 
 ## Dependency-audit gate: fail on high+, exempt with a clock
 
+> This section is the **test-lane** shape of the gate. For the wider supply-chain
+> practice — how to build the gate so it can't report a pass it never earned, how to
+> classify and report findings, and how to choose dependencies at all — see
+> [`dependencies.md`](dependencies.md).
+
 Gate the suite on `bun audit` (or `npm audit`) at **high+ severity**, but make the exemption
 mechanism time-limited so it can't rot into a permanent silence. A plain "ignore this advisory"
 list is where audit discipline goes to die — nobody ever revisits it. Instead:

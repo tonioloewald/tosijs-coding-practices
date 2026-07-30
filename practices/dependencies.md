@@ -5,6 +5,13 @@ How to decide what to depend on, and how to keep a dependency tree honest over t
 Most of this was learned building the dependency-audit gate in `tosijs-ui/site`
 (`src/doc-system/site/audit-guard.ts`) — including the parts we got wrong first.
 
+> For the **test-lane** variant of the gate (a dated `audit-exemptions.ts`, a lane that
+> self-skips offline, `SKIP_AUDIT=1` for the fast loop) see
+> [`testing.md`](testing.md#dependency-audit-gate-fail-on-high-exempt-with-a-clock).
+> Same philosophy, different attachment point: a test lane gates the suite, a build
+> gate gates the artifact. A library that publishes both wants the build gate, because
+> it fires for adopters too.
+
 ---
 
 ## 1. A gate must never report a pass it did not earn
