@@ -87,7 +87,7 @@ file it — uncertainty is a thing to state in the issue, not a reason to withho
 
 - **The economics are asymmetric.** A wrong issue costs the target's maintainer minutes to
   read and close. An unfiled real problem costs every consumer, indefinitely, and the
-  upstream repo never learns it exists. You need to be wrong *very* often before filing
+  owning repo never learns it exists. You need to be wrong *very* often before filing
   stops paying.
 - **A good-faith wrong issue is still signal** — the same principle as
   [`review.md`](review.md)'s refuted-findings rule: when a competent agent that read the
@@ -112,15 +112,26 @@ they weren't certain of
 | Artifact | Lives in | Purpose |
 | --- | --- | --- |
 | **`TODO.md`** | your own repo | **Your** work. Issue tracking for yourself. Unchanged by this doc. |
-| **GitHub issue** | the **target** repo | **The channel.** How you tell another project something. |
-| **`UPSTREAM.md`** | your own repo | A **local mirror** of what you've raised upstream, so the context stays where you're working. Records `✅ RESOLVED` with the fixing version. |
+| **GitHub issue** | the **owning** repo | **The channel**, and **the record.** How you tell another project something, and where the detail lives. |
+| **`UPSTREAM.md`** | your own repo | An **index of links** to those issues, so you can see from here what you're waiting on. Records `✅ RESOLVED` with the fixing version. |
 
-**`UPSTREAM.md` is not a channel.** It's a note to yourself — the upstream repo never sees it.
+**Ignore the filename — `UPSTREAM.md` is a legacy name, not a routing rule.** The target isn't
+always "upstream" of you in any dependency sense: it may be a **dev tool** (haltija), a
+**sibling**, or a **consumer** — and `tosijs` keeps one despite nothing in-house being upstream
+of it. The only question is **which repo owns the code with the problem**. File there.
+
+**`UPSTREAM.md` is not a channel.** It's a note to yourself — the owning repo never sees it.
 An `UPSTREAM.md` entry **without a filed issue is a complaint nobody will ever read**. So:
 
-1. File the issue on the target repo.
-2. Mirror it in your `UPSTREAM.md` with the **issue URL**, plus your local Context/Suggestion.
+1. File the issue on the owning repo. **Write the detail there** — context, workaround,
+   suggestion — so it's self-contained for someone who has never seen your repo.
+2. **Link it** from your `UPSTREAM.md`: one row, `repo · one-line finding · issue URL`.
 3. When it lands, mark `✅ RESOLVED (fixed in <pkg>@<version>)` locally and **close the issue**.
+
+**Keep the local row thin — a link, not a copy.** Restating the context and suggestion locally
+duplicates the issue body, and the two then drift: the issue gets refined in discussion while
+your copy silently ages into a description of a problem that has moved. The issue is the
+record; `UPSTREAM.md` is the index that tells you what you're waiting on.
 
 **File first, mirror second — and never write the row before the issue exists.** The order is
 the whole safeguard. Writing the row first feels like progress and discharges the urge to act,

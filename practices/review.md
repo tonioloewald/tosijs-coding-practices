@@ -239,8 +239,8 @@ Look up and out. Lens 6 asks "is the DX we **provide** good?" — this asks "is 
 - **Normalized friction.** Loop steps we've stopped noticing because we're used to them:
   manual regeneration, port collisions, cert setup, two lockfiles, a script renamed to dodge
   a builtin. Familiarity is not the same as fine.
-- **Action — file, don't fix.** You do **not** go edit the upstream repo (see
-  [`cross-project.md`](cross-project.md)). File a **GitHub issue on the upstream repo** —
+- **Action — file, don't fix.** You do **not** go edit the owning repo (see
+  [`cross-project.md`](cross-project.md)). File a **GitHub issue on the owning repo** —
   that's the channel — and mirror it in this repo's `UPSTREAM.md` with the issue URL. An
   `UPSTREAM.md` entry with no filed issue is a complaint nobody will ever read. Silently
   working around the gap is exactly the failure this half exists to catch.
@@ -419,8 +419,8 @@ developer's own dev server and hijacked their CLI)
   - **Lenses 1–6 and 9** → fix now, or file to this repo's `TODO.md`. (Lens 9 findings that
     touch the user's machine — a global binary, a kill policy — are correctness findings for
     triage purposes, not nits: they block.)
-  - **Lens 7** → a **GitHub issue on the upstream repo** (the channel), mirrored in this repo's
-    `UPSTREAM.md` with the issue URL. Never a direct edit to the upstream repo — see
+  - **Lens 7** → a **GitHub issue on the owning repo** (the channel), mirrored in this repo's
+    `UPSTREAM.md` with the issue URL. Never a direct edit to the owning repo — see
     [`cross-project.md`](cross-project.md).
   - **Lens 8** → a change to `tosijs-coding-practices` (and grep the cross-cutting docs for
     parallel mentions — see `../CONTRIBUTING.md`).
