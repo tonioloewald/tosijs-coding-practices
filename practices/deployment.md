@@ -106,6 +106,60 @@ means code-sign + notarize.
   suffix is required by Tauri's sidecar resolver. `build.ts` auto-syncs `package.json`
   version into `tauri.conf.json` on every build. — seen in: lukko
 
+## Shared preview host (dev.tosijs.net)
+
+A single small VPS serves **preview builds** for every tosijs-* project, so a phone, a
+client, or a reviewer can see current work without your dev server — or your laptop —
+being up. This is the cross-project convention; the implementation reference is
+`tosijs-ui`'s `REMOTE-ACCESS-PLAN.md`, `deploy/Caddyfile`, and `bin/deploy-preview.ts`.
+
+**How a project joins.** Set one thing in your site config and deploy:
+
+```ts
+preview: {
+  host: 'root@<preview-host>',
+  url: 'https://<name>.dev.tosijs.net',
+},
+```
+
+```bash
+bun run deploy          # dry run — shows what would change
+bun run deploy --go     # sync, self-register, refresh the index
+```
+
+That is the whole ceremony. **No DNS change** (a `*.dev` wildcard already resolves) and
+**no shared config to edit**: the deploy writes its own Caddy fragment to
+`/srv/preview/_sites/<name>.caddy`, which the server glob-imports.
+
+**The conventions that make it coordinate:**
+
+| thing | rule |
+| --- | --- |
+| remote directory | `/srv/preview/<project-name>` (defaults from your site config `name`) |
+| hostname | `<label>.dev.tosijs.net`, derived from your `preview.url` |
+| label choice | mirror production where one exists — `ui.dev.tosijs.net` for `ui.tosijs.net` — so preview and real differ by one path component and nothing else |
+| the root | `dev.tosijs.net` is a **generated index** of what is deployed, with each project's commit. Never point a project at the root. |
+
+**Things that will bite you if you don't know them:**
+
+- **The fragment is the single source of truth** for hostname→directory. The index reads
+  the same files the router reads, so a listing can never drift from what actually
+  serves. Don't introduce a second mapping.
+- **One malformed fragment fails the reload for every project on the box.** The deploy
+  therefore validates before reloading and refuses to reload on invalid config, leaving
+  the previous good config serving. If your deploy says "NOT reloading", your routing
+  did not change and someone else's site is fine — fix your fragment.
+- **Anything that can deploy can declare any hostname and serve any path.** Every project
+  uses the same key, so this grants no new privilege, but the box trusts everything that
+  can reach it. Do not put anything on it you would not put on a public web server.
+- **It is public.** Fine for work that ships publicly anyway; add Caddy `basicauth` before
+  previewing anything unreleased. The stakes for a *static* host are disclosure, not code
+  execution — there is no write endpoint — so one line is a proportionate design.
+- **`/version.json`** is emitted by every `tosijs-ui/site` build and carries the commit
+  the build came from. It is how "what am I looking at?" is answerable from a deployed
+  page, and it is what the index lists. Rebuild before deploying or you will publish a
+  stamp pointing at the previous commit.
+
 ## General
 
 - Deployment is outward-facing: confirm before a first deploy to a new target, and treat
