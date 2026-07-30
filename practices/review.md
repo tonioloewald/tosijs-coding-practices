@@ -500,10 +500,14 @@ followups. — seen in: tosijs-product (0.6.x)
 ## Feed rough edges upstream, don't work around them silently
 
 - When you hit a sharp edge in an in-house dependency (tosijs / tosijs-ui / tosijs-schema),
-  log it in an **`UPSTREAM.md`** at the repo root instead of quietly coding around it:
-  newest at top, each entry `Context` + concrete `Suggestion`, marked `✅ RESOLVED` with the
-  fixing version once landed. Creates a durable, actionable backlog and stops the same
-  integration trap being rediscovered. — seen in: tosijs-product
+  **file an issue on that repo** instead of quietly coding around it — that is the channel —
+  and mirror it in an **`UPSTREAM.md`** at your repo root: newest at top, each entry
+  `Context` + concrete `Suggestion` + the **issue URL**, marked `✅ RESOLVED` with the fixing
+  version once landed. Creates a durable, actionable backlog and stops the same integration
+  trap being rediscovered. **File first, then mirror** — an `UPSTREAM.md` row without an
+  issue URL is a complaint nobody will ever read, and `to file` is not a status. See
+  [`cross-project.md`](cross-project.md) → "The three artifacts".
+  — seen in: tosijs-product, tosijs-3d
 
 ## Review posture
 

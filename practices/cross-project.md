@@ -122,6 +122,23 @@ An `UPSTREAM.md` entry **without a filed issue is a complaint nobody will ever r
 2. Mirror it in your `UPSTREAM.md` with the **issue URL**, plus your local Context/Suggestion.
 3. When it lands, mark `✅ RESOLVED (fixed in <pkg>@<version>)` locally and **close the issue**.
 
+**File first, mirror second — and never write the row before the issue exists.** The order is
+the whole safeguard. Writing the row first feels like progress and discharges the urge to act,
+so the filing quietly never happens.
+
+- **`to file` is not a status — it's a graveyard.** A row whose Issue cell says "to file"
+  reads like a plan and functions as a deferral; nothing ever revisits it, because the finding
+  already *looks* handled. If the Issue cell isn't a URL, the row shouldn't exist yet.
+- **The trap is that the cost is invisible from inside your repo.** Your workaround is in
+  place and your work is unblocked, so nothing hurts locally — while every other consumer
+  keeps paying, and the target repo never learns the seam is wrong.
+- **Don't batch.** File at the point of discovery, while you still hold the repro and the
+  reason. Findings deferred to "later, in a batch" are the ones that rot, and a stale one
+  costs more to reconstruct than it did to write.
+
+— seen in: tosijs-3d (ten findings accumulated as "to file" rows across several releases —
+including two that had already been hand-worked-around twice — before any were filed)
+
 ## Checking issues — the other half
 
 Filing is useless if nobody reads. Checking incoming issues is part of the routine:
