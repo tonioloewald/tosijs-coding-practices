@@ -105,6 +105,7 @@ or **Cloudflare Pages / R2** as appropriate. Full detail: [`practices/00-stack.m
 | Adding a dependency, or building/using a security gate | [`practices/dependencies.md`](practices/dependencies.md) — a gate must never report a pass it didn't earn |
 | Reviewing code (a diff, a PR, or the nine-lens pre-release review) | [`practices/review.md`](practices/review.md) |
 | Cutting a release / publishing | [`practices/releasing.md`](practices/releasing.md) |
+| Hitting npm's 2FA prompt on publish, or moving publishing to CI | [`practices/publishing-via-oidc.md`](practices/publishing-via-oidc.md) — **plan**, not yet implemented |
 | Shipping to a host | [`practices/deployment.md`](practices/deployment.md) |
 | Managing state or schemas | [`practices/state-and-schema.md`](practices/state-and-schema.md) |
 | Building web components | [`practices/web-components.md`](practices/web-components.md) |

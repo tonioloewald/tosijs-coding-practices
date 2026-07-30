@@ -8,6 +8,14 @@ artifacts are committed to git so they must be regenerated, never hand-edited.
 For where the built site goes (GitHub Pages / Firebase / Cloudflare), see
 [deployment](./deployment.md). This doc is about **packaging, versioning, tagging, and publishing**.
 
+> **Local publishing is under pressure from npm's side.** npm is restricting tokens that
+> bypass 2FA for direct publishing, so a local `npm/bun publish` now needs an OTP
+> (`bun publish --otp=<code>` works and needs no second browser tab). The planned
+> replacement — publish from a tag via GitHub OIDC, which also removes the long-lived
+> publish credential from the maintainer's laptop — is drafted in
+> [publishing-via-oidc.md](./publishing-via-oidc.md). **Not yet implemented**; `tosijs-ui`
+> is the intended pilot.
+
 ## Before a minor or major release: run the comprehensive review
 
 For any **minor or major** bump, run the nine-lens
