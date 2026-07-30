@@ -180,6 +180,15 @@ When you do patch:
 - **Prefer a targeted `overrides`/`resolutions` pin** to the patched version over a
   broad `bun update --latest`. Every extra package that moves is fresh supply-chain
   surface.
+- **…but "minimal" is sometimes impossible, and then the big fix is the right one.**
+  A real case: the only unaffected `brace-expansion` is `5.0.8` (the advisory marks
+  every earlier version affected), so the pin is mandatory — and `brace-expansion@5`
+  breaks `eslint@8`'s bundled `minimatch@3` with `expand is not a function`. The
+  one-line pin forces an eslint 8 → 10 migration. Do not read that as a failure of
+  discipline: **check the per-package tally before concluding a pin is minimal.** In
+  that case the tally had already fingered the stale eslint glob stack, and replacing
+  it cleared the entire `minimatch`/`js-yaml`/`flatted` cluster at once. When a pin
+  cascades, the cascade is usually pointing at the actual problem.
 - **Treat large churn in a "patch" as itself suspicious.** Review what moved.
 - **Verify the tool sees your override.** Confirm the finding actually clears after
   pinning. (`bun audit` reads *resolved* versions, so it does — but other ecosystems
