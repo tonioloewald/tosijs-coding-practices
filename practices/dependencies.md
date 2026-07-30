@@ -226,6 +226,46 @@ to run a build.
 
 ---
 
+## 11. Stay current on minors — drift is a debt that compounds
+
+An audit gate tells you when a dependency has become *dangerous*. It says nothing about
+one quietly going stale, and stale is how you arrive at a dangerous upgrade you cannot
+take.
+
+The pattern is consistent and worth naming, because it is invisible until it isn't:
+
+- A project sits on `eslint@8` for a couple of years. Nothing breaks; nothing prompts.
+- An advisory lands on `brace-expansion`, and the only unaffected version is `5.0.8`.
+- `brace-expansion@5` breaks `eslint@8`'s bundled `minimatch@3`
+  (`expand is not a function`).
+- The one-line security pin is now an **eslint 8 → 10 migration**, flat config and all —
+  under time pressure, because the alternative is shipping a known advisory.
+
+Nobody chose that. It accumulated. Two years of skipped minors turned a five-minute fix
+into an afternoon, and the deadline arrived from outside.
+
+**So: take minor and patch upgrades on a schedule, not on an incident.**
+
+- **Cadence over completeness.** A monthly-ish sweep of `bun update` (respecting semver
+  ranges), run through the project's full gate, beats a heroic annual catch-up. Small
+  diffs are reviewable; a 40-package jump is not.
+- **Majors are a decision; minors are hygiene.** Majors get read, planned and scheduled.
+  Minors should be boring — and if a minor is *not* boring, that is itself the signal
+  that the dependency is drifting away from you.
+- **Let the tally pick the target.** The advisories-per-package view (§7) is also a
+  staleness view: a package generating repeated findings is usually one you are several
+  versions behind on.
+- **Automate the noticing, not the deciding.** Dependabot (or equivalent) opens the PR;
+  a human still reads what moved. The goal is that nothing goes un-noticed for a year,
+  not that upgrades land unattended.
+- **Backfill deliberately.** When adopting this on an existing project, do one pass to
+  get current *before* setting a cadence — otherwise the first scheduled sweep is the
+  heroic catch-up you were trying to avoid, and it will be blamed on the practice.
+
+The test: if a security advisory landed on your oldest dependency tomorrow, could you
+take the fix in an afternoon? If not, the debt is already there — it just has not been
+called in yet.
+
 ## Choosing a dependency in the first place
 
 The cheapest supply-chain fix is the dependency you didn't add.
