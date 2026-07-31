@@ -98,6 +98,38 @@ How to work in a project day-to-day.
 — seen in: a pre-release-review load test spun up 8 `yes > /dev/null` CPU hogs, ran tests under
   contention, then leaked all 8 for over an hour because its `kill $(jobs -p)` no-oped under zsh
 
+## A rot-prone claim gets a date AND a test
+
+Any published number is a claim with a shelf life: bundle sizes, benchmark results, test
+counts, dependency counts, "zero dependencies", supported-version matrices. Each was honest
+when written and each drifts silently — *your own* feature work is what moves it.
+
+The cost isn't the inaccuracy, it's the **credibility transfer**. A reader who disproves a
+checkable claim in thirty seconds discounts your *unverifiable* ones too — and the
+unverifiable ones (security properties, design guarantees) are usually the load-bearing
+ones. A stale "66 KB gzipped" costs you the reader's trust in "capability-sandboxed",
+which they can't check as easily.
+
+So, for every claim that can rot:
+
+1. **Qualify it** — "measured at v0.12.0". A dated claim ages honestly; an undated one is
+   unfalsifiable-by-inspection, because a reader can't tell whether it's current.
+2. **Make it self-updating, or track it with a test** — prefer the test. A guardrail that
+   re-measures the artifact and fails when the doc drifts past a tolerance converts "someone
+   should re-check this" into "it cannot be wrong by more than one release." Skip the test
+   when its input is absent (an unbuilt `dist/`) so it doesn't red a fresh clone; it should
+   bite in the pre-tag/publish flow, where it counts.
+3. **State increments as increments, or don't** — a table row reading "+ Transpiler 5 KB"
+   next to "VM 66 KB" gets read as "the transpiler is 5 KB" when it's 64 KB standalone.
+   Prefer independent, directly-checkable rows over deltas that require the reader to
+   reconstruct your arithmetic.
+
+The same discipline applies to prose claims that overstate a real result: say what you
+*have* proven, not the neighbouring stronger thing. "Termination is guaranteed by fuel
+metering" is unassailable; "solves the halting problem" is the same work described in a way
+that invites dismissal. — seen in: tjs-lang (`src/bundle-size.test.ts`, after a cold review
+found every row of the bundle table stale)
+
 ## Baseline artifacts: every product ships `llms.txt` and a `CHANGELOG.md`
 
 Both are how a project talks to consumers it never meets — and agents are first-class
