@@ -184,6 +184,39 @@ playground UI, not via CLI. — seen in: tjs-lang
   the browser. If a repo has no `*.test.ts`, that's the intended workflow, not an omission.
   — seen in: react-tosijs
 
+## Test the environment adopters have, not the clean room
+
+Suites almost always run **from nothing, in-repo, to nothing**: fresh state, one dev server,
+nothing else installed. Adopters run on a machine that already has your tool on it, in some state.
+Every bug that lives in that gap is structurally invisible to the suite — no amount of *depth*
+finds it, because the missing variable is **context**, not coverage.
+
+Two independent cases, same shape:
+
+- **haltija** shipped a run of field bugs its (green) suite could not see: a server left running by
+  another project silently swallowing a lane's commands; a server alive with **zero connected
+  browser windows**, so "is it up?" answered yes and there was nothing to drive; an orphaned GUI
+  child holding a singleton lock that blocked the *next* run; two projects on one shared port
+  stealing each other's commands. Each needs a *dirty* machine to reproduce, and the suite always
+  started clean.
+- **tosijs-ui** shipped four packaging regressions that **all four** of its test lanes missed —
+  every lane ran in-repo, from-repo, against one dev server. A pack-and-install lane found three of
+  them within minutes of first being written.
+
+So add lanes that reproduce the adopter's context. They're cheap, and each one maps to a bug class:
+
+- **Something already running** when the lane starts — with state, and in a half-dead state
+  (process alive but not actually serving).
+- **Two consumers at once**, in different working directories, each expecting its own.
+- **Install the built artifact and run it from outside the repo** (pack-and-install), not from
+  source with the repo's own resolution.
+- **A stale-but-satisfying version in the package cache.** A range like `^1.5.0` is satisfied by a
+  cached 1.5.0 that predates the fix your pin exists to get. Bumping the floor doesn't protect you —
+  only a lane that *runs with such a cache* catches the next instance.
+
+The bar is not "more tests"; it is **one lane per assumption the clean room silently makes**.
+— seen in: haltija (issues #1/#7/#8/#11), tosijs-ui (four packaging regressions, four blind lanes)
+
 ## Dependency-audit gate: fail on high+, exempt with a clock
 
 > This section is the **test-lane** shape of the gate. For the wider supply-chain
