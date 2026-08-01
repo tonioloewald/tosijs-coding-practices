@@ -134,6 +134,16 @@ uncertainty in the issue and file anyway.)
   false caveat is its own lie); and don't *guess* the right answer to avoid warning (ranking tabs
   by "origin looks like the cwd project" would pick confidently and wrongly — a warning you can
   justify beats a correction you can't).
+- **Fixing an instrument invalidates the results you got with the broken one.** This is the
+  corollary of the rule above and it is the expensive half. When a diagnostic gains a signal it
+  previously lacked — a console that finally reports uncaught exceptions, a check that finally
+  measures contrast, a map that finally shows real wiring — every prior "that looked fine" was
+  reached with the broken version and is now unverified. Nothing new broke; you just stopped being
+  blind to it. So **budget for the backlog the fix uncovers, and re-run the checks that previously
+  passed** rather than treating the green history as evidence. The upside is the same size: an
+  improvement to a shared instrument propagates a wave of findings to every consumer at once — which
+  is lens 9's blast radius pointing the *good* way, and the strongest argument for investing in
+  tools the whole stack looks through.
 - **Done when:** the changed behavior has been **driven end-to-end** (see the next section),
   not just unit-tested — and driven in **more than one mode** if it supports more than one.
 
