@@ -146,6 +146,50 @@ this.
 
 **The tell.** You assumed `bun build` and `bun run build` are the same command.
 
+## 9. A flaky tool's output is unreliable — discount it
+
+**The prior.** When a dependency has been misbehaving, treat what it says with suspicion.
+Isolate it, work around it, don't build on its claims.
+
+**Why the corpus holds it.** It is sound Bayesian reasoning and hard-won debugging lore. Young
+tools *do* lie, and chasing a dependency's bogus self-report wastes real days.
+
+**What it does here.** It inverts into ignoring a **correct** diagnosis. A tool's trust level
+should govern **how long you look before concluding**, never **whether you read what it is
+telling you**. Concretely: tosijs-ui's browser-test lane failed intermittently for days and was
+three times declared "environmental, can't fix". `hj where` was printing the actual cause the
+whole time — the lane was adopting the desktop app's haltija instance, whose window visibility
+depends on what else is on screen. The warning got read as noise *because* haltija was the low-
+trust component. The fix (`--private`) took twenty minutes once the tool's own output was read.
+
+Worth separating two things a young library can be bad at. Across a week of adoption, haltija
+was **right about state every time it was suspected** — the hidden-tab refusal was correct
+(a backgrounded tab throttles rAF, so results really would be plausible-but-wrong), the contrast
+findings were all real, the ambiguity warning named the actual problem. Its defects were
+*ergonomic*: warnings an unattended lane cannot act on, defaults that resolve to the wrong
+instance, two distributions under one version string. **Accurate-but-unusable earns trust far
+faster than the reverse**, and confusing the two costs you the tool's real signal.
+
+**The trust hierarchy is real and worth stating.** In this stack, **tosijs** (18+ months) and
+**b8r** (years) are beyond question: if you think the bug is in one of them, you are almost
+certainly on the wrong track. Newer components have not earned that and *should* be suspected.
+The goal state is what one of us calls a **"does math even work" bug** — you have tested the
+entire reasoning chain, found nothing, and begun suspecting the transpiler or arithmetic itself,
+and it turns out to be a typo. A library is mature when it stays outside the search until you
+reach that spiral. Until then it doubles the hypothesis space for every bug you hit while
+depending on it, which is the compounding, mostly-invisible cost of a young dependency.
+
+**How a young library buys the trust back early:** cheap discrimination. `hj where`,
+`hj doctor`, a `ready` field that separates "server up" from "there is a tab to drive", an
+`uncertain` flag that says *I don't know* instead of guessing. None of them make a tool mature;
+all of them make "is it me or you?" answerable in one command, which is most of the practical
+value of trust without the years. If you ship a tool others debug against, that is the feature
+to build first.
+
+**The tell.** You concluded "environmental", "flaky", or "not our problem" without running the
+tool's own diagnostic command — or you skimmed a warning because that component has been
+annoying lately.
+
 ---
 
 ## Why this doc exists
