@@ -17,8 +17,38 @@ bun test src/               # unit tier only (when integration lives elsewhere)
   only the top-level files and silently skips every test in a subdirectory — no error, exit 0, a
   green run that never ran. A bare directory (`bun test src/`) or bare `bun test` **recurses**; use
   those. In tosijs-ui the glob form skipped ~126 tests across whole features. — seen in: tosijs-ui
-- `bun run build` runs `bun test` first and exits non-zero on failure — a red suite blocks
-  the release build. Don't rely on separate CI; most repos here have none. — seen in: tosijs, haltija
+- **Check whether `bun run build` runs the tests — in some repos it does and in others it does
+  not, and assuming wrong means shipping a red suite.** `grep '"build"' package.json`, then read
+  the script it points at.
+  - **tosijs: yes.** `build` is `bun bin/site.ts --build`, and `bin/site.ts:49` runs
+    `await $\`bun test src/\`` — a red suite blocks the release build.
+  - **haltija: no.** `build` is `bun run scripts/build.ts`, which type-checks and bundles and never
+    invokes a test runner. Its two `process.exit(1)` paths are an ownership-marker check and
+    `node --check`. Running `bun run build` there tells you nothing about the tests.
+  Do not substitute this check for CI either: haltija has **four** gated workflows, and tosijs and
+  tosijs-ui each have `ci.yml`. See `releasing.md` step 3 (which calls the "build runs the tests"
+  assumption "the most dangerous sentence in this file") and `review.md`'s lane enumeration.
+  — seen in: tosijs (true), haltija (false)
+- **An assertion that scrapes its own input must first assert the scrape found something.**
+  Otherwise a format change turns it into `expect([]).toEqual([])` and it goes green forever. Two
+  shapes seen in one haltija cycle: a parity check whose regex never matched the real output, and a
+  flag-registry check whose regex found **zero** literals under `bun test` while working under
+  `node` — Bun's transpiler re-emits single-quoted strings as double-quoted. Better still: import
+  the authoritative data instead of re-deriving it from formatted output. — seen in: haltija
+- **An error message almost always contains the identifier you searched for.** `toContain(name)` is
+  satisfied by `"No commands matching 'name'."`, so assert the failure string is ABSENT too. In
+  haltija this let a test certify the very bug its fix was written for. — seen in: haltija
+- **Assert on the identifier the payload actually carries.** Two haltija tests asserted on a DOM
+  `id` against JSON nodes that have never carried one; one of them passed under a mutation that
+  deleted the guard entirely. — seen in: haltija
+- **A fix's own test, written in the same sitting by the same author, inherits that author's
+  misunderstanding.** Four vacuous assertions in one haltija cycle were found by mutation testing
+  and none by re-reading. If a regression test has never failed, it is unproven: break the fix on
+  purpose and watch the test go red before you trust it. — seen in: haltija
+- **Never judge a run by a truncated tail.** `| tail -n` shows the summary and hides the failure
+  lines above it; a pipeline's `$?` is the LAST command's, so `cmd | head` reports head's exit code.
+  Assert on the failure/error count, or read the whole output. Three haltija commits merged on a red
+  Playwright gate this way. — seen in: haltija
 - Capture noisy runs once, query many times: `bun test 2>&1 | tee /tmp/test-results.txt`
   then grep for failures. — seen in: tjs-lang
 

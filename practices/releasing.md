@@ -238,6 +238,15 @@ Rule of thumb: check the project's `RELEASING.md`/`AGENTS.md`/`CLAUDE.md` first.
 human-only gate, stop after tagging. If it doesn't, finish the push per "landing the plane."
 Never bypass a pre-push hook with `--no-verify` — fix the underlying failure. — seen in: tjs-lang
 
+**A generated file that is committed must be added to the drift gate in the same commit that
+creates it.** The gate *is* the list, so a file missing from the list is ungated no matter how
+obviously generated it looks — and a written argument for why staleness is impossible is not a
+substitute for a check that costs one line. Better still, don't keep a list: assert the build leaves
+the tree clean (`git status --porcelain` empty after `bun run build`), which cannot omit the next
+generated file. haltija shipped six committed compiled twins — the ones npm actually ships — that no
+gate could see, because the drift workflow named five files all derived from one schema. — seen in:
+haltija
+
 ## "Landing the plane" — session completion
 
 A work session is **not** done until `git push` succeeds (subject to the human-only gate above).
@@ -256,6 +265,11 @@ Every session, in order:
    > `--rebase`.** Its history must be append-only, because a rebase linearizes away a concurrent
    > edit — and there, a collision between two agents *is the signal* worth preserving. See its
    > `CONTRIBUTING.md`.
+3b. **Confirm the runs the push triggered are green** — `gh run list -L 3`, or `gh run watch`.
+   A push that goes red is not landed: in an agent-run repo nobody else is watching the
+   notification. Measured cost: haltija's Playwright gate sat red on `main` for three commits and
+   was found only by a nine-lens review a week later. (`grep "gh run"` across this repo returned
+   nothing before this entry existed.) — seen in: haltija
 4. **Clean up** — clear stashes, prune stale remote branches.
 5. **Verify** — everything committed AND pushed.
 6. **Hand off** — leave context for the next session.
@@ -292,6 +306,14 @@ and PR bodies follow the harness's co-author/attribution footer conventions.
   An un-stapled DMG is Gatekeeper-rejected even when the inner app is fine.
 
 ### haltija (npm + Electron DMG)
+
+> **These per-project sections are DELTAS from the canonical flow above, never replacements for
+> it.** Run the canonical steps; the section below only says where this project differs. A restated
+> sequence silently overrides the canonical one, and the step it drops is always the last one —
+> haltija's row sat fifteen tags stale because both places an agent reads when releasing it
+> (`AGENTS.md` and this section) restated the flow as self-contained and ended at `npm publish`,
+> so step 9 was never reached. `grep -ri scoreboard` in the haltija repo returned zero hits.
+
 - Bump BOTH `package.json` and `apps/desktop/package.json` (the build stamps `src/version.ts`
   from the root one), then the fixed sequence: build → `bun test src/` 100% green → commit →
   annotated tag → push commits AND tag → `gh release create` → `npm publish`.

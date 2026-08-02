@@ -9,7 +9,7 @@
   sync, untrusted input, deployment config).
 - **CI is partial, and you must know exactly which lanes it covers.** This file used to say
   there was *"no CI — no `.github/` workflows anywhere in the ecosystem"*. That is false
-  (tosijs-ui has `ci.yml`; haltija has three workflows; see `00-stack.md`), and the falsehood
+  (tosijs-ui has `ci.yml`; haltija has **four** workflows — unit-tests, test-qa, e2e, docs-drift; see `00-stack.md`), and the falsehood
   was load-bearing: a reader who believes there is no CI never asks **"which lanes does CI
   actually run?"** — which is the exact question that catches a rotted lane. tosijs-ui's CI runs
   the unit + e2e lanes and **not** the haltija doc-test lane, and that lane sat red for a month.
@@ -34,7 +34,21 @@ in already-shipped code, outside the diff, and diff-scoping structurally misses 
 case: a minor bump's review found five VM-security blockers, four of them latent in the
 _prior_ shipped release, not in the diff — caught only because the reviewer went to major
 depth anyway. And a security release's own new guard shipped with a hole in exactly the input
-type its one test didn't cover.) Corollary: extend lens 5's "never dismiss a finding as
+type its one test didn't cover.) **The same escalation applies to verification _tiering_, not only to review depth.** A finding whose
+subject is an **isolation, teardown, capability, or process-lifetime guarantee** gets adversarially
+verified regardless of its reported severity. These share the property that makes tiering unsafe:
+silent failure, a binary guarantee, and a cosmetic-looking symptom whose cause is not cosmetic —
+"a stray tab on port 8700" was in fact a client connection to another project's server. Evidence:
+three unverified single-reporter findings in one haltija cycle were all real (an EPERM treated as
+process death, causing a mid-run self-kill; a `|| 8701` fallback leaking a private instance onto the
+shared port; a silently-ignored empty config that disabled the routing it configured) — and the
+leak's fix was **incomplete**, the same leak still live one layer up, found by the next review
+rather than by the tiering. Record honestly what this argument is *not*: "0 of 3 refuted" is
+statistically empty (P ≈ 0.70 at an 11% base rate). The real content is that the existing
+mitigation's trigger is reviewer self-doubt, which an under-rated finding by construction does not
+produce. — seen in: haltija
+
+Corollary: extend lens 5's "never dismiss a finding as
 pre-existing" rule — scoped to tests today — to security-critical subsystem code: a latent
 vuln the diff happens to sit next to is in scope, not "not mine." **Scope that diff to source** —
 `git diff vLAST..HEAD -- . ':(exclude)dist' ':(exclude)docs' ':(exclude)*.map'` — for every
@@ -182,7 +196,22 @@ returned a confident wrong answer until the result was made to carry a warning �
   change; if a **durable cross-project practice** changed, update the shared KB (and grep the
   cross-cutting docs for parallel mentions — see `../CONTRIBUTING.md`).
 - Deprecations warn once and name their replacement.
-- **Done when:** docs regenerate clean and the public-API surface is documented.
+- **Discoverability, not just accuracy.** For every new public surface — endpoint, CLI command, env
+  var, config file, flag, warning string — name the consumer-facing doc it appears in, and check
+  that the error or warning a user hits *when they have the problem it solves* actually names it.
+  Regenerating clean proves the docs match the code; it proves nothing about whether the feature
+  exists to a reader. Evidence: at haltija v1.11.3 the headline feature `.haltija.json` /
+  `HALTIJA_ORIGINS` appeared in **no** consumer-facing surface (absent from README, DOCS.md,
+  llms.txt, API.md, CLAUDE.md and both `--help`s; `plugins/` was not in `files`, so the agent skill
+  was unreachable on npm), and the warning that fires on exactly that problem offered only
+  `--window <id>`. The two diagnostics the skill names as the first response to "wrong page" both
+  `return`ed before reaching the code that would have mentioned it. 24 `HALTIJA_*` vars existed;
+  CLAUDE.md documented 11. The bullet above ("README / CLAUDE.md / AGENTS.md reflect the change")
+  would have passed here — it is too narrow, and its Done-when is accuracy-only. Copyable mechanism:
+  a CONCEPTS table asserting each named concept appears in each consumer-facing doc
+  (haltija's `src/docs-coverage.test.ts`). — seen in: haltija (at least the fifth recurrence)
+- **Done when:** docs regenerate clean, the public-API surface is documented, AND every new surface
+  is reachable from a doc a consumer actually reads.
 
 ### 5. Test coverage
 - **Run the suite and read the output** — reviewing coverage without running it is guessing.
@@ -196,8 +225,10 @@ returned a confident wrong answer until the result was made to carry a warning �
   integration/E2E actually starts its target; type-level tests in `*.types.ts` under `tsc`.
 - Security-critical code (VM/runtime, capability registry, RBAC) held to its high coverage bar.
 - No skip-guarded tests passing vacuously (green ≠ ran); no Bun-only imports leaked into Playwright.
-- **Done when:** changed lines are covered, criticals hit target, and the suite is green
-  (the release build runs tests and exits non-zero on failure).
+- **Done when:** changed lines are covered, criticals hit target, and the suite is green — verified
+  by RUNNING it. Do not infer this from a clean build: whether `bun run build` runs the tests is
+  per-repo (true in tosijs, false in tosijs-ui and haltija — see `testing.md`), and this Done-when
+  previously asserted it as universal, in the one place a reviewer would rely on it.
 
 ### 6. Developer experience (DX)
 - API ergonomics: emitted types are accurate (no required→optional `.d.ts` drift), inference is
@@ -440,6 +471,13 @@ developer's own dev server and hijacked their CLI)
 - **Lenses 7 and 8 rarely block a release** — they compound instead. Treat "no findings" from
   either with suspicion: it usually means nobody looked.
 - Record anything durable back into the practice docs so the next release starts ahead.
+
+**A BLOCK is not a followup — it restarts the clock.** When remediation of a BLOCK is itself
+release-sized (new modules, changed public behaviour, a diff comparable to or larger than the one
+reviewed), the remediation gets its own full pass. The anti-treadmill rule below governs
+GO-with-followups, not BLOCK. The test is the size and shape of the fix diff, not the number of
+laps. Real case: a BLOCK whose remediation ran to eight commits, ~2000 insertions, five new source
+modules, ~60 new tests, and behaviour changes in three endpoints. — seen in: haltija
 
 **One review per release; re-review only the delta.** The review runs *once*, against
 `vLAST..HEAD`. Fixing its findings produces new diff — and re-running the whole review over that
