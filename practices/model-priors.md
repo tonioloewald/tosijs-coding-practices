@@ -190,6 +190,16 @@ to build first.
 tool's own diagnostic command — or you skimmed a warning because that component has been
 annoying lately.
 
+**The other half of this is in [`review.md`](review.md) → "The instrument must not lie."** That
+rule tells a tool's *author* to prefer an attached warning over a bare value, and to warn rather
+than guess. This entry is the matching consumer failure: the tool does exactly that, attaches an
+honest caveat — and a distrusting reader discards it as noise. Both halves have to hold or the
+warning is wasted at one end or the other. Note also its corollary, "fixing an instrument
+invalidates the results you got with the broken one": after a tool gains a signal, re-run what
+previously passed instead of trusting the green history. That is not just about the tool's
+versions — it applies to your own earlier runs too, including ones whose *setup* you can no
+longer vouch for.
+
 ---
 
 ## Why this doc exists

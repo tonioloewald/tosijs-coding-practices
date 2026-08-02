@@ -134,6 +134,9 @@ uncertainty in the issue and file anyway.)
   false caveat is its own lie); and don't *guess* the right answer to avoid warning (ranking tabs
   by "origin looks like the cwd project" would pick confidently and wrongly — a warning you can
   justify beats a correction you can't).
+  (The consumer-side counterpart is [`model-priors.md`](model-priors.md) #9: an honest caveat is
+  worth nothing if a reader who distrusts the tool discards it — which is what happens when a
+  component has been annoying lately, and is how a correct diagnosis gets read as noise.)
 - **Fixing an instrument invalidates the results you got with the broken one.** This is the
   corollary of the rule above and it is the expensive half. When a diagnostic gains a signal it
   previously lacked — a console that finally reports uncaught exceptions, a check that finally
