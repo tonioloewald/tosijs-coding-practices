@@ -166,6 +166,17 @@ Filing is useless if nobody reads. Checking incoming issues is part of the routi
   signal to drop its workaround.
 - **When you're blocked on an upstream fix**, say so in the issue and keep the workaround
   logged in `UPSTREAM.md` — don't silently absorb the cost forever.
+- **A conversation that spans two repos needs a link in BOTH, or each side thinks it is waiting on
+  the other.** When you answer somewhere other than the thread that asked — which is often the
+  *correct* venue, since a bug about repo A belongs on repo A — leave a one-line
+  `answered in <link>` on the original. Reciprocally, when you ask for something, don't only watch
+  the thread you opened: sweep recent activity across the sibling repos before concluding you were
+  ignored.
+  — seen in: three misses in one ecosystem in two weeks. A report was believed filed and wasn't; a
+  report was filed against the reporter's *own* repo instead of the target; and a request for
+  feedback sat "unanswered" for a day while the answer had been filed as an issue on the asking
+  repo **five minutes later**. Nothing was lost in any of them except time and the appearance of
+  silence — and the fix is one line per thread.
 
 ## Rule of thumb
 
