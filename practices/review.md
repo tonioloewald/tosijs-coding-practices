@@ -8,7 +8,7 @@
 - **`/security-review`** for changes with a security surface (auth, capability VMs, network
   sync, untrusted input, deployment config).
 - **CI is partial, and you must know exactly which lanes it covers.** This file used to say
-  there was *"no CI — no `.github/` workflows anywhere in the ecosystem"*. That is false
+  there was _"no CI — no `.github/` workflows anywhere in the ecosystem"_. That is false
   (tosijs-ui has `ci.yml`; haltija has **four** workflows — unit-tests, test-qa, e2e, docs-drift; see `00-stack.md`), and the falsehood
   was load-bearing: a reader who believes there is no CI never asks **"which lanes does CI
   actually run?"** — which is the exact question that catches a rotted lane. tosijs-ui's CI runs
@@ -43,7 +43,7 @@ three unverified single-reporter findings in one haltija cycle were all real (an
 process death, causing a mid-run self-kill; a `|| 8701` fallback leaking a private instance onto the
 shared port; a silently-ignored empty config that disabled the routing it configured) — and the
 leak's fix was **incomplete**, the same leak still live one layer up, found by the next review
-rather than by the tiering. Record honestly what this argument is *not*: "0 of 3 refuted" is
+rather than by the tiering. Record honestly what this argument is _not_: "0 of 3 refuted" is
 statistically empty (P ≈ 0.70 at an 11% base rate). The real content is that the existing
 mitigation's trigger is reviewer self-doubt, which an under-rated finding by construction does not
 produce. — seen in: haltija
@@ -52,7 +52,7 @@ Corollary: extend lens 5's "never dismiss a finding as
 pre-existing" rule — scoped to tests today — to security-critical subsystem code: a latent
 vuln the diff happens to sit next to is in scope, not "not mine." **Scope that diff to source** —
 `git diff vLAST..HEAD -- . ':(exclude)dist' ':(exclude)docs' ':(exclude)*.map'` — for every
-lens *except lens 4*. A release that re-bundles a dependency can churn thousands of lines of
+lens _except lens 4_. A release that re-bundles a dependency can churn thousands of lines of
 generated `dist/`/`docs/`, and feeding that bundle to nine lenses is pure cost: it is not a
 change any of them review. Only **lens 4** reads the generated tree, and only to assert it
 regenerates clean. This maps directly onto the tooling:
@@ -66,15 +66,15 @@ Those two are the compounding ones: skipping them is how a stack quietly accrete
 and a knowledge base goes stale.
 
 **Scale to the bump:** patch → a quick correctness + docs pass. Minor → all nine. Major →
-all nine plus a **completeness critic** ("what subsystem/claim/lens did we *not* review?").
+all nine plus a **completeness critic** ("what subsystem/claim/lens did we _not_ review?").
 
 **Verify where the verdict changes the decision, not everywhere.** Adversarial verification is
 the expensive part — in measured runs of the automated gate it was ~70% of total cost — and
-spending it uniformly is waste. A finding's truth only matters when it *gates the release*: a
+spending it uniformly is waste. A finding's truth only matters when it _gates the release_: a
 **blocker**'s truth decides whether you tag, so a false blocker costs a whole wasted fix cycle
 — verify it. A **minor/nit** is a follow-up whether or not it's real, so verifying it changes
-nothing. Measured refute rates make the point sharper still: refutation is *lowest* on blockers
-(~3%) and *highest* on minor/nit (~11%) — i.e. verification is least necessary exactly where
+nothing. Measured refute rates make the point sharper still: refutation is _lowest_ on blockers
+(~3%) and _highest_ on minor/nit (~11%) — i.e. verification is least necessary exactly where
 it's most often spent. So: **always verify blockers; verify majors before a tag but skip them
 while iterating; never adversarially verify minor/nit** — ship those reported-but-unverified and
 clearly marked. Do **not** economize by cutting lenses instead: lenses are cheap and are where
@@ -83,20 +83,20 @@ depth, not lens count. — seen in: haltija (1.4.0 release gate)
 
 **Key on the severity you'd _act_ on, not the label the finder typed.** The tiers above proxy
 the real test — "does this finding's truth change the release decision?" — with the reported
-severity, and that proxy has one blind spot: severity is assigned *before* verification, in the
+severity, and that proxy has one blind spot: severity is assigned _before_ verification, in the
 one direction the economics don't cover. Over-rating is self-correcting (a false major is cheap
 to wave off, and finders rarely under-rate — the 3%-vs-11% asymmetry is exactly that). But a real
 blocker mislabeled "minor" then never gets verified and sits in the follow-up pile forever, wrong
-*and* buried. So treat **"I'm not sure this minor isn't actually a blocker" as itself a trigger to
+_and_ buried. So treat **"I'm not sure this minor isn't actually a blocker" as itself a trigger to
 verify** — uncertainty about severity is a decision-changing question, which is the header's own
-test. Verifying to *find out* how bad something is costs the same as verifying to confirm it.
+test. Verifying to _find out_ how bad something is costs the same as verifying to confirm it.
 
 **The "clearly marked" on shipped-unverified findings is load-bearing, not a nicety — it is what
 makes the economics work.** At an ~11% refute rate, roughly one in nine shipped nits is wrong; if
-they don't read as *conspicuously unvetted*, the reader stops trusting the report and re-verifies
+they don't read as _conspicuously unvetted_, the reader stops trusting the report and re-verifies
 everything by hand, which spends exactly the cost the tiering just saved. Mark every unverified
 finding as such at the point it appears (not only in a preamble), so a false one reads as "an
-unchecked lead", never as "a vetted defect". (This is *adversarial* verification — spawning
+unchecked lead", never as "a vetted defect". (This is _adversarial_ verification — spawning
 skeptics — that we're skipping; inline sanity-reading a finding as you triage it is free and still
 expected. "Unverified" means "no skeptic ran", not "nobody looked.")
 
@@ -105,18 +105,19 @@ faith is valuable even when it's literally wrong. When a careful reviewer (or us
 broken" / "you can't do Y" and the claim is false, the usual reason they believed it is that the
 truth is **undiscoverable** — a docs, naming, or surfacing gap. Rejecting the report because,
 strictly speaking, it's wrong is worse than not reviewing at all: you've paid for the signal and
-thrown it away. So for every refuted finding ask *"what would make a competent reader believe
-this?"* and file the second-order finding (usually a minor docs/DX fix) if there is one. Drop it
+thrown it away. So for every refuted finding ask _"what would make a competent reader believe
+this?"_ and file the second-order finding (usually a minor docs/DX fix) if there is one. Drop it
 only when the reviewer simply erred and no gap exists — judgement, not a quota.
 
 Each lens returns **ranked findings with a concrete failure scenario**; a finding without a
 repro is a question, not a defect. Verify per the rule above before acting on or filing anything.
-(That bar applies *inside the review harness*, where verification is cheap and structured — it is
+(That bar applies _inside the review harness_, where verification is cheap and structured — it is
 **not** a certainty bar for telling another repo about a problem. For that, see
 [`cross-project.md`](cross-project.md) "File even when you might be wrong": state your
 uncertainty in the issue and file anyway.)
 
 ### 1. Correctness
+
 - Observant correctness: new state paths actually observed/bound (no manual re-render sneaking
   in); `await updates()` around post-mutation assertions; id-path surgical updates intact.
 - Boxed vs. raw: no proxy-on-proxy nesting; `===` on a BoxedScalar and `toDOM` getting raw
@@ -126,26 +127,26 @@ uncertainty in the issue and file anyway.)
   shadow); no `on<Event>` callback props.
 - Edge cases, async settling, form-association, error/failure paths.
 - **Walk the mode & flag matrix.** New behavior gets verified on the happy path its author had
-  in mind — that path works; the ones *adjacent* to it are where the bug is. So enumerate every
+  in mind — that path works; the ones _adjacent_ to it are where the bug is. So enumerate every
   mode the feature can run in (http/https/both, headless/desktop, dev/prod) and every flag that
   can select or override it, and ask what the new code does in each. Two shapes recur:
   - **A default that is a lie in another mode.** A value that is only meaningful because the
     default path sets it — but the other path never does, and it keeps a stale default that is
-    now *wrong* rather than merely unset.
+    now _wrong_ rather than merely unset.
   - **A new message or check placed before the input it depends on.** Argument parsing, config
     merging and validation have an order; code inserted "near the top" can read a flag that
     hasn't been parsed yet and confidently say the opposite of what the run then does.
 - **The instrument must not lie.** For any tool that does remote control, inspection, or
   measurement, the failure that costs the user the most is not an error or a timeout — it's a
   **plausible-but-wrong answer** returned with the same confidence as a right one. A backgrounded
-  browser tab *answers* `querySelectorAll(...).length` with `0` (rAF/timers frozen), which reads
-  as "broken" when it means "asleep." A command routed by *focus* looks identical to one routed by
-  *your intent*. When a result can be right-looking and wrong, it must carry the caveat that makes
+  browser tab _answers_ `querySelectorAll(...).length` with `0` (rAF/timers frozen), which reads
+  as "broken" when it means "asleep." A command routed by _focus_ looks identical to one routed by
+  _your intent_. When a result can be right-looking and wrong, it must carry the caveat that makes
   it interpretable — distinguish "not mounted yet" from "broken," "focus chose this" from "you
   chose this" — and prefer an **attached warning over a bare value**. Two discipline points that
   keep the caveat honest: key it on a signal the subject actually reports (a tab's own
   `visibilitychange`, not a staleness proxy that also fires for an idle-but-healthy subject — a
-  false caveat is its own lie); and don't *guess* the right answer to avoid warning (ranking tabs
+  false caveat is its own lie); and don't _guess_ the right answer to avoid warning (ranking tabs
   by "origin looks like the cwd project" would pick confidently and wrongly — a warning you can
   justify beats a correction you can't).
   (The consumer-side counterpart is [`model-priors.md`](model-priors.md) #9: an honest caveat is
@@ -159,7 +160,7 @@ uncertainty in the issue and file anyway.)
   blind to it. So **budget for the backlog the fix uncovers, and re-run the checks that previously
   passed** rather than treating the green history as evidence. The upside is the same size: an
   improvement to a shared instrument propagates a wave of findings to every consumer at once — which
-  is lens 9's blast radius pointing the *good* way, and the strongest argument for investing in
+  is lens 9's blast radius pointing the _good_ way, and the strongest argument for investing in
   tools the whole stack looks through.
 - **Done when:** the changed behavior has been **driven end-to-end** (see the next section),
   not just unit-tested — and driven in **more than one mode** if it supports more than one.
@@ -170,6 +171,7 @@ port it wasn't listening on; a new warning was emitted before `--port` was parse
 returned a confident wrong answer until the result was made to carry a warning — #2/#3)
 
 ### 2. Efficiency
+
 - Surgical updates, not rebuilds; id-paths for in-place list mutation; bulk-mutate-raw-then
   `touch()`-once for large updates.
 - Bundle size: gzip delta printed; **no new runtime dep in a core library**; peers `external`;
@@ -179,6 +181,7 @@ returned a confident wrong answer until the result was made to carry a warning �
 - **Done when:** bundle-size delta is known and no O(N) regression sits on a hot path.
 
 ### 3. DRYness (reuse & simplification)
+
 - Duplicated non-trivial logic that should be one shared helper; reuse what the stack already
   provides (`dom.ts`, `throttle`/`debounce`, bindings, `StyleSheet()`/`vars` — never raw CSS
   strings) instead of reimplementing.
@@ -187,6 +190,7 @@ returned a confident wrong answer until the result was made to carry a warning �
 - **Done when:** no copy-pasted logic remains and every new helper earns its place.
 
 ### 4. Documentation accuracy & up-to-dateness
+
 - **Regenerate and diff-check generated docs**: `bun run build` (or the doc generator) then
   `git diff --exit-code` over `docs/`, `llms.txt`, `version.ts`, `examples.md`, `API.md` — a
   dirty tree means shipped docs are stale.
@@ -198,7 +202,7 @@ returned a confident wrong answer until the result was made to carry a warning �
 - Deprecations warn once and name their replacement.
 - **Discoverability, not just accuracy.** For every new public surface — endpoint, CLI command, env
   var, config file, flag, warning string — name the consumer-facing doc it appears in, and check
-  that the error or warning a user hits *when they have the problem it solves* actually names it.
+  that the error or warning a user hits _when they have the problem it solves_ actually names it.
   Regenerating clean proves the docs match the code; it proves nothing about whether the feature
   exists to a reader. Evidence: at haltija v1.11.3 the headline feature `.haltija.json` /
   `HALTIJA_ORIGINS` appeared in **no** consumer-facing surface (absent from README, DOCS.md,
@@ -214,6 +218,7 @@ returned a confident wrong answer until the result was made to carry a warning �
   is reachable from a doc a consumer actually reads.
 
 ### 5. Test coverage
+
 - **Run the suite and read the output** — reviewing coverage without running it is guessing.
 - **Every failing or skipped test is in scope — never dismiss one as "pre-existing," "flaky,"
   or "not caused by this change."** A change easily slips out of context and causes a
@@ -231,26 +236,27 @@ returned a confident wrong answer until the result was made to carry a warning �
   previously asserted it as universal, in the one place a reviewer would rely on it.
 
 ### 6. Developer experience (DX)
+
 - API ergonomics: emitted types are accurate (no required→optional `.d.ts` drift), inference is
   good, and no re-introduced footgun (`on<Event>`, `value`-as-attribute, boolean-defaulting-true).
 - Error messages are actionable; assignment-strictness / monadic errors used where apt.
 - **Output is signal, not narration — flag log/console spam.** Breadcrumb / happy-path logs
   (`entering handler`, `processing item`, `reached here`), leftover debug output, and repeated or
-  unaddressed deprecation / retry warnings in the diff. The test for a line: *does it change what
-  a reader would DO?* If not, it's spam — cut it (keep receipts for destructive/rare actions).
+  unaddressed deprecation / retry warnings in the diff. The test for a line: _does it change what
+  a reader would DO?_ If not, it's spam — cut it (keep receipts for destructive/rare actions).
   Worth raising even though it reads as cosmetic: **spam is almost always a symptom** — a debug
   log left from a bug hunt, a deprecation nobody fixed, retry noise from a flaky dependency — so
-  complaining about it in review drives the *underlying cause* to be fixed. And output is the real
+  complaining about it in review drives the _underlying cause_ to be fixed. And output is the real
   UI you debug through: noise trains the team to stop reading it, so the one real line scrolls past
   unseen (the cry-wolf failure, worn in daily). — seen in: legacy-codebase triage (spam reduction
   as the first move, because it doubles as recon)
 - Conventions honored: `handle<Event>` callbacks; deprecations keep old names working + warn once.
 - **Breaking changes are justified, documented, and migratable.** If this release removes or
   changes public API, all four must hold: (1) the break **buys something a deprecation
-  couldn't** — an *incidental* break, made because the old API was in the way of a refactor, is
+  couldn't** — an _incidental_ break, made because the old API was in the way of a refactor, is
   the kind consumers resent; (2) the **version** reflects it; (3) there is a **CHANGELOG entry
-  naming exactly what broke** — *a release that removes public API with no CHANGELOG entry is a
-  trap*; (4) there are **migration notes** (ecosystem convention: a `Migration.md` shipped in
+  naming exactly what broke** — _a release that removes public API with no CHANGELOG entry is a
+  trap_; (4) there are **migration notes** (ecosystem convention: a `Migration.md` shipped in
   `docPaths`) telling a consumer precisely what to change, before → after. Prefer the
   deprecation path; if you break, say why. — seen in: tosijs (`Migration.md`), tosijs-ui (1.7
   dropped `<tosi-code>`'s pre-1.7 ACE props)
@@ -259,7 +265,7 @@ returned a confident wrong answer until the result was made to carry a warning �
   **fresh clone** (TLS certs, single lockfile).
 - **Done when:** a new dev or agent could adopt the change from the docs alone.
 
-### 7. Ecosystem & abstraction health — the tools we depend on, *and the ones that depend on us*
+### 7. Ecosystem & abstraction health — the tools we depend on, _and the ones that depend on us_
 
 This lens runs in **two directions, and both halves are mandatory.** Agents reliably do the
 outgoing half and skip the incoming half — **do not.** Run 7a and 7b as separate passes and
@@ -290,7 +296,7 @@ Look up and out. Lens 6 asks "is the DX we **provide** good?" — this asks "is 
   working around the gap is exactly the failure this half exists to catch.
 - **Done when:** every workaround in the diff is either justified or **filed upstream as an issue**.
 
-#### 7b. Incoming — what have our consumers filed against *us*?
+#### 7b. Incoming — what have our consumers filed against _us_?
 
 **Enumerate, don't glance.** This half is not a footnote; it is half the lens.
 
@@ -299,21 +305,22 @@ gh issue list -R tonioloewald/<this-repo> --state open
 ```
 
 - **Give every open issue a disposition.** For each one, say which: **fixed by this release**
-  (→ close it naming the version, *and put it in the release notes*), **still open** (→ say so),
+  (→ close it naming the version, _and put it in the release notes_), **still open** (→ say so),
   or **stale** (→ close it). An issue this release silently closes can **reframe what the
   release is** — e.g. a CodeMirror migration that also happens to unblock a downstream port is
   not a CodeMirror migration, and the notes should say so.
-- **Cross-check every workaround from 7a against the issue list.** *Is there already an issue
-  for this?* **A test loosened, or complexity added, to route around a bug we filed against
-  ourselves is the signature failure of this half** — 7a will flag the *shape* of it and not
+- **Cross-check every workaround from 7a against the issue list.** _Is there already an issue
+  for this?_ **A test loosened, or complexity added, to route around a bug we filed against
+  ourselves is the signature failure of this half** — 7a will flag the _shape_ of it and not
   connect it to the open issue unless you deliberately do.
 - **Done when:** every open incoming issue has a stated disposition, and every workaround found
   in 7a has been checked against the issue list.
 
-— seen in: tosijs-ui 1.7 review (which found #10 was closed *by* the release, #5/#7 fixed long
+— seen in: tosijs-ui 1.7 review (which found #10 was closed _by_ the release, #5/#7 fixed long
 ago and left open, and a loosened `title` assertion routing around our own open #6)
 
-### 8. Practices & process self-review — are *we* still right?
+### 8. Practices & process self-review — are _we_ still right?
+
 The review reviews itself. Practices are living documents, and a release is when they get
 tested against reality.
 
@@ -327,26 +334,27 @@ tested against reality.
 - **Done when:** the shared practices are updated, or explicitly confirmed still correct, and
   any process gap is filed.
 
-### 9. Blast radius — what does this change PROPAGATE outside the repo, cost *or* benefit?
+### 9. Blast radius — what does this change PROPAGATE outside the repo, cost _or_ benefit?
+
 Lenses 1–6 review the code. This one reviews the **footprint**: everything the change writes,
 spawns, binds, or kills that outlives the process and is shared with software we don't own.
 That state has no test suite, no code review, and no rollback — and it is where a tool stops
-being wrong *in its own repo* and starts being wrong *on the user's machine*.
+being wrong _in its own repo_ and starts being wrong _on the user's machine_.
 
 **Blast radius has a sign, and the amplitude multiplies whichever sign it has.** A change with
-wide reach is not automatically bad — reach *is* leverage. A bug in a widely-used library is
+wide reach is not automatically bad — reach _is_ leverage. A bug in a widely-used library is
 catastrophic for the exact same reason an improvement in it is enormously valuable: the
 amplitude is large either way. So this lens runs in **two directions** (like lens 7):
 
 - **Positive blast radius — harm that propagates.** The default worry, and the rest of this
   lens: state mutated outside the repo, processes touched, the machine changed. Interrogate it
   with the checklist below.
-- **Negative blast radius — benefit that propagates.** *This is what a library is for:* do a
+- **Negative blast radius — benefit that propagates.** _This is what a library is for:_ do a
   thing well in one place and every consumer gets it for free on the next update. Ask whether
   the change **captured** that leverage or **leaked** it. A local fix to a general problem is a
   leak — the next consumer re-hits it. **Duplication is a leak too, and worse than untidy: it
   severs the propagation path.** When the same logic lives in two places, a fix reaches only
-  one; if the *tested* copy is the one that doesn't ship, improvements propagate to *nobody*.
+  one; if the _tested_ copy is the one that doesn't ship, improvements propagate to _nobody_.
   That is the real cost DRY (lens 3) is guarding — not repetition, but the loss of the very
   propagation that justifies having a shared thing. Also weigh **propagation cost**: a benefit
   consumers get by merely updating is true negative blast radius; one that demands every
@@ -360,55 +368,55 @@ copy in `src/sessions.ts` ships to no one)
 **A tool you RUN can heal what it touches — negative blast radius you GENERATE, not just
 propagate.** A library's negative blast radius is passive: fix it once, consumers get it on
 update. A build / dev-server / review tool has an active form, and it is the higher aspiration:
-every run *encounters* the rest of the stack — the bundler, the framework, the machine, other
+every run _encounters_ the rest of the stack — the bundler, the framework, the machine, other
 projects' processes — and each encounter can leave that thing better than it found it. **The goal
 is that using the tool makes the whole system less fragile.** Two moves turn an encounter into
 that:
 
 - **Surface and route; don't absorb.** When the tool hits a defect in something it doesn't own,
   the reflex is a local workaround — which buries the signal and guarantees the next consumer
-  re-hits it. Instead file it upstream and keep the workaround *until the fix ships*, then delete
+  re-hits it. Instead file it upstream and keep the workaround _until the fix ships_, then delete
   it. A worked-around dependency bug is a leak; a filed-and-fixed one is a repair that reaches
   everyone.
 - **Feed the lesson back into the shared guard.** When a build or review catches a bug, encode
-  the *class* of it where the tool will re-apply it automatically — a lens prompt, a preflight
+  the _class_ of it where the tool will re-apply it automatically — a lens prompt, a preflight
   check, a KB entry — so the next run anywhere catches it without anyone remembering to look. A
   one-off catch helps one release; a hardened guard helps every release after, in every project.
 
 — seen in: tosijs-ui 1.7 — running the doc-site build surfaced the `Bun.build` native-arena leak
 (oven-sh/bun#34053, filed, fix in flight); adopting the components surfaced the `parts`-proxy
-poisoning (tosijs#13 → fixed in 1.6.9, so the bug is now impossible for *every* tosijs component,
+poisoning (tosijs#13 → fixed in 1.6.9, so the bug is now impossible for _every_ tosijs component,
 and both our hand-rolls were deleted); and the review that caught `killStrayServer` SIGKILLing
 connected clients fed that exact port-to-pid trap into the pre-release-review tool's own
 blast-radius lens — so the next review of any project catches it by construction.
 
 **Machine scope is not automatically a smell — and this lens is not a campaign to eliminate it.**
-Some problems are *intrinsically* machine-scoped: "which version of this shared CLI does every
+Some problems are _intrinsically_ machine-scoped: "which version of this shared CLI does every
 shell on this box run?" cannot be answered by a per-project fix, and a tool that refuses to look
 outside its own directory simply leaves that problem unsolved. Acting at machine scope is then a
 **feature**, and scoping it down to look tidy is the actual bug. A build that checks the
 machine's health rather than only its own is doing more, not overreaching.
 
-So don't ask *"does this touch global state?"* — ask **"is this done right?"** Done right means:
+So don't ask _"does this touch global state?"_ — ask **"is this done right?"** Done right means:
 
 1. **Scoped to real harm.** Act only on what is actually causing the problem, identified
    positively — never "everything that matches," never "everything older than me."
-2. **Ask before you take.** If the thing you want to stop can be *asked* to stop, ask it. Prefer
-   a request over a signal, a version query over a byte-compare. Every place we *inferred*
-   (a pid from a port, a version from file size) turned out to be a bug; every place we *asked*
+2. **Ask before you take.** If the thing you want to stop can be _asked_ to stop, ask it. Prefer
+   a request over a signal, a version query over a byte-compare. Every place we _inferred_
+   (a pid from a port, a version from file size) turned out to be a bug; every place we _asked_
    was correct by construction.
 3. **Self-terminating.** Key the rule on the condition that makes something harmful, so it stops
    firing once that condition is gone. A rule keyed on "older than me" never terminates.
 4. **Never clobber a deliberate choice.** A symlink, a pinned version, a hand-edited config: a
    human put that there on purpose.
-5. **Reversible, with an opt-out** that is documented where the *affected* person will see it.
+5. **Reversible, with an opt-out** that is documented where the _affected_ person will see it.
 6. **Accountable — the one people skip.** Leave a receipt: an append-only log of every
    machine-scope action, with timestamp, version, and **the directory of the project that
    triggered it**, and announce on **stderr** (harnesses swallow stdout). This matters most when
-   your tool is a **transitive dependency**: someone runs *another* project's test script, that
+   your tool is a **transitive dependency**: someone runs _another_ project's test script, that
    spawns you, and you touch their machine — and they have never heard of you, never read your
-   README, and never ran your `--help`. There must always be an answer to *"what did this thing
-   do to my machine, and which project caused it?"* Unaccountable global action is the thing to
+   README, and never ran your `--help`. There must always be an answer to _"what did this thing
+   do to my machine, and which project caused it?"_ Unaccountable global action is the thing to
    forbid; global action is not.
 
 — seen in: haltija (1.4.0 installs a shared `hj` and stops other haltija servers, both machine-scope
@@ -421,7 +429,7 @@ pure library change this lens is cheap and quiet, and that's correct.
 Otherwise, enumerate the footprint and interrogate each item:
 
 - **Global binaries & `PATH`** (`~/.local/bin`, `/usr/local/bin`, shell rc files). One binary,
-  every project. If N versions of the tool can each install it, ask *which one wins* — "last
+  every project. If N versions of the tool can each install it, ask _which one wins_ — "last
   process to boot" is a race, not a policy. Never clobber a symlink: it is a deliberate install
   and overwriting it reverts someone's tooling under them.
 - **Home-directory & XDG state** (`~/.config/*`, `~/.cache/*`, app dotdirs, registries, lockfiles).
@@ -430,14 +438,14 @@ Otherwise, enumerate the footprint and interrogate each item:
 - **Other processes** — anything spawned, signalled, or killed. **Killing is a policy, not a
   fix: state the predicate.** "Older than me" is almost always the wrong one — it never
   terminates, and two peers on adjacent versions will kill each other forever. Key the rule on
-  *what makes the other process harmful* (a version below the release that fixed the harm), so
+  _what makes the other process harmful_ (a version below the release that fixed the harm), so
   it self-terminates once the harmful population is gone. And when it can't act, it must
   **complain rather than fail silently** — an unfixed hazard the user doesn't know about is
   worse than a loud one.
 - **Ports and sockets.** A well-known default port is shared state; squatting or reclaiming it
   affects whoever else wanted it.
-- **THE TEST SUITE'S OWN FOOTPRINT.** Ask explicitly: *does running the tests write to any of
-  the above?* A spawned process re-reads the real config path — an in-process `dir` option or
+- **THE TEST SUITE'S OWN FOOTPRINT.** Ask explicitly: _does running the tests write to any of
+  the above?_ A spawned process re-reads the real config path — an in-process `dir` option or
   DI seam does **not** contain it. This is the sharpest edge on this lens: it silently corrupts
   the developer's own environment, so it presents as "my tools got weird," never as a red test.
   Every path a test can write to must be redirectable by env var, and pointed at a temp dir.
@@ -451,10 +459,47 @@ machine has not passed review.
 
 — seen in: haltija (1.4.0 installs a shared `hj` into `~/.local/bin`, keeps a registry in
 `~/.haltija/`, binds a well-known port, and kills legacy servers; its test suite was silently
-registering spawned servers into the developer's *real* registry, where they out-ranked the
+registering spawned servers into the developer's _real_ registry, where they out-ranked the
 developer's own dev server and hijacked their CLI)
 
+### Cross-cutting checks — run alongside the nine
+
+Not lenses in their own right so much as questions each lens should ask. All four were
+derived from defects that shipped in a real repo, not from a checklist.
+— seen in: tjs-lang
+
+**"Where else?" (sibling sites).** The single highest-yield check. A fix lands in one copy
+and its structural twin keeps the bug — six instances in one day in tjs-lang, including a
+capability membrane where the object branch was fixed in the morning and the array branch
+was still executing accessors that afternoon.
+
+> For every behavioural fix in the diff, enumerate the other sites that do the same _kind_
+> of thing and say explicitly whether each was checked. "Fixed in X" is not an answer;
+> "fixed in X, and Y/Z don't have this shape because…" is.
+
+**Comment-vs-code.** Prose doesn't execute. A validator commented _"matches declarations at
+statement level (not inside strings/comments)"_ did no such thing — the claim was in the
+comment, not the code, and a keyword inside a template literal made a legal file
+unbuildable.
+
+> Find comments asserting a property — "not inside", "always", "never", "only" — and check
+> the code actually has it. A false comment is worse than none: it stops the next reader
+> from looking.
+
+**Generated-artifact freshness.** Where build outputs are _committed_, a source fix doesn't
+reach users until they're regenerated — and nothing fails meanwhile. A docs bundle taught
+nine removed language features in a live playground for days after the source was rewritten.
+
+> For every committed generated artifact, confirm it was regenerated if its sources changed
+> in this diff.
+
+**"Prove it".** For each behavioural claim in the diff, ask what test fails if it stops
+being true. If nothing does, either add one or move the claim somewhere that doesn't read
+as a guarantee. Invariants currently held by _remembering_ are the target — those are the
+ones that regress silently.
+
 ### Triage & gate
+
 - Dedupe the union of findings and rank by severity.
 - **Unresolved correctness (and security) findings block the release.** Efficiency / DRY / DX /
   coverage findings that are not regressions may be filed to `TODO.md` and scheduled — but say
@@ -479,15 +524,15 @@ GO-with-followups, not BLOCK. The test is the size and shape of the fix diff, no
 laps. Real case: a BLOCK whose remediation ran to eight commits, ~2000 insertions, five new source
 modules, ~60 new tests, and behaviour changes in three endpoints. — seen in: haltija
 
-**One review per release; re-review only the delta.** The review runs *once*, against
+**One review per release; re-review only the delta.** The review runs _once_, against
 `vLAST..HEAD`. Fixing its findings produces new diff — and re-running the whole review over that
 diff is a treadmill with no fixed point: each fix draws fresh nits, which you fix, which is fresh
 diff. Making each pass cheaper just spins the treadmill faster. So: a fix's own correctness is
-checked **inline** (you wrote it, you read it), and any *new* nit it surfaces is the **next**
+checked **inline** (you wrote it, you read it), and any _new_ nit it surfaces is the **next**
 release's input — filed to `TODO.md`, not fed back into this gate. Re-run a lens only when a
 **blocker** fix materially reshaped the subsystem that lens covers, and then only over that fix's
 diff. **`GO-with-followups` is a stopping state, not a lap counter:** taking it — file the
-non-blockers, tag — *is* the discipline. Re-reviewing instead of shipping is the anti-pattern this
+non-blockers, tag — _is_ the discipline. Re-reviewing instead of shipping is the anti-pattern this
 rule exists to kill, and it is the specific reason a slow review gets abandoned: a gate that never
 declares itself done gets skipped entirely, which is strictly worse than a gate that ships with
 followups. — seen in: tosijs-product (0.6.x)
@@ -502,7 +547,7 @@ followups. — seen in: tosijs-product (0.6.x)
   — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, react-tosijs
 - **A printed or documented remedy is a testable claim — drive it.** When code or docs tell the
   user "do X to fix this" (an escape-hatch flag, a fallback command, a "use `--window`" hint),
-  run X *in the exact shape the message gives it*, in the mode that triggers the message. The
+  run X _in the exact shape the message gives it_, in the mode that triggers the message. The
   remedy rots silently: it's the path nobody exercises because it only appears when something's
   already wrong. — seen in: haltija (the `hj --window <id>` escape hatch the docs pointed at was
   itself broken for releases; the fix landed the same release that started printing "use
@@ -570,6 +615,15 @@ followups. — seen in: tosijs-product (0.6.x)
   `git status` clean vs origin) is the definition of done; file follow-ups in `TODO.md`.
   — seen in: tosijs, tjs-lang
 
+- **Ask an idle agent "anything you'd like to double-check?"** Executing a plan and auditing
+  a plan are different frames: while executing, the question is "what's next?"; this flips it
+  to "what did the plan not cover?" — which is where misses live, because a plan can't
+  contain its own blind spots. Counterintuitively it's _most_ productive when nothing
+  obvious is left, since that's the signal the named work is done and the remaining defects
+  are the ones no task named. In one tjs-lang session it surfaced a stale generated artifact,
+  an unfixed sibling of a just-fixed security bug, and a quota bypass in code shipped hours
+  earlier — all after "ready to tag". — seen in: tjs-lang
+
 ## Project-specific practices
 
 ### tosijs-3d
@@ -577,6 +631,14 @@ followups. — seen in: tosijs-product (0.6.x)
 - `RELEASING.md` is an agent-scoped release runbook: stop dev server → clean-tree check
   (ignoring `docs/` churn) → bump → build → verify → commit → tag, and the agent STOPS —
   `npm publish` and `git push` are human-only. Worth mirroring where releases are agent-run.
+
+### tjs-lang
+
+- Run `docs/review-lenses.md` alongside the nine. Four of its five are the cross-cutting
+  checks above; the fifth is **adversarial** and is genuinely project-specific: AJS is an
+  AST interpreter rather than a sandboxed realm, so published sandbox escapes have no direct
+  analogue — there's no `Function` to reach. The value is in TRANSLATING them ("what is the
+  AJS equivalent of this CVE?"), which is what surfaces undefended classes.
 
 ### tosijs-product
 
