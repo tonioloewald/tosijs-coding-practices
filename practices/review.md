@@ -22,7 +22,7 @@
 
 Before any **minor or major** version bump, run a structured multi-lens review — not one
 blended pass. Blending dilutes every lens; a reviewer told to "check everything" checks
-nothing deeply. Run the **nine lenses below as independent passes**, each scoped to the diff
+nothing deeply. Run **lens 0 once** to establish what the project _is_, then the **nine lenses below as independent passes**, each scoped to the diff
 since the last release (`git diff vLAST..HEAD`) plus the code it touches (for a **major**,
 review whole affected subsystems, not just the diff).
 
@@ -115,6 +115,39 @@ repro is a question, not a defect. Verify per the rule above before acting on or
 **not** a certainty bar for telling another repo about a problem. For that, see
 [`cross-project.md`](cross-project.md) "File even when you might be wrong": state your
 uncertainty in the issue and file anyway.)
+
+### 0. What KIND of thing is this? — the project's standing obligations
+
+Ask first, because the answer tunes every lens that follows. Not "what changed?" (that is
+lens 9, blast radius) but **"what is this project, and what does being that kind of thing
+oblige us to?"** The answer is stable across releases; record it once per project and revisit
+only when the project's nature changes.
+
+The point is that some categories carry obligations the generic lenses never think to check:
+
+- **Dev tooling and build systems** — they _see other projects_. They read source, configs
+  and often secrets, and run with full developer privileges. A bug is therefore not confined
+  to this repo: it is a supply-chain vector, and an insecure build tool exposes every project
+  it touches. Review its handling of paths, globs, spawned processes and anything it reads
+  from a workspace it does not own. — e.g. haltija, tosijs-ui's build system
+- **A language, compiler or transpiler** — _everything written in it inherits its bugs_. A
+  codegen defect is a defect in every consumer's shipped output, arriving without them
+  changing anything. Its **semantics are a contract**: quietly changing what an operator
+  means rewrites programs that already work. And it is usually self-applying, so a bug can
+  hide behind itself. — e.g. tjs-lang
+- **A VM, sandbox or plugin host** — adversarial input is the _normal_ case, not an edge
+  case, so "would a hostile caller…" belongs in every pass, not just the security one.
+- **A published library** — API surface is a promise; a breaking change multiplies by the
+  number of consumers, and the ones who notice last are the ones who trusted you most.
+- **A hosted app or service** — data at rest, authentication, and anything that outlives a
+  single run.
+
+A project can be several at once, and the obligations compose rather than override. tjs-lang
+is a language **and** a sandbox VM **and** a published library — three sets of standing
+obligations, which is why its reviews need more than the generic nine.
+
+> Write the answer down in the project's own docs. A standing obligation that lives only in
+> a reviewer's head is rediscovered, at best, once per reviewer.
 
 ### 1. Correctness
 
@@ -634,6 +667,12 @@ followups. — seen in: tosijs-product (0.6.x)
 
 ### tjs-lang
 
+- **Lens 0 answer:** tjs-lang is a **language + a sandbox VM + a published library**, so all
+  three sets of standing obligations apply at once. Concretely: a codegen bug ships into
+  every consumer's output without them changing anything; the _semantics_ of operators are a
+  contract, so escapes must exist before a rule tightens (`unsafe`, the `Legacy*` bridges);
+  adversarial input is the normal case for the VM; and it compiles itself, so a defect can
+  hide behind itself — which is why the dogfood corpus is pinned at 100%.
 - Run `docs/review-lenses.md` alongside the nine. Four of its five are the cross-cutting
   checks above; the fifth is **adversarial** and is genuinely project-specific: AJS is an
   AST interpreter rather than a sandboxed realm, so published sandbox escapes have no direct
