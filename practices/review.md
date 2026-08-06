@@ -90,6 +90,11 @@ blocker mislabeled "minor" then never gets verified and sits in the follow-up pi
 _and_ buried. So treat **"I'm not sure this minor isn't actually a blocker" as itself a trigger to
 verify** — uncertainty about severity is a decision-changing question, which is the header's own
 test. Verifying to _find out_ how bad something is costs the same as verifying to confirm it.
+A second trigger of the same kind: **a lead that, if true, falsifies a guarantee stated in this
+release's own docs/CHANGELOG is release-scoped regardless of its severity tier** — verify it or
+reword the guarantee before tagging. Proof case: tosijs-schema v1.5.0's pattern-throw lead
+shipped parked "(unverified major)" while falsifying the release's documented `true | Error`
+contract; triage promoted it to a confirmed blocker. — seen in: tosijs-schema (v1.5.0 review)
 
 **The "clearly marked" on shipped-unverified findings is load-bearing, not a nicety — it is what
 makes the economics work.** At an ~11% refute rate, roughly one in nine shipped nits is wrong; if
