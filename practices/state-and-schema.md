@@ -141,10 +141,22 @@ These recur in every app in the ecosystem. Internalize them.
   one edit propagates everywhere instead of drifting across surfaces. Pair with a
   fingerprint/CI-drift check so generated artifacts stay in sync (see below). — seen in: haltija,
   loewald-dot-com, lukko
-- **Validation gotchas:** `maxProperties` is emitted but ignored at validation time;
-  collections >97 items are only *stochastically sampled* unless you pass `{ fullScan: true }`.
-  In `schema.ts`, `validate` is attached to the builder via closure after `create` — runtime is
-  fine but reordering the functions can reintroduce a hoisting bug. — seen in: tosijs-schema
+- **Validation gotchas:** `maxProperties` is emitted but ignored outside strict mode;
+  collections >97 items are only *stochastically sampled* unless you pass `{ strict: true }`
+  (`fullScan` is a deprecated alias). In `schema.ts`, `validate` is attached to the builder via
+  closure after `create` — runtime is fine but reordering the functions can reintroduce a
+  hoisting bug. — seen in: tosijs-schema
+- **ValidateOptions must be threaded through every recursive `validate()` re-entry.** Any code
+  path that re-enters the public `validate` (union branches, adapters) silently resets options
+  to defaults unless it forwards them — `strict` reverted to sampling inside `anyOf` branches
+  until tosijs-schema 1.5.0. Pin option propagation with a test that only fails when options
+  are dropped. — seen in: tosijs-schema (v1.5.0 review)
+- **Agent write-gates: use `agentContract(schemas)` + the examples-as-tests conventions.**
+  tosijs-schema ships the blessed adapter for capability-gated write paths (whole-root
+  proposals, refusal reasons, strict by default — a gate that samples isn't a gate, and it
+  fails closed on keywords/formats `validate` doesn't enforce). Schemas carry `examples`
+  (must pass) and `$counterexamples` (must fail); `checkExamples()` lints both at definition
+  time. — seen in: tosijs-schema 1.5.0, tosijs (agent surface)
 - Pair schema validation with TJS safety boundaries (`./tjs-lang.md`) at public API edges.
 
 ## Sync

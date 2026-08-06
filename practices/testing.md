@@ -296,6 +296,13 @@ tjs-lang (test-lane + `audit-exemptions.ts`)
 - Keep an explicit `src/coverage.test.ts` targeting hand-audited edge cases (`s.null` vs
   `s.undefined`, `x-tjs-undefined`) alongside a written `COVERAGE.md`, rather than trusting a
   line-coverage number.
+- **Every documented/marketed guarantee is a test obligation — pin the REFUSED input, not just
+  the accepted one.** `additionalProperties: false` was documented since 1.0 and enforced only
+  in 1.5.0; the suite even had a test codifying the bug ("Actually passes - validator doesn't
+  check this"). Hand-maintained enforcement mirrors (an UNENFORCED_KEYWORDS-style list) need a
+  self-verifying drift test asserting each listed keyword is genuinely unenforced and no
+  enforced keyword is listed. — seen in: tosijs-schema (v1.5.0 review, four fail-open blockers
+  of this one class).
 
 ### loewald-dot-com
 - Prefer emulator-free tests that feed `(data, existing, userRoles)` and assert the outcome —

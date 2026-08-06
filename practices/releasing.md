@@ -210,6 +210,10 @@ over the generated paths. — seen in: haltija, tosijs-ui, tosijs, tosijs-3d, to
 - If a project also generates docs from executable code (`bun examples.ts > examples.md`),
   that regeneration belongs in the same publish gate so docs can't drift from behavior.
   — seen in: tosijs-schema, haltija
+- A generated file the gate doesn't cover WILL ship stale: tosijs-schema's `dist/context.md`
+  (bundled agent-facing docs) sat outside `pack` and shipped stale in the published 1.4.0
+  tarball; the v1.5.0 review caught it. Prefer the list-free gate: full build, then
+  `git status --porcelain` must be empty before tagging. — seen in: tosijs-schema (v1.5.0 review)
 - For rebases/merges over committed generated files, mark them `merge=ours` in `.gitattributes`
   and run `git config merge.ours.driver true` once per clone, then rebuild — resolving those
   conflicts by hand is pointless since the next build overwrites them. — seen in: tosijs-ui

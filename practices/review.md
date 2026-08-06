@@ -232,6 +232,9 @@ returned a confident wrong answer until the result was made to carry a warning �
 - `CHANGELOG.md` has an entry for this version; README / `CLAUDE.md` / `AGENTS.md` reflect the
   change; if a **durable cross-project practice** changed, update the shared KB (and grep the
   cross-cutting docs for parallel mentions — see `../CONTRIBUTING.md`).
+- **Security-relevant fixes name the affected shipped versions** (releasing.md step 2) — "was
+  fail-open" without "in ≤ X.Y.Z" leaves consumers unable to tell if they're exposed. — seen
+  in: tosijs-schema (v1.5.0 review passed this checklist while missing exactly that).
 - Deprecations warn once and name their replacement.
 - **Discoverability, not just accuracy.** For every new public surface — endpoint, CLI command, env
   var, config file, flag, warning string — name the consumer-facing doc it appears in, and check
