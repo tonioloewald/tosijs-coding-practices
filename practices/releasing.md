@@ -132,8 +132,24 @@ Removing or changing public API imposes a cost on every consumer. Before you shi
    an API removed because it was in the way of a refactor — is the kind consumers resent.
 3. **CHANGELOG entry naming exactly what broke.** A release that removes public API with **no
    CHANGELOG entry is a trap** — and it's an easy one to ship, because the code compiles fine.
-4. **Migration notes.** Ecosystem convention is a **`Migration.md`** shipped in `docPaths`.
-   Tell the consumer precisely what to change, before → after.
+4. **Migration notes, reachable from the artifact the consumer installed.** Tell them
+   precisely what to change, before → after, in a table.
+
+   The **destination is project-shaped, not universal**: a `Migration.md` in `docPaths` is
+   the convention for the tosijs/tosijs-ui _sites_, because that is where their consumers
+   read. A library whose consumers live in `node_modules` needs it in the published tarball;
+   a CLI needs it where `--help` can point. What generalises is the test:
+
+   > Can a consumer who has **only what they installed** — no repo checkout, no site visit —
+   > find the migration table? If not, it doesn't exist for them.
+
+   tjs-lang failed exactly this and it was invisible for releases: it shipped `llms.txt`, an
+   agent-facing index, with **29 of its 43 links 404 in the tarball** — including the doc it
+   names as the thing to read first, and the CHANGELOG. The guard test resolved links against
+   the repo root, so it certified an artifact nobody installs. **Check relative links against
+   the packed artifact** (`npm pack --dry-run --json` gives you npm's own file list); link
+   anything that deliberately doesn't ship — roadmaps, backlogs, agent checklists — absolutely
+   on the repo host instead.
 
 **Deprecation aliases only protect the JS import surface.** Three break classes slip past a
 warn-once alias entirely, because nothing resolves them by name at runtime — plan migration

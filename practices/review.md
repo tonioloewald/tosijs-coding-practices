@@ -289,10 +289,20 @@ returned a confident wrong answer until the result was made to carry a warning �
   couldn't** — an _incidental_ break, made because the old API was in the way of a refactor, is
   the kind consumers resent; (2) the **version** reflects it; (3) there is a **CHANGELOG entry
   naming exactly what broke** — _a release that removes public API with no CHANGELOG entry is a
-  trap_; (4) there are **migration notes** (ecosystem convention: a `Migration.md` shipped in
-  `docPaths`) telling a consumer precisely what to change, before → after. Prefer the
-  deprecation path; if you break, say why. — seen in: tosijs (`Migration.md`), tosijs-ui (1.7
-  dropped `<tosi-code>`'s pre-1.7 ACE props)
+  trap_; (4) there are **migration notes** telling a consumer precisely what to change,
+  before → after, **and reachable from the artifact they installed** — a `Migration.md` in
+  `docPaths` for the sites, the tarball for a library, wherever `--help` points for a CLI.
+  Test it as a consumer with only what they installed: no repo checkout, no site visit.
+  Prefer the deprecation path; if you break, say why. See
+  [releasing.md](releasing.md#breaking-changes-justify-document-migrate) for the full form, including the check that
+  relative links resolve **in the packed artifact** rather than in the repo.
+  — seen in: tosijs (`Migration.md`), tosijs-ui (1.7 dropped `<tosi-code>`'s pre-1.7 ACE
+  props), tjs-lang (shipped an index with 29 of 43 links 404 inside the tarball)
+- **A deprecation alias is the wrong answer when the old name was a knob whose setting became
+  unconditional.** Keeping it working then means it silently does nothing — worse than
+  removing it, because it carries a compatibility promise it cannot keep. Make it an error
+  that names the replacement, and add a guard test that nothing keeps recommending it. See
+  [code-quality.md](code-quality.md#tombstones). — seen in: tjs-lang (nine mode directives)
 - The "point an agent at it and it works" test: `CLAUDE.md`/`AGENTS.md` current, gotchas
   written down, and `bun install` → `bun start` / `bun test` / `bun run build` succeed from a
   **fresh clone** (TLS certs, single lockfile).
@@ -524,7 +534,33 @@ reach users until they're regenerated — and nothing fails meanwhile. A docs bu
 nine removed language features in a live playground for days after the source was rewritten.
 
 > For every committed generated artifact, confirm it was regenerated if its sources changed
-> in this diff.
+> in this diff — **and that the sources it bundles were themselves reviewed.** Freshness is
+> not correctness: a bundle can be perfectly up to date with a stale input.
+
+**That second clause was added because the first one passed and the bug shipped anyway.**
+In the tjs-lang 0.13.0 review, `demo/docs.json` _was_ regenerated and _was_ current with its
+sources — and it was still serving a section headed "Death to Semicolons (`TjsStandard`)" in
+the live playground, for a directive that had become a hard error. The bundler had faithfully
+picked up `PLAN.md`, which nobody had reviewed because it wasn't in the diff.
+
+The general shape: **a freshness check verifies a relationship between two artifacts, and
+both can be wrong together.** When the generated thing aggregates content (a docs bundle, a
+site index, an llms.txt), enumerate what it aggregates and spot-check the _content_, not just
+the timestamp.
+
+Three more from the same review, all in committed artifacts, all silent because nothing
+type-checks data and nothing runs a grammar:
+
+- Generated TextMate grammars that **could never match anything** — `\\\\b` in a template
+  literal produces a literal backslash. Every rule in both grammars was inert since the day
+  they were written. The generator's tests checked the generator, not the grammar. **Drive
+  the artifact against the thing it describes**: `new RegExp(rule.match).test(realSource)`.
+- A grammar regenerated on every build and **referenced by nothing** — no language
+  contribution, no file association. Freshness is meaningless for an artifact nothing loads.
+  Ask what consumes it.
+- A keyword model derived by subtracting one hand-maintained list from another, encoding the
+  **wrong language's** restrictions: 41 of 42 tokens it painted red were legal. Two lists
+  that must agree, and no test that they do, is the same defect as two scanners.
 
 **"Prove it".** For each behavioural claim in the diff, ask what test fails if it stops
 being true. If nothing does, either add one or move the claim somewhere that doesn't read

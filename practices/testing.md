@@ -195,8 +195,10 @@ line via `//# sourceURL`. Assertion discipline for these live examples:
 
 ## TJS inline tests
 
-TJS supports inline tests and `TjsEquals`. Where a module is native `.tjs`, prefer its inline
-test facility for unit-level checks; keep integration/DOM tests as `*.test.ts`. Caveat: the
+TJS supports inline `test '…' { }` blocks. Where a module is native `.tjs`, prefer its inline
+test facility for unit-level checks; keep integration/DOM tests as `*.test.ts`. (The
+`TjsEquals` directive this used to name is abolished as of 0.13.0 and now throws — a `.tjs`
+file gets footgun-free `==` unconditionally; see `practices/tjs-lang.md`.) Caveat: the
 `tjs run` CLI does **not** inject the `expect` harness — `test { … }` blocks only pass in the
 playground UI, not via CLI. — seen in: tjs-lang
 

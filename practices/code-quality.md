@@ -146,6 +146,70 @@ bare `.value`, and either over the deprecated `xin*` spellings. Note `tosiValue(
 **not** deprecated — see [state-and-schema.md](state-and-schema.md). — seen in: tosijs, haltija,
 loewald-dot-com
 
+### When a deprecation alias is the WRONG answer
+
+The warn-once-and-keep-working pattern assumes the old name still _means_ something. It
+doesn't when the old name was a **knob whose setting became unconditional** — then keeping
+it working is worse than removing it, because a knob that no longer controls anything is a
+lie with a compatibility guarantee attached.
+
+tjs-lang 0.13.0 abolished nine mode directives (`TjsEquals`, `TjsStandard`, …). Aliasing them
+to no-ops would have meant `TjsEquals` silently doing nothing in a file that already had
+honest `==`, and — far worse — `TjsCompat`-style "off" spellings silently doing nothing in a
+file that expected JS semantics. So they became **errors that name the replacement**.
+
+The test: **does the old spelling still describe a real choice?** If yes, alias it. If it
+named a choice that no longer exists, make it an error and say what replaced it.
+— seen in: tjs-lang (nine mode directives abolished in 0.13.0)
+
+## Errors as curriculum
+
+Every diagnostic is a teaching opportunity, and the measured difference between a good one
+and a bad one is much larger than intuition suggests. An A/B over diagnostic text in tjs-lang
+(`experiments/agent-legibility/`) measured the **repair rate each message actually produces**:
+
+| Message                            | Repair rate |
+| ---------------------------------- | ----------- |
+| A worked example, shown as code     | **80%**     |
+| The same remedy as prose            | 50%         |
+| An accurate bare diagnostic         | **0%**      |
+| Saying nothing at all               | 0%          |
+
+`Unsupported statement type: ForStatement` scored the same as silence. On the `for`-loop case
+specifically, prose advice scored 0/5 while the identical remedy shown as code scored 5/5.
+
+> **Show the fix as code.** A diagnostic that names a problem without showing a repair is
+> worth approximately nothing over saying nothing.
+
+Two corollaries that cost real time to learn:
+
+- **Never recommend a remedy you haven't run.** tjs-lang's `new Date()` error told people to
+  use `Timestamp.now()` while its own `Timestamp` type _rejected_ that function's return
+  value. A remedy that doesn't work is worse than no remedy — it spends the reader's trust
+  and their afternoon.
+- **Never teach a restriction that doesn't exist.** A draft diagnostic claimed `for...of` was
+  unsupported; it isn't. A guard test now checks that every remedy corresponds to a construct
+  the compiler actually rejects. A false limit is a permanent tax on everyone who believes it.
+
+— seen in: tjs-lang (`experiments/agent-legibility/`, `src/lang/diagnostic-remedy.test.ts`)
+
+### Tombstones
+
+When you remove something that used to be recommended, removing it from the code is half the
+job. **The other half is that nothing keeps recommending it** — and the docs, examples,
+editor completions and generated bundles all count.
+
+The failure is embarrassing and cheap to prevent: after tjs-lang abolished nine directives,
+its own `PLAN.md` still carried a section headed "Death to Semicolons (`TjsStandard`)", served
+from the live playground, teaching a construct that had become a hard error.
+
+> Add a **guard test** that fails if the removed name appears outside documents whose job is
+> to record history (changelog, archive, decision ledger) — and have it name the replacement
+> for each, so the failure is also the fix.
+
+The allowlist is the design: it forces the question "is this document teaching or recording?"
+every time, which is exactly the distinction that goes wrong. — seen in: tjs-lang
+
 ## Project-specific practices
 
 ### kith-email

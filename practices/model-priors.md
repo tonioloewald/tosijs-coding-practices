@@ -202,6 +202,88 @@ longer vouch for.
 
 ---
 
+## 10. Versions are strings, so compare them as strings
+
+**The prior.** A version is text. `'1.2.3' < '1.2.4'`, `'beta.1' < 'beta.2'` — a string
+compare gets it right, and reaching for a parser is over-engineering.
+
+**Why the corpus holds it.** It works on almost every example anyone tries. Simple releases
+are lexically ordered, so the shortcut is reinforced constantly and corrected approximately
+never.
+
+**Why it's wrong here.** It gets the **common** shape exactly backwards the moment a
+prerelease hits double digits: `'beta.2' > 'beta.10'`, because `'2' > '1'`. The tenth beta
+looks *older* than the second. In tjs-lang this sat behind `installRuntime`, which replaces
+the runtime wholesale on an "upgrade" — so an older beta upgraded over a newer one and
+**discarded the flight recorder and every applied `configure()`**. Silent, and it destroyed
+exactly the evidence you would use to debug it.
+
+Semver §11 is short and specific: split identifiers on `.`, compare numeric ones numerically,
+rank numeric below alphanumeric, rank a shorter prefix lower. **Pin the implementation against
+the specification's own worked ordering example**, not against your reading of it — the whole
+failure mode is that your reading is confident and wrong.
+
+> The tell: any comparison that decides *which of two versions wins* and does not tokenise.
+> Equality is easier to get right than ordering, so a codebase can have a fixed equality check
+> sitting next to a broken ordering one — tjs-lang did.
+
+---
+
+## 11. A test that fails intermittently is flaky — rerun it
+
+**The prior.** Intermittency in a test suite means test flakiness: a timing assumption, a
+shared fixture, a port collision. Rerun; if it's green, move on.
+
+**Why the corpus holds it.** Overwhelmingly true of *other people's* CI. Most intermittency in
+the wild is genuinely the harness, and re-running is the correct, cheap first move.
+
+**Why it's wrong here.** It smuggles in a conclusion — "the harness is at fault" — from a
+single observation, and the reflex is strongest exactly when the alternative is worst: an
+intermittent failure in **your own** suite is as likely to be a real race, a real resource
+leak, or a real dependency on external state as it is to be flakiness.
+
+The discipline that actually works:
+
+1. **Do not claim a fix you could not reproduce.** If it doesn't recur, say "did not reproduce
+   across N runs" and give N. A silent "fixed it" on an unreproduced failure is a false clean
+   bill of health.
+2. **Fix the thing that would have made it silent**, which you usually _can_ identify. In
+   tjs-lang, a live-model test lane degraded to a mock on any transient server hiccup — correct
+   behaviour, and it also meant the entire lane could rot to all-mock and stay green forever
+   (observed: five fallback warnings, every test passing, nothing integrated). The fix that
+   shipped was not a fix for the flake; it was a counter and a floor assertion, so the
+   difference between "the examples run" and "the examples run against the thing they claim
+   to" is now visible.
+3. **Treat "flaky" as a hypothesis with a cost.** Labelling something flaky retires it from
+   investigation. That is a real decision, so make it explicitly rather than by reflex.
+
+> Corollary for graded lanes generally: **any degradation path that keeps a suite green is a
+> place the suite can quietly become vacuous.** Count how often you took it, and assert on the
+> count.
+
+---
+
+## A prior that was vindicated: "the pre-tag gate is over-cautious"
+
+Worth recording the other direction too, since this file is about calibration and not only
+about correction.
+
+The tempting position is that requiring a **full** suite — LLM lanes, benchmarks, nothing
+skipped — before every tag is ceremony, and that the fast lane plus judgement is enough. It is
+not, and the 0.13.0 review is the evidence: the two categories `test:fast` skips are precisely
+the two most likely to rot unseen, because nothing else ever exercises them. A vector-search
+benchmark had drifted to a 27× flake unnoticed (it was measuring a single sub-millisecond
+call), and several literal-scanner defects were caught **only** by a 130-second corpus behind
+`SKIP_BENCHMARKS` — and even there incidentally, because three shipped files happened to
+contain the idiom.
+
+The lesson generalises past this repo: **a lane not in CI rots silently**, and convention is
+not enforcement. tjs-lang moved the gate into `.githooks/pre-push` (it fires on tag pushes,
+since git has no `git tag` hook), which is the difference between a documented rule and a real
+one.
+
+---
+
 ## Why this doc exists
 
 Two observations drove it. First, **React anti-patterns are real in the corpus** — not as

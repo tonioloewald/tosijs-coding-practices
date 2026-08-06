@@ -27,10 +27,31 @@ A type-safe JavaScript dialect: TypeScript-like source with **runtime validation
   most common LLM mistake in the language. Full reference: `CLAUDE-TJS-SYNTAX.md`.
   — seen in: tjs-lang
 - **Respect the `TJS ⊇ JS ⊇ AJS` invariant.** A richer layer may do more but must never
-  make subset-legal code illegal; subset violations are bugs (`PRINCIPLES.md`). Native
-  `.tjs` has all modes ON; `fromTS`/AJS/VM code gets modes OFF. Set the dialect explicitly
-  via `tjs(src, { dialect: 'js' | 'tjs' })` or the `dialectForFilename` helpers
-  (`.js`→js, `.tjs`→tjs, `.ts`→fromTS). — seen in: tjs-lang
+  make subset-legal code illegal; subset violations are bugs (`PRINCIPLES.md`). Set the
+  dialect explicitly via `tjs(src, { dialect: 'js' | 'tjs' })` or the `dialectForFilename`
+  helpers (`.js`→js, `.tjs`→tjs, `.ts`→fromTS). — seen in: tjs-lang
+- **The file extension is the gate; opt-outs are per-construct.** As of tjs-lang **0.13.0**
+  all nine mode directives are **abolished and now throw** — `TjsEquals`, `TjsClass`,
+  `TjsDate`, `TjsNoeval`, `TjsNoVar`, `TjsStandard`, `TjsDictDefaults`, `TjsSafeEval`,
+  `TjsSafeAssign`. A `.tjs` file gets every rule unconditionally, the way ESM made
+  `"use strict"` implicit. `TjsCompat` and `TjsStrict` survive but set **dialect** (which
+  language is this?), not rules.
+
+  Migration is **per-construct, not per-file** — and that is strictly better, because a
+  modes-off file also silenced the _next_, accidental use:
+
+  | You want back                         | Write                                          |
+  | ------------------------------------- | ---------------------------------------------- |
+  | `new Date()` / `var` / `eval()`       | `unsafe new Date(x)`, `unsafe var x = 1`       |
+  | …in TypeScript source (`tsc` parses it) | `/* @tjs-unsafe */`                          |
+  | JavaScript's coercing `==` / `!=`     | `DangerousLegacyEquals` / `DangerousLegacyNot`  |
+  | JavaScript's `===` / `!==`            | `LegacyExactly` / `LegacyNotExactly`            |
+  | JS atomic parameter default           | `f(args = LegacyDefault({ x: 0 }))`             |
+  | JS semantics for a whole file         | `dialect: 'js'` or `TjsCompat`                  |
+
+  The coercing pair is named "Dangerous" because `==` invokes `valueOf()`/`toString()` on
+  any object and can therefore throw or run arbitrary code; the strict pair is not, because
+  `===` cannot. — seen in: tjs-lang
 - **Native `==` is footgun-free `===`**: it unwraps boxed primitives and treats
   `null == undefined`, but is NOT coercive or structural. — seen in: tjs-lang
 - **AJS expression semantics differ from JS.** `null.foo` is safe (returns `undefined`,
@@ -130,8 +151,10 @@ The VM is **capability-based (zero IO by default) and fuel-metered** — every a
 
 ## Inline tests
 
-- TJS modules can carry inline tests and use `TjsEquals`. Use them for unit-level checks close
-  to the code; keep DOM/integration tests as separate `*.test.ts`.
+- TJS modules can carry inline `test '…' { }` blocks. Use them for unit-level checks close
+  to the code; keep DOM/integration tests as separate `*.test.ts`. (Native `==` is already
+  footgun-free in a `.tjs` file — the `TjsEquals` directive that used to enable it is
+  abolished and now throws. See "Syntax traps" above.)
 - Framework is `bun:test` (describe/it/expect). Gate slow/LLM-dependent tests behind env
   flags (e.g. `SKIP_LLM_TESTS=1 SKIP_BENCHMARKS=1` for the fast loop) and keep
   security-critical VM coverage high (target ~98% on the sandbox executor). — seen in: tjs-lang
