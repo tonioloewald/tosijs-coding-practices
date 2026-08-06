@@ -102,8 +102,12 @@ path and ask "where else does this exact mechanism fail open?". Successive revie
 finding one more member of the same class is the signature of instance-fixing: tosijs-schema's
 v1.5.0 review took five waves (additionalProperties → prototype keys → boolean schemas/typos →
 typeless nodes/value shapes) because each wave fixed the found instance instead of sweeping the
-class. The sweep costs one sitting; the waves cost five reviews. — seen in: tosijs-schema
-(v1.5.0 review)
+class. The sweep costs one sitting; the waves cost five reviews. The class includes consciously
+"documented" divergences: a spec behavior a gate's validator diverges from is fail-open no
+matter how deliberately the divergence was noted (tosijs-schema's enum-vs-null nuance was
+observed in wave 5, waved off as documented `.optional` semantics, and confirmed a gate
+bypass in wave 7). At a gate, enforce or refuse at construction — never merely document.
+— seen in: tosijs-schema (v1.5.0 review)
 
 **The "clearly marked" on shipped-unverified findings is load-bearing, not a nicety — it is what
 makes the economics work.** At an ~11% refute rate, roughly one in nine shipped nits is wrong; if
