@@ -100,9 +100,11 @@ contract; triage promoted it to a confirmed blocker. — seen in: tosijs-schema 
 remediating** — walk every keyword, default, value shape, and branch of the same enforcement
 path and ask "where else does this exact mechanism fail open?". Successive review waves each
 finding one more member of the same class is the signature of instance-fixing: tosijs-schema's
-v1.5.0 review took five waves (additionalProperties → prototype keys → boolean schemas/typos →
-typeless nodes/value shapes) because each wave fixed the found instance instead of sweeping the
-class. The sweep costs one sitting; the waves cost five reviews. The class includes consciously
+v1.5.0 review took seven remediation waves (additionalProperties → prototype keys in data →
+boolean schemas/typos → typeless nodes/value shapes → anyOf/const sibling deadness + filter
+prototype pollution → enum-vs-null → prototype-named ROOT keys in the gate's own map) because
+each wave fixed found instances instead of sweeping the class. The sweep costs one sitting; the
+waves cost seven reviews. The class includes consciously
 "documented" divergences: a spec behavior a gate's validator diverges from is fail-open no
 matter how deliberately the divergence was noted (tosijs-schema's enum-vs-null nuance was
 observed in wave 5, waved off as documented `.optional` semantics, and confirmed a gate
