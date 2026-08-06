@@ -162,7 +162,7 @@ A missing `llms.txt` makes every downstream agent re-derive the project from sou
 missing changelog breaks version-naming in issue closes. Neither is optional because a repo
 is private — private repos have agent consumers too. — raised by the repo owner 2026-07-21;
 at that point 8 of 14 linked projects shipped both, and the sets were identical — the gap
-list (tosijs-schema, editor2, lukko, loewald-dot-com, kith-email, static-assets, ariosto)
+list (tosijs-schema — fixed at 1.5.0, editor2, lukko, loewald-dot-com, kith-email, static-assets, ariosto)
 is tracked by issues filed on each.
 
 ## Generated files are committed — build before you commit
