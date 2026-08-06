@@ -299,10 +299,20 @@ tjs-lang (test-lane + `audit-exemptions.ts`)
 - **Every documented/marketed guarantee is a test obligation — pin the REFUSED input, not just
   the accepted one.** `additionalProperties: false` was documented since 1.0 and enforced only
   in 1.5.0; the suite even had a test codifying the bug ("Actually passes - validator doesn't
-  check this"). Hand-maintained enforcement mirrors (an UNENFORCED_KEYWORDS-style list) need a
-  self-verifying drift test asserting each listed keyword is genuinely unenforced and no
-  enforced keyword is listed. — seen in: tosijs-schema (v1.5.0 review, four fail-open blockers
-  of this one class).
+  check this"). — seen in: tosijs-schema (v1.5.0 review, repeated fail-open blockers of this
+  one class).
+- **The fix for an enforcement mirror is an ALLOWLIST exported from beside the enforcement
+  walk, gated at the boundary's construction — not a denylist plus a drift test.** A denylist
+  of "known unenforced" keywords fails open by construction on typos (`minumum`), unknown spec
+  keywords, and everything added later; tosijs-schema's v1.5.0 wave-4 deleted its denylist for
+  exactly this reason. Pair the allowlist with a table-driven test proving every member
+  genuinely enforced with a passing AND failing case (src/schema.test.ts's ENFORCED_KEYWORDS
+  table is the copyable template). Prototype-named keys (`constructor`, `toString`,
+  `__proto__`) belong in every gate's refused-input tests — key membership must use
+  `Object.hasOwn`, since `in` walks the prototype chain. Boolean schemas are legal JSON Schema
+  and ignoring them fails open on `properties: {k: false}`. And a documented `true | Error`
+  surface means internal throws (e.g. `new RegExp(userPattern)`) are contract bugs — fail
+  closed. — seen in: tosijs-schema v1.5.0 waves 3-5.
 
 ### loewald-dot-com
 - Prefer emulator-free tests that feed `(data, existing, userRoles)` and assert the outcome —

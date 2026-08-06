@@ -96,6 +96,15 @@ reword the guarantee before tagging. Proof case: tosijs-schema v1.5.0's pattern-
 shipped parked "(unverified major)" while falsifying the release's documented `true | Error`
 contract; triage promoted it to a confirmed blocker. — seen in: tosijs-schema (v1.5.0 review)
 
+**When a gate/validator/boundary yields a fail-open finding, enumerate the whole class before
+remediating** — walk every keyword, default, value shape, and branch of the same enforcement
+path and ask "where else does this exact mechanism fail open?". Successive review waves each
+finding one more member of the same class is the signature of instance-fixing: tosijs-schema's
+v1.5.0 review took five waves (additionalProperties → prototype keys → boolean schemas/typos →
+typeless nodes/value shapes) because each wave fixed the found instance instead of sweeping the
+class. The sweep costs one sitting; the waves cost five reviews. — seen in: tosijs-schema
+(v1.5.0 review)
+
 **The "clearly marked" on shipped-unverified findings is load-bearing, not a nicety — it is what
 makes the economics work.** At an ~11% refute rate, roughly one in nine shipped nits is wrong; if
 they don't read as _conspicuously unvetted_, the reader stops trusting the report and re-verifies
@@ -383,7 +392,12 @@ tested against reality.
   the gate work? Adjust the lenses and criteria — including this list.
 - Are this project's own `CLAUDE.md` / `AGENTS.md` still accurate after the change?
 - **Done when:** the shared practices are updated, or explicitly confirmed still correct, and
-  any process gap is filed.
+  any process gap is filed. The write-back must postdate the LAST blocker-remediation wave
+  (each wave can supersede earlier lessons — tosijs-schema v1.5.0's wave-2 denylist lesson was
+  itself the wave-4 defect). And check push state: if the practices checkout is ahead of
+  origin (pushes being human-gated), name the pending push on the release checklist and report
+  it as part of this lens — the hosted KB is what every AGENTS.md cites as authority. — seen
+  in: tosijs-schema (v1.5.0 review, KB 4 commits ahead at wave 5).
 
 ### 9. Blast radius — what does this change PROPAGATE outside the repo, cost _or_ benefit?
 
