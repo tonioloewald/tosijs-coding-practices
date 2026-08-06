@@ -46,6 +46,14 @@
   markdown entirely would hide that class of defect instead of fixing it. (Note the value
   is `"off"`; `"ignore"` is not valid and Prettier will error out.) — seen in: tjs-lang
 
+- **Never silence format/lint in a verification pipeline, and always chain with `&&`.** A
+  `bun format 2>/dev/null` (or an unchained `format; test`) lets a lint failure ride to green:
+  the failure prints nothing, the pipeline continues, and the broken state ships. Seen twice in
+  one tosijs-3d session — one silenced failure reached a push (commit 81328438), and a later
+  `bun format` non-zero exit surfaced only because it was chained. Related trap: when a dev
+  server's start script runs `format && serve`, "the server won't start" can MEAN "lint failed"
+  — check the format output before debugging the server. — seen in: tosijs-3d
+
 ## TypeScript conventions
 
 - **Strict mode, full type coverage.** The working strict baseline is Bun bundler-mode:

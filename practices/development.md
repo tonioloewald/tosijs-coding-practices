@@ -70,6 +70,13 @@ How to work in a project day-to-day.
 
 ## Spawning background processes: capture the PID, tear them down
 
+- **Never `pkill -f <pattern>` (or any broad-pattern kill) on a shared dev machine.** Multiple
+  agent sessions run in sibling repos on the same box, and a pattern like `pkill -f haltija`
+  matches *their* processes too — including scratchpad harnesses you can't see. Kill by PID from
+  `pgrep -fl`, having read what you're about to kill. (Promoted from tosijs-3d's CLAUDE.md — the
+  hazard is identical from any repo, and an agent in a sibling checkout won't have read that
+  file.) — seen in: tosijs-3d
+
 - **A backgrounded child (`&`) does not die with the shell that spawned it.** When the parent
   shell exits or is killed — a tool-call timeout, an interrupted task — the child is reparented
   to PID 1 and keeps running: a CPU-pegging or memory-holding orphan nobody is watching. macOS

@@ -135,6 +135,16 @@ There is **no clean workaround**, and don't go hunting for one: the slot is a re
   setting it fires `change` and calls `render()`.
 - **Boolean attributes default to `false`** (HTML rule). A boolean `initAttribute` defaulting to
   `true` is an error in current tosijs.
+- **A wrong-typed write to an `initAttributes` prop is silently DISCARDED — grep every call
+  site when you retype an attribute.** tosijs drops the write and the default quietly wins, and
+  the standard remedy for the true-default-boolean rule above (convert to `'on' | 'off'`) is
+  exactly what creates the trap: every leftover `foo: false` call site still compiles, still
+  runs, and silently means `'on'`. In tosijs-3d, five demos believed pointer-event forwarding
+  was off while it ran — first link in a multi-day debugging chain (a forwarded event carried
+  the physical pointerId, a `setPointerCapture` on it hijacked the real mouse, and Babylon
+  stopped receiving pointerups). Filed as
+  [tosijs#24](https://github.com/tonioloewald/tosijs/issues/24) (should throw or warn).
+  — seen in: tosijs-3d (commits 1fa90d96 / 5ad0369c)
 - **Initialize every property to a non-`undefined` value** (including `null`). Properties left
   `undefined` are not passed through by `elementCreator()`, so the value silently never reaches
   the element. — seen in: loewald-dot-com
