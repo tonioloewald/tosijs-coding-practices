@@ -113,14 +113,25 @@ client, or a reviewer can see current work without your dev server — or your l
 being up. This is the cross-project convention; the implementation reference is
 `tosijs-ui`'s `REMOTE-ACCESS-PLAN.md`, `deploy/Caddyfile`, and `bin/deploy-preview.ts`.
 
-**How a project joins.** Set one thing in your site config and deploy:
+**How a project joins.** Commit the preview block WITHOUT the host, put the host
+in your environment, and deploy:
 
 ```ts
 preview: {
-  host: 'root@<preview-host>',
   url: 'https://<name>.dev.tosijs.net',
 },
 ```
+
+```bash
+export PREVIEW_HOST=user@<preview-host>   # shell profile — never committed
+```
+
+**Never commit the host** (`host: 'user@ip'`) in a public repo: the deploy/tunnel
+bins resolve `--host ?? PREVIEW_HOST ?? preview.host`, and a committed address
+means any fork running `bun run tunnel` opens outbound SSH to your box — an
+address-shaped gift to strangers. (tosijs-3d shipped exactly this and removed it
+in its 0.6.0 blast-radius review; this section used to prescribe it.) Prefer a
+dedicated deploy user over root while you're at it.
 
 ```bash
 bun run deploy          # dry run — shows what would change
