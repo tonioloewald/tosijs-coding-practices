@@ -493,8 +493,8 @@ So don't ask _"does this touch global state?"_ — ask **"is this done right?"**
 — seen in: haltija (1.4.0 installs a shared `hj` and stops other haltija servers, both machine-scope
 by design; `src/machine-log.ts` is the receipt)
 
-**Fast exit:** if the diff writes nothing outside the repo, spawns nothing, binds nothing, and
-kills nothing, say so in one line and return no findings. Do not manufacture findings. On a
+**Fast exit:** if the diff writes nothing outside the repo, spawns nothing, binds nothing, kills
+nothing, and **deletes nothing**, say so in one line and return no findings. Do not manufacture findings. On a
 pure library change this lens is cheap and quiet, and that's correct.
 
 Otherwise, enumerate the footprint and interrogate each item:
@@ -506,6 +506,24 @@ Otherwise, enumerate the footprint and interrogate each item:
 - **Home-directory & XDG state** (`~/.config/*`, `~/.cache/*`, app dotdirs, registries, lockfiles).
   Does it survive uninstall? Can a stale entry outlive the process that wrote it, and what
   reads it afterwards?
+- **Deletion & retention — files the tool removes, not just the ones it writes.** Ask of any
+  pruning, expiry, cache-eviction or cleanup path exactly what you ask of killing a process:
+  **state the predicate, and does it self-terminate?** _Whose_ files match it, and is the answer
+  still right when two versions of the tool, or two projects, share the directory?
+  `tmpdir()` reads as "safe, ephemeral" and so lands on nobody's list — but a tool that hands
+  those paths back to a user has made them **deliverables**, and a retention policy is then a
+  promise about someone else's data. A retention rule is authored and reviewed as a write-path
+  nicety, which is why the question never gets asked.
+  Watch specifically for: production prune defaults reachable from the **test suite**; a cap
+  (`keep: N`) that is a _combined_ total across every instance on the box; an upgrade that
+  relocates a directory and prunes the new one while orphaning the old.
+
+— seen in: haltija 1.12.0 — `bun test src/` ran `pruneArtifacts` with production defaults against
+the developer's real `<tmpdir>/haltija-screenshots` and deleted their captures older than 24h. The
+existing test-suite guidance ("point it at a temp dir") was **already satisfied** by the state that
+destroyed the data: the suite's own temp isolation didn't cover a path computed inline in
+production code. The reviewer who found it declined to run the suite at all — the correct response
+to a test that destroys data, and precisely the wrong position to put a reviewer in.
 - **Other processes** — anything spawned, signalled, or killed. **Killing is a policy, not a
   fix: state the predicate.** "Older than me" is almost always the wrong one — it never
   terminates, and two peers on adjacent versions will kill each other forever. Key the rule on
@@ -620,6 +638,32 @@ reviewed), the remediation gets its own full pass. The anti-treadmill rule below
 GO-with-followups, not BLOCK. The test is the size and shape of the fix diff, not the number of
 laps. Real case: a BLOCK whose remediation ran to eight commits, ~2000 insertions, five new source
 modules, ~60 new tests, and behaviour changes in three endpoints. — seen in: haltija
+
+**…and here is the exit, because "restarts the clock" on its own has none.** Stated without a
+termination condition the rule is a treadmill with worse economics than the one below it: each
+release-sized remediation earns another full pass, which finds more, which earns another. What
+actually happens is that the rule gets skipped — and the skipping is not uniform. **The scrutiny
+inverts.** Wave-one code accumulates passes while the newest code, written specifically to satisfy
+the reviewer, ships with none. That is exactly backwards: the least-examined code in the release is
+the code with the least time in it.
+
+So the exit condition is **not another pass — it is a release candidate.** When remediation is
+release-sized and a further full review would only restart the clock, tag an `-rc`, put it in front
+of real use, and treat that use as the next reviewer. An RC is an honest stopping state in a way a
+skipped review is not: it says "this has not been fully reviewed, and here is how we are finding
+out" rather than pretending the pass happened. Cut the final only after the RC has been exercised.
+
+Two guards that make it honest rather than a loophole:
+
+- **The last wave gets a targeted pass before the RC** — the lenses that cover what it touched, over
+  its diff only. Not the full nine; enough that the newest code is not the least-read code.
+- **Say in the RC's notes what has NOT been reviewed**, by name. "Release candidate" with no
+  statement of which parts are unproven is just a version suffix.
+
+— seen in: haltija 1.12.0, where the largest user-visible change (a rewritten schematic renderer,
+~6 commits) landed entirely after the last review, and its one real regression — hidden `display:
+none` text leaking into the affordance map — was caught by CI, not by any review pass. The RC went
+out saying so.
 
 **One review per release; re-review only the delta.** The review runs _once_, against
 `vLAST..HEAD`. Fixing its findings produces new diff — and re-running the whole review over that

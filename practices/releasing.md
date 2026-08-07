@@ -290,6 +290,17 @@ Every session, in order:
    notification. Measured cost: haltija's Playwright gate sat red on `main` for three commits and
    was found only by a nine-lens review a week later. (`grep "gh run"` across this repo returned
    nothing before this entry existed.) — seen in: haltija
+
+   **Enumerate the LANES, not the last N runs, and never substitute a local run for either.**
+   `gh run list -L 3` returns the three most recent runs, which on a busy push are often three
+   attempts at *one* workflow — so a second, older, red lane is simply not in the output. Loop over
+   the workflows by name. And "I ran the tests" is a claim about the suite you chose to run: a
+   green unit suite says nothing about the e2e lane, which is precisely where a change to rendering
+   or DOM behaviour shows up. — seen in: haltija 1.12.0, where a local `bun run test` was reported
+   green while `e2e.yml` was red on `main` from the same commit, for the second time in one release
+   cycle. The regression was real (hidden `display:none` text leaking into the affordance map), and
+   the fix took four minutes; finding it took a release-readiness check that happened to enumerate
+   all four lanes.
 4. **Clean up** — clear stashes, prune stale remote branches.
 5. **Verify** — everything committed AND pushed.
 6. **Hand off** — leave context for the next session.
