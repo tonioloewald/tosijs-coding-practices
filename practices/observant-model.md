@@ -68,3 +68,38 @@ The single most common mistake (seen across every component project in the ecosy
 importing the reactive habit: putting conditional/dynamic logic in `content()`, rebuilding
 DOM in `render()`, or reaching for a re-render to reflect a change. The fix is always the
 same — **build once, bind, mutate state, let the observer do the pin-point update.**
+
+## Act on committed state (the Enter-commit race)
+
+A recurring variant of the same imported habit, seen in demo after demo: a
+text field with a submit-on-Enter `keydown` handler that mutates state and
+programmatically clears the bound path. It races the platform: **Enter
+commits the field**, firing a synchronous `change` event — and since state
+updates are synchronous while DOM flushes are async, the commit's echo
+(`handleChange` reading the still-uncleared DOM value) lands *after* your
+clear and writes the stale text back. The field "doesn't clear," and neither
+does state.
+
+The fix is never to poke the DOM (`event.target.value = ''` is treating the
+symptom with the disease). Wire the action to **`change`** instead of
+`keydown`: tosijs's capture-phase document handler writes the committed
+value to state *before* the element's own handler runs, so the handler acts
+on committed state, mutates atomically, and the UI catches up on its own —
+the same doctrine as everything else in this file:
+
+    input({
+      bindValue: app.newItem,
+      onChange: 'app.addItem',   // Enter commits → state commits → act
+    })
+
+    // in state: read, mutate, clear — atomically; no element in sight
+    addItem() {
+      const text = app.newItem.value.trim()
+      if (!text) return
+      app.items.push({ text, done: false })
+      app.newItem = ''
+    }
+
+(Unit DOMs don't emulate Enter-commit, so only real browsers expose the
+race — if a "clear the field" behavior matters, it needs a browser-lane
+test.)
