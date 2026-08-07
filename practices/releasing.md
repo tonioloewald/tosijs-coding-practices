@@ -102,6 +102,33 @@ helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was th
 7. **Push** commits and tags: `git push && git push --tags`.
 8. **Publish** the npm package: `npm publish` (the `files` field controls the tarball — usually
    just `dist/`, `LICENSE`, `README.md`).
+
+8b. **Confirm the publish actually landed**, the same way step 3b confirms the CI runs did:
+   ```bash
+   npm view <pkg> dist-tags        # is the new version there, under the tag you meant?
+   npm view <pkg> version          # did `latest` move — and did you MEAN it to?
+   ```
+   A tag in git is not a version on the registry. Measured cost: haltija had **ten of sixteen
+   tags since 1.5.2 never published** — `npm view` said `1.11.2` while the repo was tagged
+   `v1.11.3`. Nobody noticed because every local check (tests, build, tag, push) was green; the
+   only failing step was the one nobody looked at afterwards. Releases are cumulative, so the
+   user-visible damage was small — but "we shipped it" was false for a year of tags.
+
+   Check `latest` specifically when publishing a **prerelease**: the point of `--tag rc` is that
+   `latest` does not move, and the only way to know it didn't is to look.
+
+8c. **Install what you published, from the registry, and run it.** Not the local tarball —
+   `npm pack` proves the files you *have*; only a registry install proves what a consumer *gets*.
+   ```bash
+   cd $(mktemp -d) && npm init -y >/dev/null && npm i <pkg>@<tag>
+   ./node_modules/.bin/<cli> --version    # and one real command
+   ```
+   For a library, import it the way the README tells people to. This is the cheapest possible
+   test and it covers the class of bug no unit suite can: wrong `files`, a missing `bin`, an
+   export map that resolves in-repo and not out of it, a `dist/` that was never rebuilt.
+   — seen in: haltija 1.12.0-rc, where installing the candidate and importing `haltija/test`
+   revealed that a module-scope singleton made a new warning fire on IMPORT — scolding callers
+   who had done the right thing. Reasoning about the manifest would never have shown it.
 9. **Update your row in the shared scoreboard** — the "Project scoreboard" table in the
    practices repo's `README.md`: new version, a one-line activity note, today's date in
    "As of". This is the practices repo's no-signoff carve-out, so commit directly — but with
