@@ -28,8 +28,9 @@ row, verify against the project and fix it; update the row's "As of" date whenev
   `main` enforces this (rejects force-push and deletion). The inviolable history is what
   makes the no-signoff carve-out safe.
 - **Commit directly to `main`, no PR or signoff needed** — writing practices back is the
-  whole point. Commit rather than leaving a dirty tree. Recent commit style:
-  `practices(topic): summary`, `fix: summary`.
+  whole point. Commit rather than leaving a dirty tree. Commit style: prefix with the
+  practice file(s) or area touched — `review: summary`, `scoreboard: summary`,
+  `testing, review: summary`, `review+releasing: summary`; `practices:` for broad sweeps.
 
 ## Editing practices (the CONTRIBUTING.md protocol, condensed)
 
@@ -45,6 +46,9 @@ row, verify against the project and fix it; update the row's "As of" date whenev
   quietly rewrite the defaults.
 - If you change review criteria in `practices/review.md`, keep
   `tools/pre-release-review.workflow.js` in sync (and vice versa).
+- **Don't rewrite practices unprompted mid-task — but never stay silent either.** If a doc
+  is stale, self-contradictory, or fights what you actually observed, flag it or fix it per
+  the protocol; disagreement is signal, not noise (CONTRIBUTING.md "Living documents").
 - Style: terse; bullets over paragraphs; second person imperative ("Run `bun test`");
   relative links only; no dates in prose (version numbers are fine).
 

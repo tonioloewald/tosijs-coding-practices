@@ -159,12 +159,15 @@ practices/
   testing.md
   code-quality.md
   performance.md
+  dependencies.md
   review.md
   releasing.md
+  publishing-via-oidc.md
   deployment.md
   state-and-schema.md
   web-components.md
   tjs-lang.md
+tools/               ← executable forms of practices (pre-release-review workflow + skill)
 ```
 
 ## Status
