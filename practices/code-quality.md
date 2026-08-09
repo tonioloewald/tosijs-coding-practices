@@ -143,6 +143,20 @@ references (DAGs), not just true cycles.**
   how-it-works, commands). It feeds generated docs — keep it in sync when the public API
   changes. Only fenced blocks tagged `js`/`html`/`css`/`test` become live examples; use bare
   ``` for non-runnable snippets. — seen in: editor2, tosijs, tosijs-ui, tosijs-3d
+- **Don't ship a package name that near-collides with a sibling — and if one slips out,
+  rename before the first external consumer, because that window never reopens.**
+  `tosijs-schematic` vs `tosijs-schema` read as related-but-distinct to their author and
+  as the same thing to everyone else; the confusion was observed in practice within two
+  days of publishing. A README "not to be confused with…" callout documents the debt, it
+  does not pay it down. The rename window is measured in **consumers, not time**: with
+  zero external dependents the whole cost was five files, an npm deprecation, and a
+  GitHub redirect (which preserves issue URLs); one shipped dependent later it becomes a
+  permanent alias. Two corollaries: (a) test a candidate name by what a reader skimming
+  an issue list would assume it means — `floorplan` beat `wireframe` because it names a
+  *document of a live structure*, not a sketch of a proposed one; (b) scope the rename
+  honestly — exported API names that are a multi-producer contract mid-adoption stay put
+  (renaming `SchematicRecord` would have broken two producers to disambiguate nothing).
+  — seen in: tosijs-floorplan (née tosijs-schematic) vs tosijs-schema, 2026-08-09
 
 ## Deprecations
 
