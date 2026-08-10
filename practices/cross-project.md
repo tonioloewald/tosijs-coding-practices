@@ -178,6 +178,27 @@ Filing is useless if nobody reads. Checking incoming issues is part of the routi
   repo **five minutes later**. Nothing was lost in any of them except time and the appearance of
   silence — and the fix is one line per thread.
 
+## Adopters before abstraction
+
+Shared infrastructure is **extracted from working uses, not designed in advance**. Build
+the thing inside a real project against a real need — up to three times, for specific use
+cases — before attempting the general solution; generalize from the shapes that survived
+contact. A library built ahead of its adopters optimizes for an imagined caller and misses
+the real one (Unity's early multiplayer stack is the canonical cautionary example:
+elaborate, general, and with the distinct feeling of no real adopters).
+
+- Library-first is fine **when the adopter is concrete and already waiting** (tosijs-3d's
+  aircraft/HUD were built with Manta explicitly in mind — a named adopter, not
+  speculation).
+- When two projects independently grow the same organ, that convergence *is* the design
+  brief — merge them into the shared version (tosijs-floorplan: two independently-built
+  renderers merged into one library).
+- Corollary of negative blast radius: extraction is how a local win gets its propagation
+  path; premature abstraction is how a guess gets one.
+
+— seen in: manta-recon (multiplayer placement decision), tosijs-floorplan (haltija
+convergence), tosijs-3d (aircraft/HUD built for a named adopter)
+
 ## Rule of thumb
 
 > If the fix belongs in another repo: **file, don't fix.** If it truly can't wait, **ask,

@@ -239,7 +239,8 @@ returned a confident wrong answer until the result was made to carry a warning �
   provides (`dom.ts`, `throttle`/`debounce`, bindings, `StyleSheet()`/`vars` — never raw CSS
   strings) instead of reimplementing.
 - New code that re-solves a solved problem, or a copy-paste that drifted.
-- Over-abstraction is also a smell — DRY, not premature generalization.
+- Over-abstraction is also a smell — DRY, not premature generalization (the design-time
+  version of this rule is [cross-project.md "Adopters before abstraction"](cross-project.md#adopters-before-abstraction)).
 - **Done when:** no copy-pasted logic remains and every new helper earns its place.
 
 ### 4. Documentation accuracy & up-to-dateness
