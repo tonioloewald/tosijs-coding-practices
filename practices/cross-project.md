@@ -195,9 +195,15 @@ elaborate, general, and with the distinct feeling of no real adopters).
   renderers merged into one library).
 - Corollary of negative blast radius: extraction is how a local win gets its propagation
   path; premature abstraction is how a guess gets one.
+- The foundation of this stack is itself the strongest example: **tosijs is a
+  many-generation extraction** — an evolution of b8rjs, which evolved from a library
+  built at Facebook, which evolved from one built at USPTO, on top of ~20 prior years of
+  UI development practice. The generalization came *after* the specific had been built
+  many times, in production, for different masters. That's why its abstractions hold.
 
-— seen in: manta-recon (multiplayer placement decision), tosijs-floorplan (haltija
-convergence), tosijs-3d (aircraft/HUD built for a named adopter)
+— seen in: tosijs (b8rjs ← Facebook ← USPTO lineage), manta-recon (multiplayer placement
+decision), tosijs-floorplan (haltija convergence), tosijs-3d (aircraft/HUD built for a
+named adopter)
 
 ## Rule of thumb
 
