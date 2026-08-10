@@ -216,6 +216,33 @@ playground UI, not via CLI. — seen in: tjs-lang
   the browser. If a repo has no `*.test.ts`, that's the intended workflow, not an omission.
   — seen in: react-tosijs
 
+## A regression test you wrote *after* the fix must be seen to fail
+
+"Reproduction-first" above assumes you write the failing case first. Often you can't: you find the
+bug *by* fixing it, and the test gets written against code that already works. That test has never
+been observed failing, so nothing yet distinguishes "it catches the bug" from "it passes for an
+unrelated reason."
+
+**So put the bug back and watch it go red.** Revert the fix (or mutate just the guard — `if (false
+&& …)` is enough), run the one test, confirm the failure message names the thing you fixed, restore.
+Two minutes, and it converts a plausible test into an established one.
+
+Worth the ceremony because the false-pass is invisible and looks exactly like success:
+
+- A test for "a framed widget must not steal the tab's window id" passed **without the fix**. The
+  harness built its page with `page.setContent`, whose `about:blank` document has no usable
+  `sessionStorage` — so every widget minted a fresh id anyway and the collision under test could not
+  occur. Rewritten against a real http origin, it failed correctly (expected 2 windows, got 1).
+- In the same session a second test was unrepresentative in a subtler way: it created the element
+  with the *parent* document's constructor, so the code under test saw the parent's `window` rather
+  than the frame's. It exercised a situation that cannot arise in production.
+
+Both would have shipped as green. The mutation is what found them — reading the test did not, twice.
+
+Corollary: **assert that the mutation applied.** A `replace(x, '', 1)` that silently matched the
+wrong occurrence produces a "test still passes" result that reads as a vacuous test when in fact
+nothing was mutated. If the harness can't prove it changed the code, the run proved nothing.
+
 ## Test the environment adopters have, not the clean room
 
 Suites almost always run **from nothing, in-repo, to nothing**: fresh state, one dev server,
