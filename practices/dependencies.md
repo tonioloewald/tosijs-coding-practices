@@ -14,6 +14,25 @@ Most of this was learned building the dependency-audit gate in `tosijs-ui/site`
 
 ---
 
+## 0. An abstraction must out-stable what it abstracts
+
+The decision *before* the audit gate: whether to take the dependency at all. A
+middleware layer's whole pitch is insulation from platform churn — so it only earns its
+keep if its own API surface is **more stable than the platform underneath**. Judge it by
+trajectory and incentive alignment, not by liveness or market health: a commercially
+thriving vendor whose customers aren't you will churn in directions you don't control.
+
+The canonical cautionary tale: the original Manta (2010, Unity/UnityScript). Apple's
+64-bit transition *should* have been Unity's finest hour — recompile and you're 64-bit
+for free. But in the same period Unity deprecated UnityScript and rewrote APIs
+repeatedly, so the platform transition became a middleware-forced rewrite, and the game
+died. Native Obj-C — the "risky low-level choice" — would have been the stable surface.
+The ecosystem's standing bets follow this criterion: the web platform (the most
+backwards-compatible API surface in computing) over engines, Blender (foundation-owned,
+tool-is-the-product) over vendor suites, own-the-seam libraries in between.
+
+— seen in: manta-recon (the original game's death and the revival's stack choices)
+
 ## 1. A gate must never report a pass it did not earn
 
 **This is the whole ballgame.** Every other rule here is negotiable; this one isn't.
