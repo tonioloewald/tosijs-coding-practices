@@ -222,7 +222,8 @@ pitch, camera on the nose side) — a far harder bug than the one being papered 
 
 - **Keep a known-good reference asset in the scene while authoring** and match it
   visually. The ecosystem convention is **Blender defaults: -Y forward (the model's
-  face shows in Front view / Numpad 1), +Z up** — chosen deliberately so generic
+  face shows in Front view / Numpad 1), +Z up, -X starboard** (the right-hand rule
+  forces -X given the other two — stated so nobody has to derive it) — chosen deliberately so generic
   Blender tooling, tutorials, and the glTF exporter's front-faces-+Z mapping all agree
   with our content. The reasoning: Blender is central to the content workflow for the
   indefinite future — nobody else is going to build a bleeding-edge do-everything 3D
