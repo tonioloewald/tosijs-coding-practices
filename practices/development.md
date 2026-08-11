@@ -221,10 +221,14 @@ with frame bugs you haven't found yet: compensating for a *mirrored* frame with 
 pitch, camera on the nose side) — a far harder bug than the one being papered over.
 
 - **Keep a known-good reference asset in the scene while authoring** and match it
-  visually (tosijs-3d: import `static/test-2.glb` and orient craft like the scout).
-  The ecosystem convention, sign-exact: **+X = model's right, +Y = forward, +Z = up** —
-  note +Y forward, *not* Blender's default -Y. Visual matching against the reference
-  beats axis-sign reasoning every time; the signs are here for the exporter scripts.
+  visually. The ecosystem convention is **Blender defaults: -Y forward (the model's
+  face shows in Front view / Numpad 1), +Z up** — chosen deliberately so generic
+  Blender tooling, tutorials, and the glTF exporter's front-faces-+Z mapping all agree
+  with our content. ⚠️ Legacy caveat: assets exported before this decision (e.g.
+  tosijs-3d's `test-2.glb` scout) are +Y-forward and fly correctly only via a
+  double-negation in the old pipeline — they get re-exported, not imitated. The
+  engine-side forward mapping is defined in ONE place (tosijs-3d's library
+  canonical frame — see its issue tracker), never per-asset.
 - **Apply all transforms** (Blender Ctrl+A) once oriented, so mesh data ≡ world frame —
   zero object rotation/scale. That property is what makes an asset immune to
   exporter/loader disagreements about when transforms get baked; imported legacy content
