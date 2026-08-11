@@ -224,7 +224,9 @@ pitch, camera on the nose side) — a far harder bug than the one being papered 
   visually. The ecosystem convention is **Blender defaults: -Y forward (the model's
   face shows in Front view / Numpad 1), +Z up** — chosen deliberately so generic
   Blender tooling, tutorials, and the glTF exporter's front-faces-+Z mapping all agree
-  with our content. ⚠️ Legacy caveat: assets exported before this decision (e.g.
+  with our content. The reasoning: Blender is central to the content workflow for the
+  indefinite future — nobody else is going to build a bleeding-edge do-everything 3D
+  suite with a decent UI again — so conventions bend toward Blender, never the reverse. ⚠️ Legacy caveat: assets exported before this decision (e.g.
   tosijs-3d's `test-2.glb` scout) are +Y-forward and fly correctly only via a
   double-negation in the old pipeline — they get re-exported, not imitated. The
   engine-side forward mapping is defined in ONE place (tosijs-3d's library
