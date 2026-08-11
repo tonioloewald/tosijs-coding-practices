@@ -221,8 +221,10 @@ with frame bugs you haven't found yet: compensating for a *mirrored* frame with 
 pitch, camera on the nose side) — a far harder bug than the one being papered over.
 
 - **Keep a known-good reference asset in the scene while authoring** and match it
-  visually (tosijs-3d: import `static/test-2.glb` and orient craft like the scout —
-  span X, length Y, up +Z). Visual matching beats axis-sign reasoning every time.
+  visually (tosijs-3d: import `static/test-2.glb` and orient craft like the scout).
+  The ecosystem convention, sign-exact: **+X = model's right, +Y = forward, +Z = up** —
+  note +Y forward, *not* Blender's default -Y. Visual matching against the reference
+  beats axis-sign reasoning every time; the signs are here for the exporter scripts.
 - **Apply all transforms** (Blender Ctrl+A) once oriented, so mesh data ≡ world frame —
   zero object rotation/scale. That property is what makes an asset immune to
   exporter/loader disagreements about when transforms get baked; imported legacy content
