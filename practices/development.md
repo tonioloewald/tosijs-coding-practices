@@ -210,6 +210,34 @@ is tracked by issues filed on each.
   `SKILL.md`) *in the same change* — they silently drift otherwise, and some repos gate this in
   CI (`git diff --exit-code` after re-running the generator). — seen in: tjs-lang, haltija
 
+## Content is code: fix assets at the source, never in the importer
+
+When content (models, textures, audio) is **under your control**, it conforms to the
+pipeline's conventions in the *source file* — never via compensating transforms at import
+or load time. A code-side rotation that makes a mis-authored model "look right" is a
+monkey-patch on every future consumer of that asset, and it composes catastrophically
+with frame bugs you haven't found yet: compensating for a *mirrored* frame with a
+*rotation* produces a craft that looks correct and flies chirally backwards (inverted
+pitch, camera on the nose side) — a far harder bug than the one being papered over.
+
+- **Keep a known-good reference asset in the scene while authoring** and match it
+  visually (tosijs-3d: import `static/test-2.glb` and orient craft like the scout —
+  span X, length Y, up +Z). Visual matching beats axis-sign reasoning every time.
+- **Apply all transforms** (Blender Ctrl+A) once oriented, so mesh data ≡ world frame —
+  zero object rotation/scale. That property is what makes an asset immune to
+  exporter/loader disagreements about when transforms get baked; imported legacy content
+  (Cheetah 3D-era files) typically carries the convention in an object-level rotation
+  and needs this normalization.
+- If an asset renders 180°-flipped, **check the node hierarchy for a negative scale
+  before touching content** — Babylon's glTF `__root__` carries `scaling [1,1,-1]`; a
+  mirror is not a rotation, and "fixing" content against a mirror bakes in wrongness.
+- Content you *don't* control (third-party formats) is the exception — normalize it once
+  at ingestion into a conforming source file, then treat that as the source.
+
+— seen in: manta-recon (the orientation saga: a content flip compensating for the
+mirrored `__root__` control frame, then a Y-up Cheetah legacy frame — two days of
+"flying backwards"), tosijs-3d (scout/test-2.glb as the reference frame)
+
 ## Code you write should read like the code around it
 
 Match the surrounding file's naming, comment density, and idioms. Consistency beats
