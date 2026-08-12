@@ -45,6 +45,38 @@ nothing else:
 Treat bundle size as a budget: adding a dependency to a core library must be justified.
 Core libraries target small gzip footprints and **zero runtime dependencies**.
 
+### First, the right question: size *relative to what it replaces*
+
+A framework's own kilobytes are the least interesting number in the system.
+Tonio spent years holding tosijs under 10 KB gzipped — and in hindsight, why?
+**Almost anything added to a framework subtracts far more code from a typical
+consumer project than it adds to the framework.** A binding system, a list
+renderer, a contract harness, a scaffolded component: each one deletes
+hand-rolled equivalents from every app downstream, and the framework pays for
+it once. A 2 KB feature that removes 10 KB of bespoke glue from each of five
+apps is a 48 KB win, not a 2 KB loss.
+
+So the budget isn't a hard ceiling on the total. What it actually governs:
+
+- **Watch for size *regressions*, not size.** The number to defend is the
+  delta on an unchanged feature set — that's a refactoring signal or an
+  accident (a mis-bundled dep, an inlined dynamic import). Print gzip on
+  every build so a regression can't hide; a *deliberate* increase that buys
+  a feature is a purchase, not a defect.
+- **Treat the size number as a refactoring prompt.** When it jumps, look for
+  the duplication or the wrong-layer code it's pointing at. Sometimes the
+  best "size fix" is extracting a package (which can then serve several
+  consumers) or deleting a subsystem the platform has since absorbed.
+- **Guard the API surface instead.** The scarce resource is not bytes, it's
+  concepts a user must hold and a maintainer must keep true forever. A small
+  API that deletes a lot of consumer code is the goal; a large API that
+  saves bytes is a bad trade.
+- **Offer smaller doors rather than shrinking the house.** Where a subset is
+  genuinely separable, ship it as an entry point (tosijs 1.8.0:
+  `tosijs/core`, `tosijs/state`) so minimalists opt in without the default
+  losing capability — and without silent breakage for people who didn't opt
+  in. — seen in: tosijs 1.8.0
+
 - **Print gzipped size on every build/pack — it's the size-regression gate.** No CI means
   the printed kb is the only signal. Use the throwaway `show-size` pattern:
   ```bash
@@ -72,6 +104,15 @@ Core libraries target small gzip footprints and **zero runtime dependencies**.
   tree-shakes those registrations to zero. Keep per-component subpath entry points, and
   never point a `browser` export condition at the IIFE (it inlines the whole framework). —
   seen in: tosijs-ui
+- **⚠️ A `sideEffects` ARRAY is not the safe middle ground — and it fails SILENTLY at
+  build time.** tosijs 1.8.0 added an *accurate* array (listing exactly the modules that
+  register elements or attach listeners) and bun emitted a bundle that **exported names
+  whose definitions had been shaken away**: `import` threw `ReferenceError: "H6" is not
+  declared in this file`. Unit tests, `tsc`, and lint were all green — the only artifact
+  that knew was the artifact. **So: smoke-import every published bundle in the build**
+  (load it, assert no export is `undefined`) and fail the build otherwise. Any packaging
+  change — `sideEffects`, export maps, format changes, a new entry — must be gated on
+  executing the thing you're about to publish. — seen in: tosijs 1.8.0
 - **Lazy-load heavy deps and defer global injection to first use.** Dynamic-import bulky
   editors/engines (e.g. CodeMirror) rather than eagerly bundling them; inject shared
   styles/listeners on first use (`ensureMenu`/`ensureTooltipStyles`/`ensureFloatListeners`),
