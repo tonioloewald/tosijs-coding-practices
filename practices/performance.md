@@ -70,7 +70,11 @@ So the budget isn't a hard ceiling on the total. What it actually governs:
 - **Guard the API surface instead.** The scarce resource is not bytes, it's
   concepts a user must hold and a maintainer must keep true forever. A small
   API that deletes a lot of consumer code is the goal; a large API that
-  saves bytes is a bad trade.
+  saves bytes is a bad trade. This is also what keeps *this* work cheap: with
+  a tight surface, a missed refactor is a scheduling question — you can
+  always go and fix it. With a drifted one, the same cleanup is a breaking
+  change. See
+  [code-quality.md → A small API surface is what makes future refactoring cheap](code-quality.md#a-small-api-surface-is-what-makes-future-refactoring-cheap).
 - **Offer smaller doors rather than shrinking the house.** Where a subset is
   genuinely separable, ship it as an entry point (tosijs 1.8.0:
   `tosijs/core`, `tosijs/state`) so minimalists opt in without the default
