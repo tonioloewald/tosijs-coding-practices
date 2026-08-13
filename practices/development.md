@@ -208,7 +208,15 @@ is tracked by issues filed on each.
 - **Agent-facing docs travel with the code.** When you change an entry point, CLI command,
   script, or endpoint, update the doc that agents read (`CLAUDE.md`, `llms.txt`, a plugin's
   `SKILL.md`) *in the same change* — they silently drift otherwise, and some repos gate this in
-  CI (`git diff --exit-code` after re-running the generator). — seen in: tjs-lang, haltija
+  CI (`git diff --exit-code` after re-running the generator).
+
+  **Running the generator is not the gate — diffing the result is.** tjs-lang's CI ran
+  `bun run make` (which regenerates four committed paths) and never looked at the output, so
+  it proved only that the build did not crash. `demo/docs.json` sat twelve documents stale
+  underneath a green run, shipping claims the repo had already corrected — and, separately,
+  6MB of a third party's changelogs that a scratch directory had leaked into it. This entry
+  named tjs-lang as an example of the practice while tjs-lang was not yet doing it; it is
+  now (0.13.0). — seen in: tjs-lang, haltija
 
 ## Content is code: fix assets at the source, never in the importer
 

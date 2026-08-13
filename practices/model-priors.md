@@ -280,7 +280,8 @@ contain the idiom.
 The lesson generalises past this repo: **a lane not in CI rots silently**, and convention is
 not enforcement. tjs-lang moved the gate into `.githooks/pre-push` (it fires on tag pushes,
 since git has no `git tag` hook), which is the difference between a documented rule and a real
-one.
+one — and added GitHub Actions in 0.13.0 for the fast lane, so it now has two gates with
+different coverage. Knowing WHICH lane covers what is the point; see `review.md`.
 
 ---
 

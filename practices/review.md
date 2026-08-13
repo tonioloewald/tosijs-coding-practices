@@ -9,13 +9,20 @@
   sync, untrusted input, deployment config).
 - **CI is partial, and you must know exactly which lanes it covers.** This file used to say
   there was _"no CI — no `.github/` workflows anywhere in the ecosystem"_. That is false
-  (tosijs-ui has `ci.yml`; haltija has **four** workflows — unit-tests, test-qa, e2e, docs-drift; see `00-stack.md`), and the falsehood
+  (tosijs-ui has `ci.yml`; haltija has **four** workflows — unit-tests, test-qa, e2e, docs-drift;
+  tjs-lang added `ci.yml` in 0.13.0; see `00-stack.md`), and the falsehood
   was load-bearing: a reader who believes there is no CI never asks **"which lanes does CI
   actually run?"** — which is the exact question that catches a rotted lane. tosijs-ui's CI runs
   the unit + e2e lanes and **not** the haltija doc-test lane, and that lane sat red for a month.
   It is also false that `bun run build` runs tests — in tosijs-ui it does not (see
   `releasing.md`). **Enumerate the lanes, check which are gated, and run the ungated ones by
   hand.** An ungated lane always rots.
+
+  Two gates are not one gate twice. tjs-lang runs `test:fast` in Actions (no LLM, no
+  benchmarks, no audit) and the FULL suite in `.githooks/pre-push`, but only on tag pushes —
+  a deliberate split, and until 0.13.0 **nothing anywhere enumerated both**, which is the
+  same gap in a newer disguise. If a project has more than one gate, say what each covers in
+  the same place, or a reader will assume the stricter one runs everywhere.
   — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, kith-email, react-tosijs
 
 ## Comprehensive pre-release review (minor & major)

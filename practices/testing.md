@@ -243,6 +243,55 @@ Corollary: **assert that the mutation applied.** A `replace(x, '', 1)` that sile
 wrong occurrence produces a "test still passes" result that reads as a vacuous test when in fact
 nothing was mutated. If the harness can't prove it changed the code, the run proved nothing.
 
+## A ratchet measures a RATE, not a count
+
+A "floor" test — *this number must not go down* — is the standard way to stop a metric
+regressing while you improve it. Written against an absolute **count** it does the opposite
+of its job the moment the corpus grows.
+
+tjs-lang ratchets self-hosting: how many of its own files convert, compile, and graduate.
+The floors were counts, and the corpus went 287 → 336 files as the language got *better*.
+Every added file that did not yet convert pushed the count down, so a run that improved the
+language reported a regression — and the reflex fix ("lower the floor") destroys the ratchet
+entirely.
+
+**Store the rate; assert on the rate.** `passing / total`, with the raw counts in the failure
+message so a human can see both. Then corpus growth is neutral by construction: adding ten
+files that convert and ten that do not leaves the rate where it was, which is the honest
+reading.
+
+Pair it with a **promote-check**: when the rate exceeds the recorded floor by more than
+noise, FAIL with "raise the floor to X". Otherwise a ratchet only ever protects the number
+it was set at, and the gap between actual and asserted widens silently until the test is
+guarding nothing. — seen in: tjs-lang (`92fc22e`)
+
+## Documentation snippets are code, so compile them
+
+Fence-tag hygiene (`code-quality.md`, `web-components.md`) stops a snippet from *running*
+when it should not. It does nothing about the opposite failure: a snippet that is never checked at
+all and quietly stops being true.
+
+**Compile every fenced snippet in the reference docs as part of the suite.** In tjs-lang,
+182 blocks across nine documents surfaced four stale claims — three of them the *same wrong
+fact* in the three documents a reader opens first. One taught a construct that had become a
+compile error; another documented a syntax that was never implemented. A 3,400-test suite
+had not noticed, because no test read prose.
+
+Two details make it work rather than merely sound good:
+
+- **Unmarked means real.** The default is "this is a program"; every exemption is an
+  annotation visible in the markdown source. A skip nobody can see is how a "checked"
+  document ends up mostly unchecked.
+- **`expect-error` is the load-bearing half.** A snippet demonstrating a *rejection* is also
+  a claim, and it rots in the opposite direction — silently starting to compile. Assert both
+  directions or you have only checked the easy one.
+
+Beware the escape hatch. Bulk-annotating fragments is tempting on first adoption, and in
+tjs-lang two blocks teaching a rejected construct were marked `fragment` by that pass — so
+the harness looked away from exactly the defect it was built for, in the same release. If
+you must bulk-annotate, re-triage afterwards by compiling each exemption and reading the
+ones that fail for a *rejection* reason. — seen in: tjs-lang (`ac2b297`, `3cad86c`)
+
 ## Test the environment adopters have, not the clean room
 
 Suites almost always run **from nothing, in-repo, to nothing**: fresh state, one dev server,
