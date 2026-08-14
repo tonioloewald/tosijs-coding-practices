@@ -158,6 +158,34 @@ references (DAGs), not just true cycles.**
   (renaming `SchematicRecord` would have broken two producers to disambiguate nothing).
   — seen in: tosijs-floorplan (née tosijs-schematic) vs tosijs-schema, 2026-08-09
 
+## Change the funnel, not the consumer — and check the scope of the seam you picked
+
+Before patching a pipeline, ask **what scope does this intervention point have**, and
+compare it with the scope you intended. The two diverge silently, and the wrong seam
+usually *works* — for the case you tested.
+
+The trap is that discoverability and scope are frequently **inverted**: the narrow,
+per-consumer seam tends to sit on the object you already hold, while the funnel that
+governs everything is reached through some less obvious owner. So the reach that feels
+natural is the one that quietly scopes your change to a single path.
+
+- Symptom of having picked wrong: **two clients of the same setting disagree** — one
+  device, one entity, one caller behaves and another doesn't. That is a scope error
+  wearing a bug's clothes; adding a second patch to fix the second client entrenches it.
+- The question that routes it correctly is usually about *meaning* vs *routing*: whatever
+  decides what something MEANS belongs at the funnel, whatever merely delivers it can be
+  per-consumer. (Input: sources produce axes, the **mapping** decides what axes mean,
+  providers route them to consumers — so "which way is up" is mapping-level, always.)
+- Patch the **installer** rather than the installed value when the funnel is re-created
+  during normal operation (per-entity remaps, respawns, reconnects). Otherwise the fix
+  survives only until the next swap.
+- If a library made you pick, that is worth an upstream issue about **affordance**, not
+  just a local fix — the next adopter will reach for the same wrong thing.
+
+— seen in: manta-recon (a global invert-pitch setting patched onto the aircraft's own
+input provider worked for the keyboard and left the touch gamepad inverted; moving it to
+the mapping made the divergence unrepresentable — tosijs-3d#10)
+
 ## A small API surface is what makes future refactoring cheap
 
 The API surface is not just a usability concern — it is the **contract that
