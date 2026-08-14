@@ -35,6 +35,33 @@ Spare cycles become design freedom rather than banked virtue —
 spend the headroom on **agents and reactions, not vertices**, because a stick
 figure that notices the wall is worth more than another million triangles.
 
+### The counterweight: cycles are BOUGHT, not saved
+
+This is not asceticism, and the tell is that the same stack deliberately **pays**
+a runtime cost for type checking (`tjs-lang`) — squarely against "optimization".
+That is not an exception to the rule, it is the rule stated properly:
+
+> Every cycle should be **bought**. Waste is unpriced consumption; a runtime
+> check is a priced purchase with a known return in correctness and developer
+> time.
+
+What makes the trade almost free is *where* it is paid. The places that want
+checking — boundaries, configuration, state plumbing, deserialization — are
+**cold paths**: they run once at setup, not per frame. The hot paths (integrators,
+particle updates, terrain sampling) stay unchecked. That is exactly the
+`safety none` interior / validate-at-the-edge shape described under Hot paths
+below; the two are the same policy seen from opposite ends.
+
+A live example of the dividend, from the same week as the numbers above: a
+settings toggle silently did nothing because a state-library proxy leaf is an
+*object* and therefore always truthy — it reads like a boolean, prints like a
+boolean, and is permanently `true` in a conditional. No error, no symptom except
+a control that does nothing, and it cost a full round-trip with a remote tester
+to find. A checked boundary would have rejected it at configuration time, for a
+cost measured in nanoseconds *once*. The bytes-and-cycles discipline and the
+pay-for-safety discipline point the same way: **spend where it buys something,
+refuse where it buys nothing.**
+
 Two honest boundaries, so this doesn't become dogma:
 
 - **Automatic quality-shedding machinery can cost more than the waste it
