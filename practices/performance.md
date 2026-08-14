@@ -1,5 +1,55 @@
 # Performance & monitoring
 
+## Waste is not an optimization problem — it is a design problem
+
+The stack's stated position, and it is deliberately the opposite of the usual
+reading of "premature optimization is the root of all evil": **take care of the
+bytes and the cycles, and most other things take care of themselves.**
+
+The usual objection misfires because it answers a different question. Knuth was
+warning against *local* micro-optimization at the cost of clarity, chosen before
+measurement. This is about **not manufacturing waste in the first place**, which
+is architectural — and architecture is precisely what you cannot retrofit. The
+distinction that matters:
+
+- **Optimizing** = making existing work faster. Often premature, often aimed at
+  the wrong 3%.
+- **Not being wasteful** = choosing designs that never generate the work. Never
+  premature, because there is nothing to undo later.
+
+A worked example, all from one project in one week: the world is *computed*
+rather than shipped (procedural terrain and biome shaders instead of baked
+assets), so a full game's cold payload is ~3 MB of code and two small mesh
+libraries. Minifying cut 22.9 → 15.4 MB uncompressed, which is a third of the
+**parse** time on a phone, for free. Serving from the box instead of a
+developer's uplink was 346 KB/s → 3.5 MB/s. ETags turned every reload from 4 MB
+into 0 bytes. Result: a 3D game cold-starts in under two seconds over the public
+internet — faster than shipped native apps play their *loading animations*. None
+of those were optimizations of working code; each was declining to ship
+something that never needed shipping.
+
+The compounding is the real argument. Small payloads mean fast loads, which mean
+you test more often, which tightens the loop that actually produces quality.
+Spare cycles become design freedom rather than banked virtue —
+[`AI-DESIGN.md`](https://github.com/tonioloewald/tosijs-3d) makes this explicit:
+spend the headroom on **agents and reactions, not vertices**, because a stick
+figure that notices the wall is worth more than another million triangles.
+
+Two honest boundaries, so this doesn't become dogma:
+
+- **Automatic quality-shedding machinery can cost more than the waste it
+  prevents.** An ambient-particle budget that judged the frame rate *during
+  scene loading* permanently disabled every effect on a machine that then held
+  120fps. Mechanisms that trade quality for speed on inference need the same
+  scrutiny as the waste they police, and should be recoverable rather than
+  latching. — seen in: tosijs-3d#11
+- **Guessing at thresholds is still guessing.** A "taking too long" watchdog set
+  at 20s fired on a perfectly healthy cold load and reported failure. Measure the
+  thing before you set a limit on it.
+
+— seen in: manta-recon (sub-2s cold start for a 3D game over a tunnel and then a
+CDN-less VPS), tosijs-3d (computed worlds), tosijs (observant updates below)
+
 ## The core philosophy: observant, surgical updates
 
 The stack's performance model is *not* re-render-and-diff — it is
