@@ -338,6 +338,63 @@ are" — complete the push, or stop cleanly at the tag if the repo is human-only
 Branching: commit/push only when asked; if on the default branch, branch first. Commit messages
 and PR bodies follow the harness's co-author/attribution footer conventions.
 
+## Bypassing the publish loop: where local tarballs live
+
+Sometimes a release is tagged but cannot be published — no npm rights to hand, the owner is
+remote, a registry outage, or a downstream project needs to try a fix *now*. The stopgap is
+`npm pack` and a `file:` dependency. That is fine. What is not fine is leaving the artifact
+somewhere only its author can find.
+
+**Put it in a shared sibling directory of the projects that consume it**, not in a session
+scratchpad, not in the producing repo (`*.tgz` is gitignored in every repo here, so it is
+invisible to git *and* to anyone who clones), and not loose in `/tmp`:
+
+    ~/projects/
+      tosijs-3d/            <- produces
+      manta-recon/          <- consumes
+      local-packages/       <- BOTH agree to look here
+        tosijs-3d-0.7.0-beta.5.tgz
+        PROVENANCE.md
+
+The whole value of a stopgap tarball is that a *different* agent, in a *different* repo,
+picks it up without being told. A path that only the producer knows converts a five-second
+lookup into an archaeology exercise — and worse, into a **silent duplicate**: the consumer
+packs its own from the tagged tree, and now two artifacts claim one version with nothing
+proving they match.
+
+### Rules
+
+- **One agreed location, named in both projects' `CLAUDE.md`.** Producer writes there;
+  consumer reads there. Neither guesses.
+- **Never a session scratchpad.** It is ephemeral, session-scoped, and unreachable by the
+  one agent that needs it. If you packed to a scratchpad, copy it out before you finish.
+- **Ship a `PROVENANCE.md` beside it** — tag, commit, whether the tree was clean, timestamp,
+  and a `sha256`. A `file:` dep has no registry, no integrity hash and no audit trail, so
+  the provenance note *is* the supply chain. State what it contains and what supersedes it.
+- **Record the sha256, and check it.** If the consumer has to pack its own, comparing hashes
+  is what distinguishes "byte-identical to the official artifact" from "a plausible lookalike
+  built from a different tree." Do not assert equivalence you have not measured.
+- **Version-suffix every file, and never overwrite one in place.** A `file:` dependency is
+  cached by path; rebuilding `foo-1.2.3.tgz` with different bytes gives some consumers the
+  old one and no way to tell.
+- **Delete superseded tarballs** when the consumer moves on, and drop the whole directory the
+  moment the version reaches npm — `bun add pkg@<version>`. A stopgap that outlives its
+  reason becomes a fork nobody declared.
+
+### Traps
+
+- **An un-suffixed version number is not "the final release."** `pkg-0.7.0.tgz` sitting
+  beside `pkg-0.7.0-beta.1.tgz` may well be *older* — an early build stamped before the beta
+  sequence started. Check mtimes and the packed `package.json`, not the filename.
+  — seen in: tosijs-3d (`/private/tmp/tosijs-3d-0.7.0.tgz` predates beta.1 by 15 minutes)
+- **macOS `find` is BSD and silently ignores GNU predicates.** `-newermt` matches *nothing*
+  rather than erroring, so `find ~ -name '*.tgz' -newermt '-2 days'` returns clean and reads
+  as "there is no tarball" when there are four. Drop the time filter before concluding a file
+  does not exist, and prefer `ls -lt` for recency.
+- **Absence from npm proves nothing about existence.** Beta tarballs are cut *outside* the
+  registry by definition, so `npm view` and `gh release list` both come back empty for
+  artifacts that exist. Check the agreed directory first, the registry second.
+
 ## Traps
 
 - **Two lockfiles.** Several repos carry both `bun.lock`(`b`) and a stale `package-lock.json`.
