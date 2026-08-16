@@ -42,6 +42,35 @@ Fix what this release should fix, and **close each fixed issue naming the versio
 downstream agent is waiting on that signal to drop its workaround. See
 [`cross-project.md`](cross-project.md).
 
+## Say what you are NOT fixing, in one place
+
+A review produces findings. Some get fixed; the rest need a decision written down, or the
+record cannot distinguish one from the other.
+
+tjs-lang's `TODO.md` carried, verbatim:
+
+> ### 14 majors from the re-review, not yet worked
+
+That reads identically whether the majors were triaged and deliberately deferred, or
+nobody got to them and the release went out anyway. A reader six months later — including
+the author — cannot tell which, and neither can anyone deciding whether to trust the next
+release's process.
+
+> **A release whose review left confirmed findings unfixed must say so in ONE place, with
+> three things: what they are, the decision, and the version they are deferred to.** An
+> unannotated open-findings list is indistinguishable from an oversight, and will be read
+> as one.
+
+Three things make it practical rather than ceremonial:
+
+1. **One place.** Split across `TODO.md`, a review report and a changelog, it is not a
+   record — it is three partial records that will drift.
+2. **The decision is the content.** "Deferred to 0.14.0; all in the TS converter, which no
+   shipped consumer path touches" is a record. "Not yet worked" is an absence.
+3. **Deferring is fine.** This does not say fix everything before shipping. It says the
+   choice must be legible. The failure it prevents is not shipping with known majors; it is
+   being unable to show afterwards that you *chose* to. — seen in: tjs-lang (0.13.0)
+
 ## Which number moves: version by narrative, not by semver's letter
 
 Semver's *letter* says any backwards-compatible new functionality is a minor. Followed

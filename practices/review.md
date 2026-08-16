@@ -406,7 +406,18 @@ tested against reality.
   the gate work? Adjust the lenses and criteria — including this list.
 - Are this project's own `CLAUDE.md` / `AGENTS.md` still accurate after the change?
 - **Done when:** the shared practices are updated, or explicitly confirmed still correct, and
-  any process gap is filed. The write-back must postdate the LAST blocker-remediation wave
+  any process gap is filed — **and the write-back NAMES THE COMMIT RANGE it covers**
+  (`<base>..<sha>`), where `<sha>` is the reviewed repo's HEAD at the time of writing. If
+  anything lands after it, the write-back is stale: re-run lens 8 or amend it, and say
+  which. Without the range, staleness is something a person has to *notice* rather than
+  something that can be *checked* — and it is not noticed. Observed twice in one cycle:
+  a write-back landed at 11:46 and the repo landed "clears both blockers from the re-review"
+  at 14:14, while `TODO.md` carried a checked `[x] Lens-8 write-back complete` describing a
+  state that had stopped being true two and a half hours earlier. The first review of that
+  cycle proposed exactly this amendment; the round that was supposed to apply it added a
+  different paragraph instead, and the failure recurred within 48 hours. — seen in: tjs-lang
+  (0.13.0)
+  The write-back must postdate the LAST blocker-remediation wave
   (each wave can supersede earlier lessons — tosijs-schema v1.5.0's wave-2 denylist lesson was
   itself the wave-4 defect). And check push state: if the practices checkout is ahead of
   origin (pushes being human-gated), name the pending push on the release checklist and report
@@ -627,6 +638,17 @@ ones that regress silently.
 - **Unresolved correctness (and security) findings block the release.** Efficiency / DRY / DX /
   coverage findings that are not regressions may be filed to `TODO.md` and scheduled — but say
   so explicitly; a silently-dropped finding reads as "reviewed and fine."
+- **File the report FIRST, before acting on any finding.** Copy the harness output to
+  `docs/reviews/<version>-<slug>.md` in the reviewed repo. A report living at a
+  session-scratch path is one cleanup away from gone, and it is the only artifact recording
+  what was found and *not* fixed. Observed: a second-round report sat at
+  `/private/tmp/.../tasks/*.output` — 892 lines, present by luck — while the durable record
+  of fourteen unworked majors was a five-line paraphrase, and the instruction to copy it was
+  prose rather than a checkbox, so no open-items sweep would surface it. Exclude the
+  directory from the published package (`"!docs/reviews"` in `files`, or equivalent): these
+  are process artifacts, and shipping candid internal assessments to consumers is not the
+  intent — one repo's `files` allowlist included `docs` wholesale and 258KB of review
+  reports were going out in the tarball. — seen in: tjs-lang (0.13.0)
 - **Route by lens — these findings do not all belong in the same place:**
   - **Lenses 1–6 and 9** → fix now, or file to this repo's `TODO.md`. (Lens 9 findings that
     touch the user's machine — a global binary, a kill policy — are correctness findings for
@@ -635,7 +657,12 @@ ones that regress silently.
     `UPSTREAM.md` with the issue URL. Never a direct edit to the owning repo — see
     [`cross-project.md`](cross-project.md).
   - **Lens 8** → a change to `tosijs-coding-practices` (and grep the cross-cutting docs for
-    parallel mentions — see `../CONTRIBUTING.md`).
+    parallel mentions — see `../CONTRIBUTING.md`). **A direct edit, not an issue.**
+    `cross-project.md`'s file-don't-fix rule protects CODE repos and names this one *a
+    standing exception*; filing here is a deferral, not a write-back. Observed: a queue at
+    8 open / 0 closed, the oldest four weeks, while the same repo took 78 non-merge commits
+    in that window — direct edits happen freely; only review write-backs silt up. — seen
+    in: tjs-lang (0.13.0)
 - **Lenses 7 and 8 rarely block a release** — they compound instead. Treat "no findings" from
   either with suspicion: it usually means nobody looked.
 - Record anything durable back into the practice docs so the next release starts ahead.

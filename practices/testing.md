@@ -292,6 +292,60 @@ the harness looked away from exactly the defect it was built for, in the same re
 you must bulk-annotate, re-triage afterwards by compiling each exemption and reading the
 ones that fail for a *rejection* reason. — seen in: tjs-lang (`ac2b297`, `3cad86c`)
 
+### A result comment is an assertion — run it, or don't write the arrow
+
+Compiling a snippet proves it *parses*. It says nothing about the claim written beside it:
+
+```js
+place({ x: 1, z: 9 })  // -> {x: 1, y: 0}
+```
+
+That arrow is **wrong** — the real result carries `z` through. The snippet compiles, the
+gate is green, and the documentation teaches a false fact with a passing test standing
+behind it. In tjs-lang the snippet suite was 193 pass / 0 fail with that line in it.
+
+> **A `// →` result comment is an assertion.** Either run the snippet and compare, or don't
+> write the arrow.
+
+The framing matters more than the tooling: the arrow is doing the work of an `expect()`
+while being invisible to every gate, and a reader cannot tell the difference. The cheapest
+enforcement is a `run` mode that executes snippets whose comments contain `// →` / `// ->`
+and compares — but even unenforced, the rule tells a reviewer what to look for.
+
+**Check the corpus list too.** The same suite's `DOCS` array did not include `CLAUDE.md`,
+the single most-read file in the repo. A snippet gate with a gap in its *input* is the same
+failure one level up. — seen in: tjs-lang (0.13.0)
+
+### A skip flag names exactly what it skips
+
+A slow *correctness* gate folded into a flag named for a different category disappears.
+
+tjs-lang has two dogfood ratchets — *can the toolchain convert its own source and its own
+test suite?* — guarded by `if (process.env.SKIP_BENCHMARKS)`. `test:fast` sets that flag.
+CI runs `test:fast`. So neither ratchet had **ever** run in CI, and both were invisible to
+every automatic signal.
+
+Two measured costs:
+
+- the pre-tag suite stayed **red through an entire round of blocker fixes** while every
+  automatic signal was green;
+- the known-failure list sat at **eleven** entries, six annotated "undiagnosed" for weeks.
+  Given a CI lane, it dropped to **two** — nine of them were one defect, already fixed. A
+  ratchet nobody runs cannot invite that connection.
+
+The flag's *name* was the whole problem: nobody reading `SKIP_BENCHMARKS` in a `test:fast`
+definition thinks "this also disables two correctness gates."
+
+> **A skip flag names exactly what it skips, and nothing rides along.** If a slow
+> correctness check needs excluding from the fast lane, give it its own flag and its own
+> lane. When you add a check to an existing flag, re-read the flag's *name* and ask whether
+> the check belongs to that category or merely shares its runtime cost.
+
+"Slow" was a real reason to exclude them; "benchmark" was never the right name for it. The
+fix was a separate `test:dogfood` script and its own CI step — deliberately *not*
+un-gating them in the fast lane, since tripling the inner loop is how a fast lane stops
+being used. — seen in: tjs-lang (0.13.0)
+
 ## Test the environment adopters have, not the clean room
 
 Suites almost always run **from nothing, in-repo, to nothing**: fresh state, one dev server,
