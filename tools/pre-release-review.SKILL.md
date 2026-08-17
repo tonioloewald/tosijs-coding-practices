@@ -77,6 +77,12 @@ pre-release review". This skill is the executable version of it.
 
 ## Acting on the result
 
+- **File the report FIRST, before acting on any finding**: copy `reportMarkdown` to
+  `docs/reviews/<version>-<slug>.md` in the reviewed repo and commit it. A report at a
+  session-scratch path is one cleanup away from gone, and it is the only artifact recording
+  what was found and *not* fixed. Make sure the published package excludes it
+  (`"!docs/reviews"` in `files`, or equivalent) — review reports are process artifacts, not
+  shipping docs.
 - **BLOCK** → do not cut the release. Walk the blockers; fix them (or get the user to), then
   re-run.
 - **GO_WITH_FOLLOWUPS** → the release can proceed, but **file every follow-up** before moving
@@ -90,7 +96,7 @@ pre-release review". This skill is the executable version of it.
 | --- | --- |
 | correctness, efficiency, DRYness, docs, coverage, DX | fix now, or this repo's `TODO.md` |
 | **ecosystem & abstraction health** | a **GitHub issue on the upstream repo** (`gh issue create -R tonioloewald/<target>`), mirrored in this repo's `UPSTREAM.md` with the issue URL. **Never edit the other repo** — file, don't fix. Also close any incoming issue this release fixes, naming the version. |
-| **practices & process self-review** | a change to the shared **`tosijs-coding-practices`** repo (and grep its cross-cutting docs for parallel mentions), and/or this repo's `CLAUDE.md`/`AGENTS.md` |
+| **practices & process self-review** | a **direct edit** to the shared **`tosijs-coding-practices`** repo (it is the standing exception to file-don't-fix — filing an issue there is a deferral, not a write-back; grep its cross-cutting docs for parallel mentions), and/or this repo's `CLAUDE.md`/`AGENTS.md`. The write-back must **name the commit range it covers** (`<base>..<sha>`, `<sha>` = the reviewed repo's HEAD at write time) — without the range, staleness has to be noticed instead of checked, and it is not noticed |
 
 Lenses 7–8 rarely block a release — they **compound**. If they returned no findings, be
 suspicious: it usually means nobody looked. Surfacing "we are working around a missing seam in

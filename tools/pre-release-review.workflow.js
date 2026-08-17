@@ -10,10 +10,16 @@ export const meta = {
 }
 
 // ---- inputs -----------------------------------------------------------------
-// args: { baseRef?, bump?: 'patch'|'minor'|'major', scope?, depth?: 'fast'|'full' }
-const base = (args && args.baseRef) || 'main'
-const bump = (args && args.bump) || 'minor'
-const diffCmd = (args && args.scope) || `git diff ${base}...HEAD`
+// args: { baseRef?, bump?: 'patch'|'minor'|'major', scope?, depth?: 'fast'|'full', repoDir? }
+// args may arrive as a JSON string depending on the caller — parse defensively
+// (this silently degraded three real runs to base='main', an empty diff)
+const opts = typeof args === 'string' ? JSON.parse(args) : args || {}
+const base = opts.baseRef || 'main'
+const bump = opts.bump || 'minor'
+const diffCmd =
+  opts.scope ||
+  `git diff ${base}...HEAD` +
+    ` # if this diff is empty, the base is wrong: fall back to \`git describe --tags --abbrev=0\` (or the last version-bump commit if no tags) and diff against that — and REPORT the empty-base as a finding`
 
 // How deep to VERIFY. Verification is ~70% of this workflow's cost, and measurement across
 // six real runs of this exact gate showed the money was being spent in the wrong place:
@@ -28,7 +34,7 @@ const diffCmd = (args && args.scope) || `git diff ${base}...HEAD`
 //   fast (iterating):        verify blocker only.       ~62% cheaper — run it every iteration.
 // The lens set does NOT shrink in either mode: lenses are cheap (~0.3 MB each) and are where
 // the value is (blast-radius alone found 8 blockers). Cutting lenses would cut value, not cost.
-const depth = (args && args.depth) || 'full'
+const depth = opts.depth || 'full'
 const VERIFY_SEVERITIES = depth === 'fast' ? ['blocker'] : ['blocker', 'major']
 // Key on the severity you'd ACT on, not just the label the finder typed: a reviewer who is
 // unsure a "minor" isn't really a blocker sets severityUncertain, and that uncertainty is
@@ -69,7 +75,7 @@ const LENSES = [
   {
     key: 'dx',
     title: 'Developer experience',
-    checks: `The DX we PROVIDE. API ergonomics: emitted types accurate (no required->optional .d.ts drift), good inference, no re-introduced footgun (on<Event>, value-as-attribute, boolean-defaulting-true). Error messages actionable; assignment-strictness / monadic errors used where apt. Conventions: handle<Event> callbacks; deprecations keep old names working + warn once. The "point an agent at it and it works" test: CLAUDE.md/AGENTS.md current, gotchas documented, and \`bun install\` -> \`bun start\`/\`bun test\`/\`bun run build\` succeed from a fresh clone (TLS certs, single lockfile).
+    checks: `The DX we PROVIDE. API ergonomics: emitted types accurate (no required->optional .d.ts drift), good inference, no re-introduced footgun (on<Event>, value-as-attribute, boolean-defaulting-true). Error messages actionable; assignment-strictness / monadic errors used where apt. OUTPUT IS SIGNAL, NOT NARRATION — flag log/console spam in the diff: breadcrumb/happy-path logs (entering handler, processing item, reached here), leftover debug output, repeated/unaddressed deprecation or retry warnings. Test per line: does it change what a reader would DO? If not it's spam (keep receipts for destructive/rare actions). Raise it even though it reads cosmetic — spam is almost always a SYMPTOM (a debug log left from a bug hunt, a deprecation nobody fixed, retry noise from a flaky dep), so flagging it drives the underlying cause to be fixed; and noise trains the team to stop reading output, so the one real line scrolls past unseen. Conventions: handle<Event> callbacks; deprecations keep old names working + warn once. The "point an agent at it and it works" test: CLAUDE.md/AGENTS.md current, gotchas documented, and \`bun install\` -> \`bun start\`/\`bun test\`/\`bun run build\` succeed from a fresh clone (TLS certs, single lockfile).
 **BREAKING CHANGES — check all four.** If this release removes or changes public API: (1) is the break JUSTIFIED (does it buy something a deprecation couldn't? an incidental break, made because the old API was in the way of a refactor, is the kind consumers resent); (2) does the VERSION reflect it; (3) is there a CHANGELOG ENTRY NAMING EXACTLY WHAT BROKE — a release that removes public API with no changelog entry is a trap, and an easy one to ship because the code still compiles; (4) are there MIGRATION NOTES (ecosystem convention: a \`Migration.md\` shipped in \`docPaths\`) telling a consumer precisely what to change, before -> after. Prefer the deprecation path; if you break, say why.`,
   },
   {
@@ -99,6 +105,7 @@ Report 7b findings even when they are not defects in the diff (e.g. "issue #N ha
 - Did this release **contradict, outdate, or vindicate** a documented practice? A practice that didn't match reality is a BUG IN THE KNOWLEDGE BASE — say so and propose the correction (with attribution), don't route around it.
 - What did we learn here that **would have saved time if it had been written down**? Propose the entry and which doc it belongs in.
 - Did the **process** hold — did a lens miss something that bit us, is a lens dead weight, did the gate work?
+- If the repo carries a PRIOR lens-8 write-back claim (a checked TODO item, a docs/reviews report), verify it NAMES THE COMMIT RANGE it covered (\`<base>..<sha>\`) and that nothing landed after it. A claim with no range, or one that predates later commits while asserting completion, is a finding — staleness must be checkable, not merely noticeable.
 - Are this project's own CLAUDE.md / AGENTS.md still accurate after the change?
 Findings here are proposed CHANGES TO THE PRACTICES (or to this repo's agent docs), not to the shipping code. Severity is usually minor/major, rarely a blocker. Returning zero findings is suspicious — it usually means nobody looked.`,
   },
@@ -123,6 +130,7 @@ This is what a library is FOR: do a thing well in one place, and every consumer 
   - A LOCAL fix to a GENERAL problem is a leak — the next consumer re-hits it. Was the fix made at the layer where everyone benefits, or patched where it happened to bite?
   - DUPLICATION is a leak, and worse than untidy: it SEVERS THE PROPAGATION PATH. When the same logic lives in two places a fix reaches only one — and if the TESTED copy is the one that doesn't ship, improvements propagate to NOBODY. (This is the real cost DRY guards; report it here, from the propagation angle, when a change adds or leaves such a copy on a path that matters.)
   - PROPAGATION COST: a benefit consumers get by merely updating is true negative blast radius; one that forces every consumer to change code (a breaking change, a migration) is leverage with friction — ask whether it could have shipped without the friction.
+  - GENERATED, not just propagated: a build/dev/review tool encounters the rest of the stack every run, and each encounter can leave it BETTER. Two moves, and their absence is a finding: (i) SURFACE AND ROUTE, don't absorb — a defect this diff WORKS AROUND in something it doesn't own (a dependency, the machine, another process) should be FILED upstream with the workaround kept only until the fix ships; a silent local workaround buries the signal and guarantees the next consumer re-hits it; (ii) FEED THE LESSON BACK — when this change was prompted by a bug some earlier review/build caught, was the CLASS of it encoded where the tool re-applies it automatically (a lens prompt, a preflight check, a KB entry)? A one-off catch helps one release; a hardened guard helps every release after. A diff that hand-patches around an upstream bug with no issue filed, or fixes a bug-class without hardening the guard that missed it, has left negative blast radius on the table — report it.
 Not every change has a B-half finding; a pure internal refactor may capture leverage cleanly. But a change that fixes a bug LOCALLY that other consumers will hit, or that hand-copies a shared policy, has leaked leverage — say so.
 
 FAST EXIT (applies to the A-half): if the diff writes nothing outside the repo, spawns nothing, binds nothing and kills nothing, say so in one line and return no A-half findings. Do not manufacture footprint findings — on a pure library change the A-half is correctly quiet. (Still run the B-half.)
@@ -217,7 +225,11 @@ const GAPS_SCHEMA = {
   },
 }
 
-const READONLY = `You are REVIEWING, read-only. Do NOT edit, write, or create any file, and do NOT run any mutating command (no git add/commit/push/checkout/stash, no formatter). Running the test suite (\`bun test\`) or a read-only build to OBSERVE results is fine — just don't commit or hand-edit anything.`
+const READONLY = `You are REVIEWING, read-only. Do NOT edit, write, or create any file, and do NOT run any mutating command (no git add/commit/push/checkout/stash, no formatter). Running the test suite (\`bun test\`) or a read-only build to OBSERVE results is fine — just don't commit or hand-edit anything.${
+  opts.repoDir
+    ? `\n\nIMPORTANT: the repository under review is \`${opts.repoDir}\` — NOT the session's default working directory. cd there first; run ALL commands (git, bun, file reads) against that directory.`
+    : ''
+}`
 
 const reviewPrompt = (lens) =>
   `${READONLY}

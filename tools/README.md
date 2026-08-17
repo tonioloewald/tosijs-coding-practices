@@ -36,6 +36,14 @@ Then in `~/.claude/skills/pre-release-review/SKILL.md`, make sure the `scriptPat
 `$HOME/.claude/skills/pre-release-review/pre-release-review.workflow.js` — the shipped copy
 uses an absolute path; adjust it to your home directory).
 
+**The install is a second copy, and it WILL diverge.** Real release runs improve the
+installed copy in place (that's where the tool actually gets exercised); repo edits land here.
+Both have happened without the other: an audit found the installed copy carrying four
+improvements the repo lacked (defensive args parsing, log-spam DX criteria, a blast-radius
+check, `repoDir` support) while the repo carried `severityUncertain` the installed copy
+lacked. **When you edit either copy, diff the other and merge both directions** — and a
+practices-repo audit should include that diff.
+
 ### Use
 
 ```

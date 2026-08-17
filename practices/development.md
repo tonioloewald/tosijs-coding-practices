@@ -208,7 +208,9 @@ is tracked by issues filed on each.
 - **Agent-facing docs travel with the code.** When you change an entry point, CLI command,
   script, or endpoint, update the doc that agents read (`CLAUDE.md`, `llms.txt`, a plugin's
   `SKILL.md`) *in the same change* — they silently drift otherwise, and some repos gate this in
-  CI (`git diff --exit-code` after re-running the generator).
+  CI (`git diff --exit-code` after re-running the generator). The generalized form — delete the
+  second copy and generate it — is [documentation-surface.md](./documentation-surface.md)
+  (proposal).
 
   **Running the generator is not the gate — diffing the result is.** tjs-lang's CI ran
   `bun run make` (which regenerates four committed paths) and never looked at the output, so
