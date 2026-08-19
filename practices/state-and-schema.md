@@ -158,7 +158,7 @@ These recur in every app in the ecosystem. Internalize them.
   (must pass) and `$counterexamples` (must fail); `checkExamples()` lints both at definition
   time. — seen in: tosijs-schema 1.5.0, tosijs (agent surface)
 - **Derive a schema from data with `inferSchema(sample)`** (tosijs-schema 1.6.0; also the
-  `tosijs-schema/infer` ~1.3kB subpath) — the runtime inverse of `Infer<S>`. It unifies across
+  `tosijs-schema/infer` ~1.4kB subpath) — the runtime inverse of `Infer<S>`. It unifies across
   EVERY array element (not `sample[0]`), leaves objects open (`additionalProperties: true` — a
   sample is not a contract), infers structure only (never range constraints), and roundtrip-holds
   (`validate(sample, inferSchema(sample))`). Roots carry `$inferred: true` so an observed schema

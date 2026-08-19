@@ -283,7 +283,10 @@ over the generated paths. — seen in: haltija, tosijs-ui, tosijs, tosijs-3d, to
   atomically with it — otherwise the accidental old behavior is load-bearing with no replacement.
   tosijs-schema 1.5.0 enforced `additionalProperties` with no way to spell an intentionally-open
   object; the `.open` relief didn't arrive until 1.6.0 — one full release of consumer pain (see
-  its issues #4/#5). Sharpens the "stricter = breaking" rule above. — seen in: tosijs-schema
+  its issues #4/#5). Sharpens the "stricter = breaking" rule above. The clean positive
+  counterpart: tosijs-schema 1.7.0 tightened `format: 'date-time'` to RFC 3339 AND shipped the
+  `format: 'date'` remedy (+ `s.date` builder) in the same release — tighten-and-relief atomic,
+  break announced with a migration table. — seen in: tosijs-schema (1.5.0→1.6.0 negative, 1.7.0 positive)
 - For rebases/merges over committed generated files, mark them `merge=ours` in `.gitattributes`
   and run `git config merge.ours.driver true` once per clone, then rebuild — resolving those
   conflicts by hand is pointless since the next build overwrites them. — seen in: tosijs-ui
