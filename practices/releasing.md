@@ -270,6 +270,20 @@ over the generated paths. — seen in: haltija, tosijs-ui, tosijs, tosijs-3d, to
   (bundled agent-facing docs) sat outside `pack` and shipped stale in the published 1.4.0
   tarball; the v1.5.0 review caught it. Prefer the list-free gate: full build, then
   `git status --porcelain` must be empty before tagging. — seen in: tosijs-schema (v1.5.0 review)
+
+- **A drift gate built on "regenerate + `git diff`" protects only GENERATED artifacts** — a
+  hand-maintained field it *names* is false assurance. tosijs-schema's `llms.txt` version header
+  read `v1.5.0` through v1.5.1 and v1.6.0 while the release checklist listed "llms.txt version"
+  as gate-covered: `pack` never regenerated the file, so a forgotten hand-edit produced no diff
+  and the gate passed on a wrong value. Either GENERATE the field (stamp it from the single
+  source of truth — tosijs-schema now stamps the header from `package.json` in `make-context.ts`)
+  or drop it from the gate's claimed coverage. — seen in: tosijs-schema (v1.6.0 review)
+- **Ship the escape hatch in the SAME release as the tightening**, not one later. When a release
+  tightens a default that fails consumers on install, the sanctioned alternative must land
+  atomically with it — otherwise the accidental old behavior is load-bearing with no replacement.
+  tosijs-schema 1.5.0 enforced `additionalProperties` with no way to spell an intentionally-open
+  object; the `.open` relief didn't arrive until 1.6.0 — one full release of consumer pain (see
+  its issues #4/#5). Sharpens the "stricter = breaking" rule above. — seen in: tosijs-schema
 - For rebases/merges over committed generated files, mark them `merge=ours` in `.gitattributes`
   and run `git config merge.ours.driver true` once per clone, then rebuild — resolving those
   conflicts by hand is pointless since the next build overwrites them. — seen in: tosijs-ui

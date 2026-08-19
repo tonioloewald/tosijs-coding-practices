@@ -157,6 +157,17 @@ These recur in every app in the ecosystem. Internalize them.
   fails closed on keywords/formats `validate` doesn't enforce). Schemas carry `examples`
   (must pass) and `$counterexamples` (must fail); `checkExamples()` lints both at definition
   time. — seen in: tosijs-schema 1.5.0, tosijs (agent surface)
+- **Derive a schema from data with `inferSchema(sample)`** (tosijs-schema 1.6.0; also the
+  `tosijs-schema/infer` ~1.3kB subpath) — the runtime inverse of `Infer<S>`. It unifies across
+  EVERY array element (not `sample[0]`), leaves objects open (`additionalProperties: true` — a
+  sample is not a contract), infers structure only (never range constraints), and roundtrip-holds
+  (`validate(sample, inferSchema(sample))`). Roots carry `$inferred: true` so an observed schema
+  is distinguishable from an authored one. **Do NOT use the deprecated `s.infer` builder method**
+  (first-element-only, closes objects — the footgun 1.6.0 replaced). — seen in: tosijs-schema 1.6.0
+- **Model a shape you don't control with `.open`**, not `s.record(s.any)`: `s.object(props).open`
+  keeps `properties`/`required` and admits unknown keys, so a provider adding fields (an LLM
+  message's `reasoning_content`) doesn't fail validation while a genuinely wrong value still does.
+  — seen in: tosijs-schema 1.6.0, tjs-lang (LLM battery atoms)
 - Pair schema validation with TJS safety boundaries (`./tjs-lang.md`) at public API edges.
 
 ## Sync
