@@ -387,8 +387,24 @@ gh issue list -R tonioloewald/<this-repo> --state open
   for this?_ **A test loosened, or complexity added, to route around a bug we filed against
   ourselves is the signature failure of this half** — 7a will flag the _shape_ of it and not
   connect it to the open issue unless you deliberately do.
-- **Done when:** every open incoming issue has a stated disposition, and every workaround found
-  in 7a has been checked against the issue list.
+- **Glance at the consumer footprint on a breaking or tightening change.** When the release
+  breaks something (a validation tightening, a removed/renamed API), the "who breaks / how far
+  does this propagate" reasoning must be grounded in the *actual* downstream base, not assumed.
+  Look at npm downloads and GitHub dependents so the blast-radius claim is quantitative:
+
+  ```bash
+  curl -s https://api.npmjs.org/downloads/point/last-month/<pkg>   # download trend
+  gh api "/repos/tonioloewald/<repo>" --jq '.stargazers_count'      # + the repo's "Used by" page
+  ```
+
+  A policy of breaking-toward-correctness in minors often rests on "no significant external
+  consumers" (see [`releasing.md`](releasing.md) "Versioning philosophy"). This is where that
+  assumption gets *validated* rather than restated — a footprint that has quietly grown flips the
+  calculus, and you want to notice before a break bites someone, not after. — seen in:
+  tosijs-schema (breaking-in-a-minor twice; the assumption held, but nothing was checking it).
+- **Done when:** every open incoming issue has a stated disposition, every workaround found
+  in 7a has been checked against the issue list, and a breaking release has looked at who
+  actually consumes the package.
 
 — seen in: tosijs-ui 1.7 review (which found #10 was closed _by_ the release, #5/#7 fixed long
 ago and left open, and a loosened `title` assertion routing around our own open #6)

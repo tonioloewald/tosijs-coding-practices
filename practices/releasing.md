@@ -178,6 +178,34 @@ helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was th
 - Desktop (Tauri) builds auto-sync `package.json` version into `src-tauri/tauri.conf.json`
   on every build for the same reason — one source of truth, no drift. — seen in: lukko, kith-email
 
+## Versioning philosophy: break toward correctness, but know who you're breaking
+
+When a project's consumers are **all in-ecosystem** (sibling repos you control, on lockfiles/CI),
+**breaking toward correctness — announced and documented, in a minor — is the right default.**
+The conservative machinery (opt-in flags, deprecation windows, a whole legacy mode) is real
+standing complexity that only pays for itself against a large **unknown external** base. Don't
+build it speculatively. But hold three distinctions, because they change the answer in specific
+cases — worked out over tosijs-schema's two breaking-in-a-minor releases (1.5.0, 1.7.0):
+
+- **The break's CLASS decides whether a "legacy-loose" escape hatch is ever acceptable.**
+  A **fail-open / security** fix (the old behavior was a *hole* — `additionalProperties` not
+  enforced, a prototype-key bypass) must **never** get a loose opt-in; that option is literally
+  "keep the vulnerability," and these deserve the *most* aggressive treatment (GHSA-adjacent). A
+  **spec-conformance** tightening (accepted more than the spec but leaked nothing — `date-time`
+  → RFC 3339) *may* carry a loose opt-in if you want one. Scope any escape hatch to the
+  conformance class only.
+- **The trigger for "deprecate-then-major" is break FREQUENCY, not just external consumers.**
+  Even in-ecosystem, a consumer would rather absorb one `2.0.0` migration than a trickle of
+  surprise minor breaks. Rare breaks → minors are fine. If you notice you're shipping a breaking
+  minor every few weeks, batch them into a major (loose defaults deprecated-but-working in
+  between) to cut the drip — regardless of who consumes.
+- **"No significant external consumers" is an assumption, so keep validating it.** The whole
+  policy rests on it. The nine-lens review's lens 7b now glances at npm downloads + GitHub
+  dependents on a breaking release ([`review.md`](review.md) §7b) so a footprint that quietly
+  grew gets noticed *before* a break bites someone.
+
+— seen in: tosijs-schema (versioning policy in its README, breaking-in-a-minor 1.5.0 + 1.7.0).
+
 ## Breaking changes: justify, document, migrate
 
 Removing or changing public API imposes a cost on every consumer. Before you ship one, all four:
