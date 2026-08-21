@@ -87,14 +87,17 @@ considered choice; it's the default every custom-elements tutorial opens with. B
 your design system's cascade and CSS custom properties to reach in. The reason people accept the
 whole bundle anyway is that **`<slot>` only works inside shadow DOM**: composition is held
 hostage to encapsulation you didn't want. **tosijs refused that trade and reimplemented slot
-composition for light DOM** (`<tosi-slot>` / `xinSlot()`), so you get composition *without* being
+composition for light DOM** (`<tosi-slot>` / `tosiSlot()`), so you get composition *without* being
 forced into shadow DOM.
 
 **Rule of thumb:** author in **Light DOM by default**; reach for shadow DOM only when you truly
 need CSS/DOM isolation (e.g. rendering untrusted email HTML, which is also DOMPurify-sanitized).
-Set `role` in `initAttributes` to opt into light DOM. In light DOM, use `xinSlot()` (a bare
-`slot()` silently becomes `<xin-slot>`/`<tosi-slot>`); use `slot()` only in shadow-DOM
-components.
+Set `role` in `initAttributes` to opt into light DOM. In light DOM, use `tosiSlot()` (a bare
+`slot()` silently becomes `<tosi-slot>`); use `slot()` only in shadow-DOM components.
+
+> **Renamed in tosijs 1.8.0.** `xinSlot()` still works as a deprecated alias naming 2.0, and
+> `<xin-slot>` markup is now a warning tombstone that still composes — but both are on the way
+> out. Use `tosiSlot()` / `<tosi-slot>` in new code. — seen in: tosijs 1.8.0
 
 **The footgun in the fix — know it.** Light-DOM slotting inserts a **real element** into the
 tree, so **a slotted element's `parentElement` is the `<tosi-slot>`**, not the host or the
@@ -168,18 +171,27 @@ There is **no clean workaround**, and don't go hunting for one: the slot is a re
 
 ## Callback naming — the `on<Event>` trap
 
-`elementCreator()` / the element factory treats **any `on<Capital>`-prefixed prop as a DOM
-`addEventListener` target**. Assign a function to `onInput`/`onProgress`/`onDeath` and the class
-field stays `null` — the callback silently never fires, no error. This bit multiple projects for
-hours.
+The element factory treats an `on<Capital>`-prefixed prop as a DOM `addEventListener` target.
+Historically it did so **unconditionally**: assign a function to `onInput`/`onProgress`/`onDeath`
+and the class field stayed `null` — the callback silently never fired, no error. This bit multiple
+projects for hours.
 
-- **Use non-`on` names** for callback props: `drive`, `whenDestroyed`, `handleResize`, etc.
-  `handle<Event>` is the established component-callback convention; the base warns once per class
-  when a subclass defines an `on<Event>` member.
-- If you must set a function/object prop, use the **`apply(el){ el.onProgress = fn }`** escape
-  hatch in the element spec, which bypasses the attribute/event-listener path.
+**tosijs 1.8.0 changed the rule, and the new one is conditional.** If the member already **holds
+a function** when the creator runs, assignment wins (`creator({ onProgress: fn })` sets the
+member); if it is `undefined`/`null`, event sugar still wins. Which means **the behaviour now
+depends on how the member was initialised** — a declared-but-undefined `onProgress` still gets
+shadowed, and the same call site can mean two different things in two components. That
+determinism gap is the part to design around, not the old blanket rule.
 
-— seen in: tosijs, tosijs-3d, tosijs-product
+- **Prefer non-`on` names** for callback props regardless: `drive`, `whenDestroyed`,
+  `handleResize`. `handle<Event>` is the established component-callback convention, and it is the
+  only spelling that means one thing everywhere. The base warns once per class when a subclass
+  defines an `on<Event>` member.
+- Give a callback member a **function default** if you want assignment to win predictably.
+- The **`apply(el){ el.onProgress = fn }`** escape hatch in the element spec still bypasses the
+  attribute/event-listener path entirely, and is unaffected by any of this.
+
+— seen in: tosijs, tosijs-3d, tosijs-product; rule inverted in tosijs 1.8.0
 
 ## Parts & event handlers
 

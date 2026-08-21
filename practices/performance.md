@@ -157,6 +157,16 @@ So the budget isn't a hard ceiling on the total. What it actually governs:
   `tosijs/core`, `tosijs/state`) so minimalists opt in without the default
   losing capability — and without silent breakage for people who didn't opt
   in. — seen in: tosijs 1.8.0
+  - **But an entry point must not become a second SINGLETON.** tosijs tried to
+    ship the agent surface as a separately-bundled `tosijs/agent`, and the
+    separate bundle carried **its own copy of the state registry** — so the
+    surface faithfully described an empty app. It now resolves to the same
+    file with narrower types, and the slimming happens in the entry that
+    genuinely can't tree-shake (the IIFE) instead. Before splitting an entry,
+    ask what module-level state the subset touches: anything singleton-shaped
+    (a registry, a cache, a listener table, a `customElements` registration)
+    must be **shared, not duplicated**, or the split silently forks it.
+    See also [`dependencies.md`](dependencies.md). — seen in: tosijs 1.8.0
 
 - **Print gzipped size on every build/pack — it's the size-regression gate.** No CI means
   the printed kb is the only signal. Use the throwaway `show-size` pattern:

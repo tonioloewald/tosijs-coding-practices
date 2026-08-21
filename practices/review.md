@@ -9,7 +9,7 @@
   sync, untrusted input, deployment config).
 - **CI is partial, and you must know exactly which lanes it covers.** This file used to say
   there was _"no CI — no `.github/` workflows anywhere in the ecosystem"_. That is false
-  (tosijs-ui has `ci.yml`; haltija has **four** workflows — unit-tests, test-qa, e2e, docs-drift;
+  (tosijs-ui has `ci.yml`; tosijs has one too — a `unit` lane plus a Playwright `e2e` lane, `main` only; haltija has **four** workflows — unit-tests, test-qa, e2e, docs-drift;
   tjs-lang added `ci.yml` in 0.13.0; see `00-stack.md`), and the falsehood
   was load-bearing: a reader who believes there is no CI never asks **"which lanes does CI
   actually run?"** — which is the exact question that catches a rotted lane. tosijs-ui's CI runs

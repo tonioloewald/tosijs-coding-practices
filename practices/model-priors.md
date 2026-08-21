@@ -63,7 +63,7 @@ CSS custom properties to reach in. The encapsulation is sold as a feature; in pr
 often an obstacle you spend effort punching holes through.
 
 **What this stack did.** tosijs **refused the trade** rather than accepting a bad design: it
-reimplemented **slot composition for light DOM** (`<tosi-slot>` / `xinSlot()`), so you get
+reimplemented **slot composition for light DOM** (`<tosi-slot>` / `tosiSlot()`), so you get
 composition *without* being forced into shadow DOM. Hence the ecosystem default: **light DOM**,
 with shadow DOM reserved for when you genuinely need isolation (e.g. rendering untrusted email
 HTML). Reflexive shadow DOM here also **breaks tosijs path bindings** outright.
