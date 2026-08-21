@@ -11,7 +11,7 @@ The promise is always kept for a while and never kept forever.
 The fix that works has one shape — **make the second copy a build artifact** — and the fix that
 never works is resolving to be more careful.
 
-## The four moves
+## The five moves
 
 ### 1. Generate documentation from ONE source of truth, and put that source in (or beside) the code
 
@@ -120,6 +120,59 @@ Haltija's agent prompt was ~31KB (~7.8k tokens) when first measured, against an 
 a "pithy one-pager". One section was 52% of it, and its largest blocks were caveats that each
 carried *the rule, the reasoning, and the incident that caused it*. Only the rule earns space on a
 surface read every time; the incident already lives in the changelog and the code comments.
+
+### 5. When the fact is OUTSIDE your build, stamp it "as of DATE" instead of promising to maintain it
+
+Moves 1–4 all have the same shape: delete the second copy, generate it from the first. That works
+because both copies are inside the repo. **Some facts have no first copy you control** — a browser
+version, whether a competitor has shipped, the state of a spec, who else is doing this. You cannot
+generate them, and there is no build step that can fail when they go stale.
+
+The instinct is to promise to keep them current. Don't. That promise is the same one move 1 exists
+to abolish, just aimed at the outside world, where you have *less* ability to keep it. What you get
+is a page that is confidently wrong at an unknown moment — worse than an obviously old page,
+because nothing signals which.
+
+**So date the claim and let it age honestly:**
+
+```
+## Prior art & the window — all facts below are as of 2026-08-21
+
+> This section is a snapshot, not a maintained page. Everything in it is
+> external state we do not control and cannot generate, so it is stamped
+> rather than promised. Do not read it as current; read it as dated. If the
+> date is old and the answer matters, re-survey and re-stamp.
+```
+
+A reader can then do the one thing they could never do with an undated page: **decide whether to
+trust it.** "As of six weeks ago" is a usable input. An unmarked assertion about Chrome versions is
+not.
+
+Practical notes, learned the hard way:
+
+- **Stamp the section, not every sentence.** A per-claim date turns the page into noise. One header
+  stamp covers a block of facts gathered in one sitting, which is how surveys actually happen.
+- **Do not write the re-survey as a diff.** Marking "⚠️ this changed since last time" documents
+  *your edit*, not the subject, and it is a maintenance burden that pays once and costs forever.
+  Rewrite the section as a fresh statement of what is true, and let git hold the history. The
+  exception is a claim you got *wrong* rather than merely stale — that belongs in the text, because
+  the correction is information the reader needs (see `review.md` on findings that changed a
+  decision).
+- **Perishability is a property of the CLAIM, not the document.** The same page can hold "HATEOAS is
+  the philosophical ancestor of this" (indefinite) and "Chrome 149 is running the origin trial"
+  (weeks). Separate them, and stamp only what rots.
+- **Prefer the claim that rots slower.** "Every integration hand-registers tools" was falsified by
+  two platform launches inside a month. "Platform packs know their domain, not your app" survives
+  them and says something more precise. If a competitive claim is a headcount of who hasn't done X
+  yet, it has a short shelf life by construction — re-aim it at the *mechanism*, which changes far
+  more slowly than the roster.
+- **The stamp is not a licence to skip the check before you ship.** Date-stamping removes the
+  obligation to *continuously* maintain; it does not remove the obligation to re-survey when the
+  claim is load-bearing for a release, a blog post, or a strategy call.
+
+— seen in: tosijs 1.8.0 (`plan-and-prior-art.md`), where a three-and-a-half-week-old survey had one
+of its five central claims falsified by two platform launches, and a "no such API exists" note had
+been written down as fact and queued as an upstream issue.
 
 ## The ideal pipeline, and why you probably will not start there
 
