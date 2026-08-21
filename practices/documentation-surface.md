@@ -190,6 +190,14 @@ Practical notes, learned the hard way:
 - **The stamp is not a licence to skip the check before you ship.** Date-stamping removes the
   obligation to *continuously* maintain; it does not remove the obligation to re-survey when the
   claim is load-bearing for a release, a blog post, or a strategy call.
+- **Stamp only what you cannot generate.** Perishability and generatability are different axes,
+  and the interesting case is a fact that is perishable *and yours*: your own bundle sizes,
+  benchmark numbers, test counts. Those drift every release — but they are measurable by your own
+  build, so they belong to **move 1** (generate them), not here. Reach for a stamp only when the
+  fact is genuinely ungeneratable: someone else's version numbers, someone else's roadmap. And
+  where a number must be quoted somewhere the build cannot reach — a blog post, a conference
+  talk, a README on another site — stamp it *with the version it was measured against*, because
+  "6.7 kB" ages invisibly while "6.7 kB, measured against 1.8.0" cannot.
 
 — seen in: tosijs 1.8.0 (`plan-and-prior-art.md`), where a three-and-a-half-week-old survey had one
 of its five central claims falsified by two platform launches, and a "no such API exists" note had
