@@ -133,6 +133,27 @@ to abolish, just aimed at the outside world, where you have *less* ability to ke
 is a page that is confidently wrong at an unknown moment — worse than an obviously old page,
 because nothing signals which.
 
+**Give the stamp ONE machine-readable spelling, so it can be found later.** A stamp nobody can
+locate is a stamp nobody re-surveys — you are back to relying on someone remembering which pages
+contain perishable claims, which is the memory-based promise this whole document exists to replace.
+The convention is an HTML comment (invisible when rendered, greppable, valid anywhere Markdown is):
+
+```
+<!-- as-of: 2026-08-21 | what this covers, briefly -->
+```
+
+with a tiny script that lists them by age and can fail on a limit:
+
+```
+bun run stamps                  # what have we asserted, and how old is it?
+bun run stamps --max-age 60     # exits non-zero if anything is older
+```
+
+**Make the age check a RELEASE step, not a build gate.** A stale doc is not a broken build, and
+failing `build` over the age of a survey trains everyone to bypass it — the same reflex that makes
+a flaky test worthless. At release, though, it is exactly the right question, because that is when
+a perishable claim becomes load-bearing. (tosijs: `bin/stamps.ts`, step 5 of Releasing.)
+
 **So date the claim and let it age honestly:**
 
 ```
