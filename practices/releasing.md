@@ -518,3 +518,38 @@ proving they match.
   Decide stable-vs-beta before you type either command.
 - DMG notarization is on-demand, not part of either loop; set `APPLE_API_KEY_ID` before
   overwriting `APPLE_API_KEY` or notarization fails with a JSON parse error.
+
+## `npm deprecate` is for "you cannot get the fix by updating"
+
+Distinct from API deprecation above (keeping an old *name* working). This is about marking a
+published VERSION, and the bar is a question about **escape**, not severity:
+
+- **Can a consumer reach the fix by updating?** Then the CHANGELOG's upgrade note is the
+  proportionate channel — `latest` moving IS the fix reaching them.
+- **If they cannot, deprecate.** The qualifying shape: a break in `0.12.0` where the
+  consumer's range is `^0.12.0`, which under 0.x semver cannot float past `0.13.0`. They are
+  stuck permanently and `npm deprecate` is the only thing that reaches them.
+
+**"This version had a bug" is not the bar.** Every project has bugs; the ones that fix them
+quickly end up with several superseded versions in a row, and deprecating each one produces
+a package whose version list is mostly warnings. That reads as a project in trouble rather
+than one that responds fast — and since every deprecation prints on install, spending the
+signal on marginal versions teaches people to ignore it, including for the one that matters.
+
+Three failure modes, all observed in a single release sequence (tjs-lang 0.13.x, four
+deprecations across six versions, of which **one** met the bar):
+
+1. **Momentum.** Having deprecated the previous two, the third gets recommended without
+   re-examining whether it qualifies. Size the affected population *before* recommending —
+   in the case that prompted this it took two minutes and reversed the answer (the defect
+   needed an opt-in feature that was one release old, and the version was `latest` for 21
+   hours).
+2. **A range sweeping up more than you meant.** `<0.12.1` also catches every prerelease
+   below it. A beta is opt-in and superseded normally; it does not need a warning. Check
+   what the RANGE matches, not just the version you had in mind.
+3. **Not reading the state back.** Two deprecations in that sequence silently did not
+   take — one was owed at a publish and skipped, one did not run. Always
+   `npm view <pkg>@<version> deprecated` afterwards. A deprecation you did not verify is one
+   you did not do.
+
+— seen in: tjs-lang
