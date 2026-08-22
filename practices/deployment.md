@@ -123,7 +123,7 @@ preview: {
 ```
 
 ```bash
-export PREVIEW_HOST=user@<preview-host>   # shell profile — never committed
+. ~/local-secrets/tosijs-preview.env       # sets PREVIEW_HOST — see below
 ```
 
 **Never commit the host** (`host: 'user@ip'`) in a public repo: the deploy/tunnel
@@ -132,6 +132,36 @@ means any fork running `bun run tunnel` opens outbound SSH to your box — an
 address-shaped gift to strangers. (tosijs-3d shipped exactly this and removed it
 in its 0.6.0 blast-radius review; this section used to prescribe it.) Prefer a
 dedicated deploy user over root while you're at it.
+
+### Where machine-local credentials live: `~/local-secrets/`
+
+**`~/local-secrets/` is the one place these values are stored, and the first
+place to look for them.** It is a plain directory (mode `700`) sitting beside
+`tosijs-coding-practices` and `local-packages` — a sibling of the repos, never
+inside one, so it is structurally impossible to commit. One `600` file per
+concern; `tosijs-preview.env` holds `PREVIEW_HOST`. Docs, including this one,
+reference it **by path** — the values appear nowhere but the file.
+
+To have it present in every shell, add to **`~/.zshenv`** — not `~/.zshrc`:
+
+```sh
+[ -f "$HOME/local-secrets/tosijs-preview.env" ] && . "$HOME/local-secrets/tosijs-preview.env"
+```
+
+Two failures produced this, both worth keeping in mind because neither announces
+itself:
+
+- **Redacting a config does not redact history.** Removing the host from
+  `site.config.ts` in favour of `process.env.PREVIEW_HOST` left the original
+  value in the git history of two **public** repos, where `git log -S` finds it
+  in seconds. The rule above was written and believed while the address stayed
+  published. **If a credential has ever been committed, it is public — rotate
+  it.** History rewriting on a published repo does not un-publish anything.
+- **"Put it in your shell profile" hides it from everything that isn't you.**
+  Agents and scripts run in non-interactive shells that inherit no profile — so
+  a profile-only value is present for a human and absent for every tool, which
+  is how the tunnel silently became human-only to start. A sourced file is
+  legible to both.
 
 ```bash
 bun run deploy          # dry run — shows what would change
