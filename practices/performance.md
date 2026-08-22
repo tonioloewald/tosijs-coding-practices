@@ -225,6 +225,40 @@ So the budget isn't a hard ceiling on the total. What it actually governs:
 
 ## Measuring
 
+- **A microbenchmark measures the JIT unless you prove otherwise. Three specific ways it
+  lies, all paid for in tjs-lang 0.13.x within three days of each other:**
+  1. **A folded-away baseline.** A pure function called with a constant argument can be
+     hoisted out of the timing loop entirely. Symptom: an implausible rate — `sum += i*i`
+     measured at 3.3 **G**ops/s is not a speed, it is an absence. Compute the per-operation
+     rate and sanity-check it against what the hardware can do before believing any ratio.
+     Adding a sink for the result does **not** always fix it: if the value is still
+     foldable, the compiler folds it anyway (verified).
+  2. **Dead code elimination on the thing under test.** If the result is discarded, the work
+     may not happen. Accumulate into an observed sink — and then check (1), because a sink
+     defeats DCE and not constant-folding.
+  3. **Process history.** The same code measured in-process inside a long-lived test run
+     varied **54×** depending on what the JIT had done earlier: 2.18× running the file
+     alone, 5.05× under a directory run, 116.75× in the full suite. A number produced inside
+     a shared test process characterises that process, not the code.
+
+  **Consequences worth adopting:**
+  - **Calibrate to a time floor.** Scale iterations until a lane runs long enough to measure
+    (~50ms), rather than fixing an iteration count that is meaningless on some machines.
+  - **Report best-of-N, not the mean.** The minimum is the closest thing to an uncontended
+    sample; a mean folds in whatever else the machine was doing.
+  - **Assert on RATIOS, never wall-clock**, when a test must gate on performance. A ratio
+    scales with the machine and does not flake; a threshold in milliseconds fails on a slow
+    CI box and passes on a fast broken one.
+  - **Never run benchmarks alongside anything else.** Doing so during a review produced
+    phantom test failures that then cost a cycle to chase.
+  - **If a test prints a ratio it cannot defend, delete the ratio.** A wrong quotable number
+    is worse than no number: `guides/benchmarks.md` published a 17–28× validation-overhead
+    claim for seven months (real figure: under 2×) sourced from exactly this shape, and it
+    is the kind of number that gets copied into docs and pitches. Print the raw observations
+    and point at the real harness.
+  — seen in: tjs-lang
+
+
 - `settings.perf` / `settings.debug` flags exist in tosijs to surface performance/debug
   info — use them rather than adding ad-hoc logging. — seen in: tosijs
 - **Benchmark against real competitors on every pack.** For a library whose selling point

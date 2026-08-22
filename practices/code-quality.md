@@ -315,3 +315,37 @@ every time, which is exactly the distinction that goes wrong. — seen in: tjs-l
   section of `ROADMAP.md` and treat those decisions as settled — relitigating them
   reintroduces designed-out bug classes (keep `Invalid` "fix payload" and `Denied` "don't
   retry" distinct).
+
+## A fix applied at one site is not applied
+
+**The single most expensive defect class in tjs-lang 0.13.x.** It produced a blocker in
+**four consecutive** review rounds, each time in the fixes for the previous round, and it got
+past nine-lens reviews repeatedly. Instances, all shipped:
+
+- a symlink guard moved into one of three directory walks; the other two kept the old
+  behaviour and were the two that WRITE files
+- a `#!` line re-attached at the file-write path and not the stdout path — where the stdout
+  form is the first example in `--help`
+- a write boundary adopted by one of five call sites in the same file
+- a symlink guard that checked the LEAF but not the directories above it
+- a CHANGELOG claiming a fix for a whole file when one test in it had changed
+
+**Why review does not reliably catch it.** The diff is *correct*. Nothing in the changed
+lines is wrong; the defect is in the lines that were not changed, often in a file the diff
+does not touch. A reviewer reading the change sees a good change.
+
+**The rule:** when a fix touches a value or a decision that crosses a boundary, enumerate
+every consumer of that boundary before calling it done — mechanically, with a `grep`, not
+from memory. In tjs-lang `result.code` had twelve consumer sites and four were tested; the
+other eight happened to be fine, which is luck, not method.
+
+**The durable fix is a test that enumerates, not a lens that reminds.** "Where else?" was
+already written down as a project review lens and still did not fire. What worked was a test
+that walks the command directory and fails on any raw `writeFileSync`, naming the reason. A
+lens can be forgotten; an enumeration cannot.
+
+**And prefer removing the generator.** Two near-identical functions (`emitDirectory` /
+`convertDirectory`) meant every defect had to be fixed twice, and three times running only
+one copy got fixed. Deduplicating them is more valuable than fixing another instance.
+
+— seen in: tjs-lang
