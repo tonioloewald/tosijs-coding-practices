@@ -321,6 +321,17 @@ over the generated paths. — seen in: haltija, tosijs-ui, tosijs, tosijs-3d, to
 
 ## Tagging
 
+**Land the current release before starting the next.** If the current version's tag is not
+pushed and its publish not confirmed on the registry, do **not** bump the version, create the
+next tag, or move any tag — reconcile first. Stacking a new version on an unlanded release
+forks the record three ways (working tree, tags, registry), and every observed
+publish-integrity failure in the ecosystem grew from that state: releases tagged but never
+published (tosijs-ui 1.10.1/1.10.2), a release published from a tree whose commits and tag
+were never pushed (tosijs-timezone-picker 0.6.0), and a dist-tag left pointing at a
+superseded pre-release (tosijs-3d `next`). "Confirm the publish landed" (below) is the check;
+this rule is the ordering that keeps the check meaningful. — seen in:
+tosijs-timezone-picker, tosijs-ui, tosijs-3d (weekly sweep findings); rule set by the owner
+
 Tag `vX.Y.Z` at the release commit and push tags. **Contradiction in the ecosystem:** some
 repos use **lightweight** tags (tosijs, tosijs-ui), others use **annotated** tags (tosijs-3d,
 haltija). Rule of thumb: prefer **annotated** (`git tag -a` — it carries a message and date);
