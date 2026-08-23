@@ -511,6 +511,27 @@ proving they match.
   `src/api-schema.ts`; the `docs-drift` CI workflow re-runs the build and fails if any of them
   differ. Same idea as [Regenerate generated files, then verify they're in
   sync](#regenerate-generated-files-then-verify-theyre-in-sync), enforced in CI.
+- **A prerelease channel NEVER MOVES BACKWARDS IN SEMVER.** Before cutting one, check that
+  the new version sorts **above** whatever the channel's dist-tag currently points at:
+
+  ```sh
+  npm view <pkg> dist-tags        # what next/beta/rc points at today
+  npx semver -r "^<new-version>" <that-version> <new-version>   # the new one must win
+  ```
+
+  Measured failure: `0.7.0-rc.1` was published, work continued, and `0.7.0-beta.1…6` were
+  published after it. Semver sorts `beta` **below** `rc`, so `bun add pkg@next` wrote
+  `^0.7.0-beta.6` and then resolved **backwards** to rc.1 — three-days-older code than the
+  adopter installed — and `bun update` reported the downgrade as an **upgrade**.
+  `maxSatisfying([…], '^0.7.0-beta.6')` returns `0.7.0-rc.1`; reproduce it before disbelieving
+  it. The successor to `-rc.N` is `-rc.N+1`, **never** a beta.
+
+  The existing `npm view dist-tags` check cannot catch this: the dist-tag was *correct*, and
+  RANGE RESOLUTION was what went wrong. So assert the stronger property — the version you are
+  about to publish is the semver-max of everything already published on that channel. Only a
+  stable release un-inverts a channel this has happened to, since it sorts above every
+  prerelease.
+
 - **Betas take the same sequence with two deltas**: `gh release create --prerelease` and
   `npm publish --tag beta` (see [Tagging](#tagging) — the dist-tag is not optional). The flags
   cut both ways: pass them on a *stable* release and the version lands under the `beta`

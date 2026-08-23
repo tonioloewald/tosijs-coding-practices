@@ -655,16 +655,25 @@ ones that regress silently.
   coverage findings that are not regressions may be filed to `TODO.md` and scheduled — but say
   so explicitly; a silently-dropped finding reads as "reviewed and fine."
 - **File the report FIRST, before acting on any finding.** Copy the harness output to
-  `docs/reviews/<version>-<slug>.md` in the reviewed repo. A report living at a
+  **`reviews/<version>-<slug>.md` at the repo ROOT**. A report living at a
   session-scratch path is one cleanup away from gone, and it is the only artifact recording
   what was found and *not* fixed. Observed: a second-round report sat at
   `/private/tmp/.../tasks/*.output` — 892 lines, present by luck — while the durable record
   of fourteen unworked majors was a five-line paraphrase, and the instruction to copy it was
-  prose rather than a checkbox, so no open-items sweep would surface it. Exclude the
-  directory from the published package (`"!docs/reviews"` in `files`, or equivalent): these
-  are process artifacts, and shipping candid internal assessments to consumers is not the
-  intent — one repo's `files` allowlist included `docs` wholesale and 258KB of review
-  reports were going out in the tarball. — seen in: tjs-lang (0.13.0)
+  prose rather than a checkbox, so no open-items sweep would surface it. — seen in:
+  tjs-lang (0.13.0)
+
+  ⚠️ **NOT `docs/reviews/`,** which this doc used to prescribe. In every
+  `tosijs-ui/site` project `docs/` is the **generated site root**: wiped on every build and
+  **served publicly**. It destroyed a tosijs-3d 0.7.0 report about ninety seconds after it
+  was written, and the alternative outcome was worse — publishing a "Verdict: BLOCK" report
+  that named an adopter to the open web. `tjs-lang`, where this practice originated, is the
+  one repo where `docs/` happens to be safe, which is exactly why the hazard went unnoticed.
+
+  Excluding the directory from the npm tarball (`"!docs/reviews"` in `files`) is still worth
+  doing — one repo shipped 258KB of review reports because its `files` allowlist included
+  `docs` wholesale — but it addresses PACKAGING, not publication. **Check the path against
+  both `files` and the site's `docPaths`/output dir before committing.**
 - **Route by lens — these findings do not all belong in the same place:**
   - **Lenses 1–6 and 9** → fix now, or file to this repo's `TODO.md`. (Lens 9 findings that
     touch the user's machine — a global binary, a kill policy — are correctness findings for
