@@ -38,7 +38,10 @@ reaches no one.
 
 ## How to use this (agents, read this section)
 
-1. **Start here.** This README is the index. Every practice lives in `practices/`.
+1. **Start here — fresh.** This README is the index; every practice lives in `practices/`.
+   If you are reading a **local checkout** of this repo, `git pull --no-rebase` it before
+   reading — a stale checkout silently serves last month's practices, and you cannot notice
+   what you never fetched.
 2. **Find your task's doc** in the map below and read it before acting.
 3. **Honor the assumed stack** (`practices/00-stack.md`) unless the project you are in
    explicitly overrides it. Projects declare overrides in their own `CLAUDE.md`/`AGENTS.md`.

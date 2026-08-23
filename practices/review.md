@@ -433,6 +433,13 @@ tested against reality.
 - Did the **process** hold? Did a lens miss something that bit us; is a lens dead weight; did
   the gate work? Adjust the lenses and criteria — including this list.
 - Are this project's own `CLAUDE.md` / `AGENTS.md` still accurate after the change?
+- **Run the read direction too.** The bullets above ask whether this release outdated the
+  practices; also ask whether **the practices moved under this project**:
+  `git -C <practices-checkout> log --oneline --since=<last release date>` (pull the checkout
+  first), and disposition each change that touches how this project works — *adopted*,
+  *already compliant*, or *deliberately diverging* (→ record under "Known divergences" in
+  `00-stack.md`). The last release date is a marker that already exists, so staleness is
+  checkable without new bookkeeping — the commit-range rule below, pointed the other way.
 - **Done when:** the shared practices are updated, or explicitly confirmed still correct, and
   any process gap is filed — **and the write-back NAMES THE COMMIT RANGE it covers**
   (`<base>..<sha>`), where `<sha>` is the reviewed repo's HEAD at the time of writing. If

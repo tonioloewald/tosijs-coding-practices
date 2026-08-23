@@ -150,6 +150,19 @@ so the filing quietly never happens.
 — seen in: tosijs-3d (ten findings accumulated as "to file" rows across several releases —
 including two that had already been hand-worked-around twice — before any were filed)
 
+## Your `CLAUDE.md` links to practices — it doesn't paraphrase them
+
+The same "a link, not a copy" logic as `UPSTREAM.md` rows, applied to the knowledge base: a
+project's `CLAUDE.md`/`AGENTS.md` **links** to the shared practice it follows; it only writes
+local prose for genuine **project-specific overrides** (which belong there — local wins on
+precedence). A paraphrased practice is a severed propagation path: the shared entry gets
+sharpened and the local copy silently ages into last quarter's advice, with nothing checking
+the drift. If a practice feels worth restating locally, that's a signal to sharpen the shared
+entry until the link alone suffices.
+
+— follows from the propagation-path argument in the README; the failure mode is the same
+stale-twin drift seen inside this repo (CONTRIBUTING "grep for the parallel mention")
+
 ## Checking issues — the other half
 
 Filing is useless if nobody reads. Checking incoming issues is part of the routine:

@@ -101,12 +101,13 @@ Report 7b findings even when they are not defects in the diff (e.g. "issue #N ha
   {
     key: 'practices',
     title: 'Practices & process self-review',
-    checks: `The review reviews itself. Read the shared practices — the repo at https://github.com/tonioloewald/tosijs-coding-practices (or the sibling checkout ../tosijs-coding-practices, or this project's CLAUDE.md/AGENTS.md pointer) — and ask:
+    checks: `The review reviews itself. Read the shared practices — the repo at https://github.com/tonioloewald/tosijs-coding-practices (or the sibling checkout ../tosijs-coding-practices — \`git -C\` pull it first, a stale checkout serves stale practices — or this project's CLAUDE.md/AGENTS.md pointer) — and ask:
 - Did this release **contradict, outdate, or vindicate** a documented practice? A practice that didn't match reality is a BUG IN THE KNOWLEDGE BASE — say so and propose the correction (with attribution), don't route around it.
 - What did we learn here that **would have saved time if it had been written down**? Propose the entry and which doc it belongs in.
 - Did the **process** hold — did a lens miss something that bit us, is a lens dead weight, did the gate work?
 - If the repo carries a PRIOR lens-8 write-back claim (a checked TODO item, a docs/reviews report), verify it NAMES THE COMMIT RANGE it covered (\`<base>..<sha>\`) and that nothing landed after it. A claim with no range, or one that predates later commits while asserting completion, is a finding — staleness must be checkable, not merely noticeable.
 - Are this project's own CLAUDE.md / AGENTS.md still accurate after the change?
+- RUN THE READ DIRECTION TOO: did the practices move under THIS project? \`git -C <practices-checkout> log --oneline --since=<this project's last release date>\` and disposition each change that touches how this project works — adopted, already compliant, or deliberately diverging (the divergence goes to 00-stack.md "Known divergences"). A practices change nobody dispositioned is a silent fork.
 Findings here are proposed CHANGES TO THE PRACTICES (or to this repo's agent docs), not to the shipping code. Severity is usually minor/major, rarely a blocker. Returning zero findings is suspicious — it usually means nobody looked.`,
   },
   {
