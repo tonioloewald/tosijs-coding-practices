@@ -127,6 +127,18 @@ unchecked lead", never as "a vetted defect". (This is _adversarial_ verification
 skeptics — that we're skipping; inline sanity-reading a finding as you triage it is free and still
 expected. "Unverified" means "no skeptic ran", not "nobody looked.")
 
+**The skeptic reads the artifact, not the author's narrative.** Verification is only
+independent if the verdict is derived from the diff and the code — never from the implementer's
+explanation, which anchors the reviewer into the very blind spot that produced the bug. The
+harness already embodies this (verifiers are told to refute by inspecting the actual code);
+preserve it when reviewing by hand — read the change before the PR description — and when
+pairing an implementer agent with reviewer agents, hand the reviewers the diff and the standing
+instruction "assume the code is wrong", nothing else. Corroborated at scale by bun's Zig→Rust
+port, which ran 2+ diff-only adversarial reviewers per implementer across 1,448 files and
+credits the pattern with catching a use-after-free and two eager-evaluation bugs the
+implementers' framing had rationalized. — seen in: the pre-release-review harness; external:
+bun.com/blog/bun-in-rust
+
 **A refuted finding is not waste — it's a discoverability signal.** Feedback offered in good
 faith is valuable even when it's literally wrong. When a careful reviewer (or user) claims "X is
 broken" / "you can't do Y" and the claim is false, the usual reason they believed it is that the

@@ -105,6 +105,34 @@ How to work in a project day-to-day.
 — seen in: a pre-release-review load test spun up 8 `yes > /dev/null` CPU hogs, ran tests under
   contention, then leaked all 8 for over an hour because its `kill $(jobs -p)` no-oped under zsh
 
+## Fan-out agent work: serialize understanding, pilot the harness, isolate the fleet
+
+When a task is big enough to spread across many agents (a port, a migration, an
+ecosystem-wide sweep):
+
+- **Serialize understanding first.** Before any agent writes code, have one pass produce the
+  shared analysis artifact — the pattern map, the ownership/lifetime table, the file
+  inventory — and make every downstream agent read it. N agents re-deriving comprehension
+  from source is the expensive, divergent path; one artifact read N times is the cheap one.
+  (Same reason every product ships `llms.txt` — see below.)
+- **Pilot the harness before the fleet.** Run the full unit-of-work loop — implementer +
+  adversarial reviewers + fixer — on ~3 representative files first and tune the prompts and
+  criteria there. A defect in the harness multiplies by the fleet size; the pilot is where
+  it is cheap to find.
+- **Isolate the fleet from itself.** Parallel agents in one checkout WILL collide on shared
+  mutable state — concurrent `git stash` from two agents destroys work — so: one worktree
+  per parallel workflow, and forbid mutations broader than the agent's own unit of work
+  (git narrowed to atomic commits of its own files). Same class as the `pkill -f` hazard
+  above.
+- **Stage validation cheapest-first** — compile, then smoke, then the full suite — so fleet
+  errors surface at the cheap gate, not the expensive one.
+
+— source: bun's Zig→Rust port (external — bun.com/blog/bun-in-rust: 535k lines, 1,448 files,
+64 concurrent agents, 11 days; `PORTING.md` + a whole-codebase lifetimes table before any
+translation, a 3-file trial before scale-out). Not yet exercised at this scale in our
+ecosystem; the harness pieces (adversarial review, refute-default verification) match what
+`tools/pre-release-review` already practices.
+
 ## A rot-prone claim gets a date AND a test
 
 Any published number is a claim with a shelf life: bundle sizes, benchmark results, test

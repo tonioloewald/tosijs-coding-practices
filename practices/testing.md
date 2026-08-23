@@ -206,10 +206,18 @@ playground UI, not via CLI. — seen in: tjs-lang
 
 - Behavior at the public API edge and the known-hard cases (async settling, id-path surgical
   updates, form-association, boxed/raw boundaries, sandbox/security paths) — not framework
-  internals. — seen in: tosijs
+  internals. A suite written at this edge is also what *survives a rewrite*: bun's Zig→Rust
+  port kept ~60k behavioral tests unchanged as the ground truth across the language swap —
+  tests of internals would have died with the internals. — seen in: tosijs; external:
+  bun.com/blog/bun-in-rust
 - **Reproduction-first.** Write the failing case BEFORE fixing a bug or refactoring trusted
-  logic; when porting, characterize the current code as the oracle first. Cross-repo regressions
-  get a repro test in the *library that owns the behavior*. — seen in: tjs-lang, loewald-dot-com
+  logic; when porting, characterize the current code as the oracle first — and for the duration
+  of the port the suite is the *contract*: **zero tests skipped or deleted**, with the assertion
+  count tracked as the meter (a shrinking count is silent scope loss — the invisible-skip
+  failure at migration scale). Cross-repo regressions
+  get a repro test in the *library that owns the behavior*. — seen in: tjs-lang, loewald-dot-com;
+  the suite-as-contract invariant external: bun.com/blog/bun-in-rust ("0 tests skipped or
+  deleted" across a 535k-line port, ~1.38M assertions counted per platform)
 - Keep security-critical surfaces at high coverage against a written audit, not a blanket
   percentage — target the sandbox/RBAC/validation slices explicitly. — seen in: tjs-lang, loewald-dot-com, tosijs-schema
 - Not every project has a suite: pure demo/bridge libraries verify by running the demo app in
