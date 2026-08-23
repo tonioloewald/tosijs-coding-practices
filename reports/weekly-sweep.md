@@ -1,7 +1,28 @@
 # Weekly security & health sweep — 2026-08-23 (UTC)
 
-Reconnaissance only. Nothing outside this repo was modified; no issues filed, no PRs opened.
-Prior weeks live in git history (this file is overwritten, never appended).
+Reconnaissance only at sweep time. Prior weeks live in git history (this file is overwritten,
+never appended).
+
+> **Filed 2026-08-23 (owner-requested):** every actionable finding below now has an issue on
+> its repo — the issue is the record; this report is the index.
+>
+> | Finding | Issue |
+> | --- | --- |
+> | §1 tosijs-platform/functions advisories | [tosijs-platform#2](https://github.com/tonioloewald/tosijs-platform/issues/2) |
+> | §2 tjs-lang/functions advisories | [tjs-lang#30](https://github.com/tonioloewald/tjs-lang/issues/30) |
+> | §3 haltija Electron context-isolation | [haltija#35](https://github.com/tonioloewald/haltija/issues/35) |
+> | §4 haltija MCP SDK re-lock | [haltija#36](https://github.com/tonioloewald/haltija/issues/36) |
+> | §5 tosijs-schema fail-open class | comment on existing [tosijs-schema#8](https://github.com/tonioloewald/tosijs-schema/issues/8#issuecomment-5387873842) |
+> | §6 tosijs-ui unpublished 1.10.1/1.10.2 | [tosijs-ui#101](https://github.com/tonioloewald/tosijs-ui/issues/101) |
+> | §6 timezone-picker (source since pushed; tag remains) | [tosijs-timezone-picker#2](https://github.com/tonioloewald/tosijs-timezone-picker/issues/2) |
+> | §6 wobbly unpublished releases | [wobbly#1](https://github.com/tonioloewald/wobbly/issues/1) |
+> | §7 lukko stale tjs-lang pin | [lukko#2](https://github.com/tonioloewald/lukko/issues/2) |
+> | storage.rules world-readable | [tosijs-platform#3](https://github.com/tonioloewald/tosijs-platform/issues/3) |
+> | tjs-lang dev-tree / demo web key | [tjs-lang#31](https://github.com/tonioloewald/tjs-lang/issues/31) |
+> | react-tosijs eslint-8 dev advisories | [react-tosijs#4](https://github.com/tonioloewald/react-tosijs/issues/4) |
+> | tosijs-3d dist-tag drift | [tosijs-3d#33](https://github.com/tonioloewald/tosijs-3d/issues/33) |
+> | tosijs-floorplan zero tags | [tosijs-floorplan#6](https://github.com/tonioloewald/tosijs-floorplan/issues/6) |
+> | Mapbox `pk.` token in demo builds | **accepted by owner** — deliberate public demo token; sweep instructed not to re-report |
 
 **Scanned:** 14 GitHub repos, **19 dependency trees** (5 nested workspaces found and audited
 separately — see the note below, it is where almost every serious finding lives).
