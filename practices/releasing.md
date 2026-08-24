@@ -185,7 +185,7 @@ When a project's consumers are **all in-ecosystem** (sibling repos you control, 
 The conservative machinery (opt-in flags, deprecation windows, a whole legacy mode) is real
 standing complexity that only pays for itself against a large **unknown external** base. Don't
 build it speculatively. But hold three distinctions, because they change the answer in specific
-cases — worked out over tosijs-schema's two breaking-in-a-minor releases (1.5.0, 1.7.0):
+cases — worked out over tosijs-schema's three breaking-in-a-minor releases (1.5.0, 1.7.0, 1.8.0):
 
 - **The break's CLASS decides whether a "legacy-loose" escape hatch is ever acceptable.**
   A **fail-open / security** fix (the old behavior was a *hole* — `additionalProperties` not
@@ -199,12 +199,25 @@ cases — worked out over tosijs-schema's two breaking-in-a-minor releases (1.5.
   surprise minor breaks. Rare breaks → minors are fine. If you notice you're shipping a breaking
   minor every few weeks, batch them into a major (loose defaults deprecated-but-working in
   between) to cut the drip — regardless of who consumes.
+  - **But the batch trigger is subordinate to the CLASS distinction above: a fail-open fix
+    cannot be batched.** Batching means "loose defaults deprecated-but-working in between" —
+    which for a fail-open hole is exactly the forbidden opt-in ("keep the vulnerability" for
+    the length of the deprecation window). So when the frequency trigger fires on a run of
+    breaks that are *mixed* class, batch the conformance-class ones and **ship the fail-open
+    ones now anyway** — the disposition is "ship now, cannot batch," and it should be recorded,
+    not left as a silent contradiction of the frequency rule. tosijs-schema tripped this at
+    1.8.0: three breaking minors (1.5.0, 1.7.0, 1.8.0; the last two four days apart) crossed
+    the frequency line, but 1.5.0 and 1.8.0 were fail-open closures that had to ship promptly,
+    and only 1.7.0 (a `date-time` conformance tightening) was ever batchable. Frequency alone
+    would have said "hold for a 2.0.0"; the class rule overrode it.
 - **"No significant external consumers" is an assumption, so keep validating it.** The whole
   policy rests on it. The nine-lens review's lens 7b now glances at npm downloads + GitHub
   dependents on a breaking release ([`review.md`](review.md) §7b) so a footprint that quietly
   grew gets noticed *before* a break bites someone.
 
-— seen in: tosijs-schema (versioning policy in its README, breaking-in-a-minor 1.5.0 + 1.7.0).
+— seen in: tosijs-schema (versioning policy in its README, breaking-in-a-minor 1.5.0 + 1.7.0 +
+1.8.0; the 1.8.0 review recorded the "ship-now-cannot-batch" disposition when the frequency
+trigger fired on mixed-class breaks).
 
 ## Breaking changes: justify, document, migrate
 

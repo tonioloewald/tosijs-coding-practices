@@ -51,6 +51,20 @@ Then a marker block in each hand-written doc, filled by the build:
 and a CI gate asserting a build leaves the tree clean, so staleness is a red build rather than a
 discovery six months later.
 
+**This applies to your OWN measured numbers, not just enumerations.** Bundle size, test/assertion
+counts, a `--coverage` table — perishable facts you *can* measure at build time — belong to move 1,
+not move 5's stamp (that's for facts outside your build). Hand-maintaining them looks harmless
+because each edit is a one-liner, so it never gets automated — and it drifts every release. seen in:
+tosijs-schema hand-carried its gzipped bundle size and test counts across README + CONTEXT + a
+COVERAGE doc through five releases; the counts and even the coverage percentage were quietly wrong
+by the time a review caught them (`98.53%` vs a measured `98.59%`, `7.8` vs `7.9 kB` — pure
+hand-rounding error). The fix was a `make-coverage.ts` that regenerates marker blocks from
+`bun test --coverage` + a real gzip, wired into the release build so the existing drift gate covers
+it. **One caveat when the generated value is a moving number: stamp the release VERSION, not a
+wall-clock date** — a date makes the drift gate go dirty the day *after* release with no code change,
+re-breaking the very gate you built (see move 5 for the outside-your-build case that *does* want a
+date).
+
 **Prose keeps what humans are good at** — judgement, rationale, when-not-to. Lists are not that.
 
 ### 2. Mark what belongs on the CORE discovery surface, in the same place

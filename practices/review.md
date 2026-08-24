@@ -118,6 +118,21 @@ observed in wave 5, waved off as documented `.optional` semantics, and confirmed
 bypass in wave 7). At a gate, enforce or refuse at construction — never merely document.
 — seen in: tosijs-schema (v1.5.0 review)
 
+**Where you deliberately enforce only a SUBSET, the fail-open fix has a third form beyond
+enforce-or-refuse: make the gap ENUMERABLE.** A boundary that supports a documented subset is
+honest only if a consumer can *tell* they've stepped outside it — "a subset you can't tell you've
+left is not fine." The pattern is three tiers over the same allowlist, so they cannot drift:
+(1) **allowlist** — name what you enforce, as data (`ENFORCED_KEYWORDS`); (2) **refuse** — the
+strict gate rejects anything outside it at construction (`agentContract` throws); (3) **enumerate**
+— for the lenient path that can't refuse (a plain `validate` that must accept arbitrary schemas off
+the wire), export a runtime lister of exactly the tree-paths that fall outside the allowlist
+(`unenforcedKeywords(schema): string[]`), reusing the *same* walker the gate refuses on, so a
+consumer can WARN ("this schema uses `allOf`, which is not validated") instead of silently implying
+a check. The enumerator is the honest answer when full coverage is out of scope and hard refusal is
+too strict for the surface. — seen in: tosijs-schema v1.8.0 (issue #8, filed by a consumer whose
+form validation was a silent no-op on `oneOf`; their framing — "detectability is worth more than
+coverage" — is the rule).
+
 **The "clearly marked" on shipped-unverified findings is load-bearing, not a nicety — it is what
 makes the economics work.** At an ~11% refute rate, roughly one in nine shipped nits is wrong; if
 they don't read as _conspicuously unvetted_, the reader stops trusting the report and re-verifies

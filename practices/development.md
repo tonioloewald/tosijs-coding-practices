@@ -165,6 +165,32 @@ metering" is unassailable; "solves the halting problem" is the same work describ
 that invites dismissal. — seen in: tjs-lang (`src/bundle-size.test.ts`, after a cold review
 found every row of the bundle table stale)
 
+## A "decided against" note is only as strong as its reconsider-if trigger
+
+Numbers rot; so do *scope decisions*. A "we deliberately don't support X" note reads as settled,
+but it rests on a premise about the world — usually "no consumer needs X" — that can quietly stop
+being true. The load-bearing part of the note is therefore **not** the decision, it's the
+**reconsider-if trigger**: the named condition that flips it. A note without one is an assertion
+that hardens into dogma; the tell of a weak one is that its premise is an unvalidated "nobody needs
+this," which is an *assumption*, not a finding, and has to be re-checked against real consumer
+signal rather than trusted because you wrote it down once.
+
+So when you record a "decided against":
+
+1. **Name the trigger explicitly** — "reconsider if a consumer needs to validate schemas off the
+   wire" — and make it a condition you'd actually notice firing (an issue, a downstream request),
+   not a vibe.
+2. **When it fires, reverse promptly and record the reversal** — don't defend the old note because
+   it was written confidently. Strike it (don't delete: leave it as a worked example) and cite what
+   tripped it.
+3. **Treat a triggerless "we don't do X" as a smell** in review — it's the shape that calcifies.
+
+— seen in: tosijs-schema's "no `oneOf` support" note (2026-08-19), which *worked* precisely because
+it named its trigger ("if a consumer needs off-the-wire JSON Schema, which uses `oneOf`"); issue #8
+tripped exactly that trigger four days later and v1.8.0 reversed it cleanly. The reversal was easy
+because the note had already said what would change its mind — the failure mode to avoid is the
+triggerless version that would have been argued *against* the consumer instead.
+
 ## Baseline artifacts: every product ships `llms.txt` and a `CHANGELOG.md`
 
 Both are how a project talks to consumers it never meets — and agents are first-class
