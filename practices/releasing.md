@@ -226,11 +226,28 @@ audience size changes them. **Release-process *worry* is not unconditional**: an
 rc briefly exposed as `latest`, an unpublished tag, or a breaking minor is proportional to the
 **measured** consumer base, not an imagined one.
 
-- **Measure, don't imagine.** npm last-month downloads + GitHub dependents (the lens-7b glance,
-  [`review.md`](review.md) §7b). As of this writing: **tosijs and tosijs-ui have real external
-  users** (dozens, by download stats) — their release integrity is real responsibility. Most
-  other packages have **no known external consumers**, and the ecosystem has **never received a
-  single breakage complaint**.
+- **Measure, don't imagine — and know each instrument's failure mode.** Raw npm downloads are
+  the WEAKEST signal: every published package collects ~50–250/month of mirror/scanner noise
+  (measured: a package with zero plausible consumers drew 245/month), and an ecosystem's own
+  CI, cloud agent sessions, and transitive dependency edges generate thousands more — the
+  weekly sweep alone installs every package. Instruments that actually distinguish, weakest to
+  strongest: per-version download shape (scanners pull *every* version — 58–111 distinct
+  versions/week downloaded is a crawler signature; a top version three majors stale is
+  machines, not humans); jsDelivr hits (browser script-tag use, confounded by your own doc
+  sites); GitHub dependents graph (`/network/dependents`, subtract your own repos); GitHub
+  code search for the package in external `package.json`s; and strongest, **humans** —
+  non-owner issue/PR authors. ⚠️ **The npm search API silently does not support
+  `dependencies:<pkg>`** — it free-texts the query and returns garbage: measured 187,439
+  "dependents" for tosijs-ui and 0 for tosijs *in the same minute*. Both of the wild consumer
+  estimates that prompted this measurement (zero / 100k+) trace to that one broken query.
+- **Baseline, measured 2026-08-25:** across the whole ecosystem, **one identified external
+  adopter** (two experimental repos consuming tosijs + tosijs-schema); **zero** external repos
+  in any GitHub dependents graph; **zero** non-owner issue or PR authors ever, on any repo
+  (dependabot aside). Download counts are fully explicable by self-generated traffic + noise.
+  The *internal* base is the real one: 21 in-ecosystem manifests (tosijs ×17, tosijs-ui ×16,
+  tjs-lang ×8, tosijs-schema ×7, haltija ×4 as a dependency plus CLI use everywhere).
+  Absence can't be proven (vendored copies, CDN script tags, and private repos are invisible)
+  — so re-measure at each decision rather than caching this conclusion.
 - **On a zero-consumer package, a publish-integrity slip is bookkeeping, not an incident.** Fix
   it (the record still matters — see "Land the current release" above), but don't grade it
   major, don't build ceremony against it, and don't let it gate unrelated work. Reviews and
@@ -242,8 +259,8 @@ rc briefly exposed as `latest`, an unpublished tag, or a breaking minor is propo
   Assuming you still have none after the footprint quietly grows is how a break finally bites
   someone. Both errors are cured by checking the numbers, not by defaulting to fear or bravado.
 
-— rule set by the owner; grounded in download stats (tosijs/tosijs-ui real, rest ~zero) and
-zero breakage complaints ever received across the ecosystem
+— rule set by the owner; baseline measured 2026-08-25 (instruments above) and zero breakage
+complaints ever received across the ecosystem
 
 ## Breaking changes: justify, document, migrate
 
