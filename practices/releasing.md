@@ -389,20 +389,40 @@ forgotten. Same argument as the pre-push gate below: discipline rots, enforcemen
 The guard is ~20 lines in `prepublishOnly`, and npm hands you the signal:
 
 ```js
-// npm sets npm_config_tag when --tag is passed, and leaves it undefined otherwise
+// npm sets npm_config_tag for a NON-DEFAULT --tag. `latest` is the default, so
+// `--tag latest` is indistinguishable from no flag — the override needs an env var.
+// bun does not set it at all (see below).
 const isPrerelease = pkg.version.includes('-')
 const tag = process.env.npm_config_tag
-if (isPrerelease && (tag == null || tag === 'latest')) { /* explain, exit 1 */ }
+const bun = (process.env.npm_config_user_agent ?? '').includes('bun')
+
+if (isPrerelease && process.env.ALLOW_PRERELEASE_ON_LATEST !== '1') {
+  if (tag == null && bun) { /* warn: cannot be checked under bun, verify after */ }
+  else if (tag == null || tag === 'latest') { /* explain, exit 1 */ }
+}
 ```
+
+**It must not block a correct `bun publish --tag rc`.** bun does not set `npm_config_tag`,
+so a guard that only reads that variable refuses every correct bun publish and tells the user
+to run the command they just ran. Every sibling repo here publishes with bun. Hard-block only
+where the signal is trustworthy; degrade to a loud warning where it is not, and lean on the
+post-publish `dist-tags` check as the backstop.
 
 Verify that against `npm publish --dry-run` **both ways** before trusting it, rather than taking
 it from the docs — the whole guard rests on that one environment variable.
 
 Three scoping decisions worth copying:
 
-- **Allow `--tag latest` explicitly.** Someone may genuinely want a prerelease on `latest`; the
-  guard exists to stop the accident, not to overrule the decision. Requiring them to say it out
-  loud is the whole mechanism.
+- **Give the override a channel that is actually observable — NOT `--tag latest`.**
+  ⚠️ This document previously said "allow `--tag latest` explicitly", and the snippet above
+  cannot implement it: **npm exports `npm_config_*` only for NON-DEFAULT values, and `tag`'s
+  default is `latest`**, so `npm publish --tag latest` leaves `npm_config_tag` unset —
+  indistinguishable from omitting the flag, and refused by the same branch that told the user
+  to run it. The only escapes were `--ignore-scripts` or deleting the hook, both of which
+  disable every publish gate permanently. Verified against npm 11.18.0.
+  Use an env var, which survives into the script env: `ALLOW_PRERELEASE_ON_LATEST=1 npm publish`.
+  The principle stands — the guard stops the accident, not the decision — but "say it out loud"
+  needs a channel the hook can hear.
 - **A stable release with no `--tag` must pass untouched.** That is the ordinary path and it has
   to stay frictionless, or the guard becomes something people work around.
 - **`prepublishOnly`, not `prepack`** — it fires for `npm publish` and not for `npm pack`,
