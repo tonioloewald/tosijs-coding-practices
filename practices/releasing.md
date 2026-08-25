@@ -354,6 +354,45 @@ For npm **pre-releases**, `npm publish --tag beta` is mandatory — without the 
 the beta as `latest` and a bare `npm install <pkg>` pulls it. Pair it with
 `gh release create --prerelease`. — seen in: haltija
 
+**Enforce it, because this paragraph did not.** The rule above was here, correct and
+unambiguous, when tosijs published `1.8.0-rc.2` without the flag — `latest` moved to a release
+candidate and every `npm i tosijs` served it until someone looked. A rule you have to remember at
+exactly one moment, months apart, under the mild adrenaline of shipping, is a rule that will be
+forgotten. Same argument as the pre-push gate below: discipline rots, enforcement doesn't.
+
+The guard is ~20 lines in `prepublishOnly`, and npm hands you the signal:
+
+```js
+// npm sets npm_config_tag when --tag is passed, and leaves it undefined otherwise
+const isPrerelease = pkg.version.includes('-')
+const tag = process.env.npm_config_tag
+if (isPrerelease && (tag == null || tag === 'latest')) { /* explain, exit 1 */ }
+```
+
+Verify that against `npm publish --dry-run` **both ways** before trusting it, rather than taking
+it from the docs — the whole guard rests on that one environment variable.
+
+Three scoping decisions worth copying:
+
+- **Allow `--tag latest` explicitly.** Someone may genuinely want a prerelease on `latest`; the
+  guard exists to stop the accident, not to overrule the decision. Requiring them to say it out
+  loud is the whole mechanism.
+- **A stable release with no `--tag` must pass untouched.** That is the ordinary path and it has
+  to stay frictionless, or the guard becomes something people work around.
+- **`prepublishOnly`, not `prepack`** — it fires for `npm publish` and not for `npm pack`,
+  `bun pm pack`, or an install. Narrowest hook that covers the mistake.
+
+Put the recovery commands in the failure message. The moment you most need
+`npm dist-tag add <pkg>@<version> <tag>` is the moment you have just discovered you need it, and
+it is fixable without unpublishing:
+
+```
+npm dist-tag add <pkg>@<prerelease> rc
+npm dist-tag add <pkg>@<last-stable> latest
+```
+
+— seen in: tosijs 1.8.0-rc.2 (`bin/check-publish-tag.ts`)
+
 ### Enforcing the full-suite gate at the tag (pre-push hook)
 
 Discipline ("run every lane before you tag") rots; enforcement doesn't. But **git has no
