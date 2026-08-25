@@ -240,11 +240,17 @@ rc briefly exposed as `latest`, an unpublished tag, or a breaking minor is propo
   `dependencies:<pkg>`** — it free-texts the query and returns garbage: measured 187,439
   "dependents" for tosijs-ui and 0 for tosijs *in the same minute*. Both of the wild consumer
   estimates that prompted this measurement (zero / 100k+) trace to that one broken query.
-- **Baseline, measured 2026-08-25:** across the whole ecosystem, the only identified external
+- **Baseline, measured 2026-08-25:** on the *public* instruments, the only identified external
   usage is **a friend of the owner who kicked AJS's tires early on** (two experimental repos
-  consuming tosijs + tosijs-schema) — i.e. **zero organic external adoption**; **zero** external
-  repos in any GitHub dependents graph; **zero** non-owner issue or PR authors ever, on any repo
-  (dependabot aside). Download counts are fully explicable by self-generated traffic + noise.
+  consuming tosijs + tosijs-schema); **zero** external repos in any GitHub dependents graph;
+  **zero** non-owner issue or PR authors ever, on any repo (dependabot aside). **But the public
+  instruments missed real consumers:** per the owner, **Nonono** (his previous startup) and
+  **Snowfox** use(d) **tosijs and tosijs-ui** in production, in private repos — invisible to
+  every instrument above. So: tosijs and tosijs-ui carry real production responsibility (to
+  *known, contactable* organizations — a known counterparty can absorb a coordinated break in a
+  way an anonymous base cannot); the rest of the ecosystem remains measured-zero. The
+  methodological lesson: **the instruments only see public surface — for private/commercial
+  usage, the owner's own knowledge is the instrument. Ask before concluding zero.** Download counts are fully explicable by self-generated traffic + noise.
   The *internal* base is the real one: 21 in-ecosystem manifests (tosijs ×17, tosijs-ui ×16,
   tjs-lang ×8, tosijs-schema ×7, haltija ×4 as a dependency plus CLI use everywhere).
   Absence can't be proven (vendored copies, CDN script tags, and private repos are invisible)
