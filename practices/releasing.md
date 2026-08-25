@@ -219,6 +219,32 @@ cases — worked out over tosijs-schema's three breaking-in-a-minor releases (1.
 1.8.0; the 1.8.0 review recorded the "ship-now-cannot-batch" disposition when the frequency
 trigger fired on mixed-class breaks).
 
+## Responsibility scales with the MEASURED user base — don't cosplay Firebase
+
+Code quality and correctness are unconditional — they are for the code and for us, and no
+audience size changes them. **Release-process *worry* is not unconditional**: anxiety about an
+rc briefly exposed as `latest`, an unpublished tag, or a breaking minor is proportional to the
+**measured** consumer base, not an imagined one.
+
+- **Measure, don't imagine.** npm last-month downloads + GitHub dependents (the lens-7b glance,
+  [`review.md`](review.md) §7b). As of this writing: **tosijs and tosijs-ui have real external
+  users** (dozens, by download stats) — their release integrity is real responsibility. Most
+  other packages have **no known external consumers**, and the ecosystem has **never received a
+  single breakage complaint**.
+- **On a zero-consumer package, a publish-integrity slip is bookkeeping, not an incident.** Fix
+  it (the record still matters — see "Land the current release" above), but don't grade it
+  major, don't build ceremony against it, and don't let it gate unrelated work. Reviews and
+  sweeps should grade breakage/publish-state findings **against the measured base**: major on a
+  package with real users, notable on one without.
+- **The error is live in both directions, and the same instrument fixes both.** Assuming users
+  you don't have is **process cosplay** — Firebase-scale caution without Firebase-scale users,
+  a standard the Firebase team itself doesn't hold (they break things; see their changelogs).
+  Assuming you still have none after the footprint quietly grows is how a break finally bites
+  someone. Both errors are cured by checking the numbers, not by defaulting to fear or bravado.
+
+— rule set by the owner; grounded in download stats (tosijs/tosijs-ui real, rest ~zero) and
+zero breakage complaints ever received across the ecosystem
+
 ## Breaking changes: justify, document, migrate
 
 Removing or changing public API imposes a cost on every consumer. Before you ship one, all four:

@@ -427,7 +427,11 @@ gh issue list -R tonioloewald/<this-repo> --state open
   A policy of breaking-toward-correctness in minors often rests on "no significant external
   consumers" (see [`releasing.md`](releasing.md) "Versioning philosophy"). This is where that
   assumption gets *validated* rather than restated — a footprint that has quietly grown flips the
-  calculus, and you want to notice before a break bites someone, not after. — seen in:
+  calculus, and you want to notice before a break bites someone, not after. **The numbers also
+  calibrate severity in the other direction**: a breakage or publish-integrity finding on a
+  package with a measured-zero consumer base is bookkeeping (minor/notable), not a blocker —
+  grade against the base you measured, not the one you imagined (releasing.md "Responsibility
+  scales with the MEASURED user base"). — seen in:
   tosijs-schema (breaking-in-a-minor twice; the assumption held, but nothing was checking it).
 - **Done when:** every open incoming issue has a stated disposition, every workaround found
   in 7a has been checked against the issue list, and a breaking release has looked at who
