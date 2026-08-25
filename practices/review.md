@@ -708,6 +708,13 @@ ones that regress silently.
   that named an adopter to the open web. `tjs-lang`, where this practice originated, is the
   one repo where `docs/` happens to be safe, which is exactly why the hazard went unnoticed.
 
+> **This rule has drifted between copies twice.** It lives in three places — this file,
+> `tools/pre-release-review.SKILL.md` (the runnable version this document links, and the one
+> every `AGENTS.md` cites), and whatever each machine has installed. A correction landing in
+> only one of them is the normal outcome, not the exception, and it recurred within a week
+> (tosijs 1.8.0 round-4 M7 caught `tools/` still prescribing the destroyed path). **When you
+> change the report path, grep all three.**
+
   Excluding the directory from the npm tarball (`"!docs/reviews"` in `files`) is still worth
   doing — one repo shipped 258KB of review reports because its `files` allowlist included
   `docs` wholesale — but it addresses PACKAGING, not publication. **Check the path against

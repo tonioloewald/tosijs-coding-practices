@@ -78,11 +78,18 @@ pre-release review". This skill is the executable version of it.
 ## Acting on the result
 
 - **File the report FIRST, before acting on any finding**: copy `reportMarkdown` to
-  `docs/reviews/<version>-<slug>.md` in the reviewed repo and commit it. A report at a
+  **`reviews/<version>-<slug>.md` at the repo ROOT** and commit it. A report at a
   session-scratch path is one cleanup away from gone, and it is the only artifact recording
-  what was found and *not* fixed. Make sure the published package excludes it
-  (`"!docs/reviews"` in `files`, or equivalent) — review reports are process artifacts, not
-  shipping docs.
+  what was found and *not* fixed.
+
+  ⚠️ **NOT `docs/reviews/`.** In every `tosijs-ui/site` project `docs/` is the generated
+  site root: it is wiped on each build and served publicly. That path destroyed a 0.7.0
+  report about ninety seconds after it was written, and the alternative outcome was worse —
+  publishing a "Verdict: BLOCK" report naming an adopter to the open web. Excluding it from
+  the npm tarball does not address that; publication is the exposure, not packaging.
+
+  Before committing, confirm the chosen path is outside both `files` (npm) **and**
+  `docPaths`/the site's output dir (the web).
 - **BLOCK** → do not cut the release. Walk the blockers; fix them (or get the user to), then
   re-run.
 - **GO_WITH_FOLLOWUPS** → the release can proceed, but **file every follow-up** before moving
