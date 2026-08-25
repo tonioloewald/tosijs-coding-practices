@@ -233,8 +233,12 @@ rc briefly exposed as `latest`, an unpublished tag, or a breaking minor is propo
   weekly sweep alone installs every package. Instruments that actually distinguish, weakest to
   strongest: per-version download shape (scanners pull *every* version — 58–111 distinct
   versions/week downloaded is a crawler signature; a top version three majors stale is
-  machines, not humans); jsDelivr hits (browser script-tag use, confounded by your own doc
-  sites); GitHub dependents graph (`/network/dependents`, subtract your own repos); GitHub
+  machines, not humans); jsDelivr hits — but read the **per-file** breakdown
+  (`data.jsdelivr.com/v1/stats/packages/npm/<pkg>@<ver>/files`), not the total: a crawler
+  enumerates the whole file tree evenly (measured: 2,160 hits/month on one stale version,
+  4–5 per file including `.d.ts` and icon-data files — a bot, and most of the package's
+  apparent CDN traffic), while a real script-tag audience concentrates on the published
+  bundle (`dist/iife.js`) at a current version; GitHub dependents graph (`/network/dependents`, subtract your own repos); GitHub
   code search for the package in external `package.json`s; and strongest, **humans** —
   non-owner issue/PR authors. ⚠️ **The npm search API silently does not support
   `dependencies:<pkg>`** — it free-texts the query and returns garbage: measured 187,439
