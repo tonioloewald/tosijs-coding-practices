@@ -315,13 +315,37 @@ report green across it every time. The gate has to run the thing you ship.
 difference between a complaint and a fixable issue, and it costs about five minutes.
 Script the loop; do not do it by hand.
 
-**When you pin backwards, write the reason where the pin is read.** We ended up on
-`0.12.0` — the last version whose `convert` is correct, and *itself npm-deprecated*, so
-every `bun install` now prints a deprecation notice. Left unexplained, that notice is an
-open invitation for the next session to helpfully bump it and re-introduce the bug. The
-note belongs in `CLAUDE.md`/`AGENTS.md` next to the version, and it must say the
-deprecation is **expected**, why the deprecation's stated reason does not reach your use,
-and what has to happen before the pin moves (here: an upstream issue closing).
+**When you pin backwards, write the reason where the pin is read.** We pinned to
+`0.12.0` — the last version whose `convert` was correct, and *itself npm-deprecated*, so
+every `bun install` printed a deprecation notice. Left unexplained, that notice is an open
+invitation for the next session to helpfully bump it and re-introduce the bug. The note
+belongs in `CLAUDE.md`/`AGENTS.md` next to the version, and it must say the deprecation is
+**expected**, why its stated reason does not reach your use, and what has to happen before
+the pin moves.
+
+**Epilogue, which is the real payoff: the backward pin lasted one day.** The bisected
+issue was filed with a ten-line repro, fixed upstream within hours, and we took the new
+version the same day. That is the argument for the paragraph above — a *good* issue is
+usually cheaper than the workaround it replaces, and a backward pin is best understood as
+a **holding position with an exit condition**, not a settled state. Write the exit
+condition down (here: "when issue #N closes"), because a pin with no stated exit becomes
+permanent by default. Two habits fall out of this:
+
+- **Re-check a held pin when its upstream moves.** Ours was revisited because someone
+  mentioned a new release, not because anything watched for one. That is luck, not
+  process.
+- **State a fix's cost when you report it fixed.** The correct output was ~340 gzipped
+  bytes larger, which pushed a bundle to *seven bytes* under its budget ceiling. A gate
+  that passes by seven bytes will fail next week on something unrelated and teach whoever
+  hits it to raise the number without reading it — so raise it deliberately, in the same
+  commit, with the reasoning written where the number is.
+
+**And correct your own report when you were wrong about part of it.** The same filing
+flagged a second symptom as "possibly the same emitter bug." It was not — that one lived
+in the tool's *test-runner harness*, the emitted module parsed and imported fine, and it
+predated the regression by several minor versions. Saying so on the issue costs a comment;
+not saying so sends a maintainer chasing a bug that does not exist, in the exact area they
+have just changed.
 
 The general shape: **a pin is a claim, and a claim needs a measurement.** This same file
 previously carried the *opposite* failure — a pin justified by "that version peers a
