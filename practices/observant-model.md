@@ -38,6 +38,48 @@ mutate exactly the bound nodes that changed, and nothing else.
 - **User events and state are peers.** UI updates come from two sources — observed state
   changes *and* direct user events — not solely from a state-derived render. You wire both.
 
+## The path is one substrate with many consumers
+
+The reason surgical DOM updates are possible is usually stated as "we know where everything
+is." The more useful form is: **every write carries a stable, global address** —
+`list[id=123].color`, not an object reference and a key. Once that is true, capability after
+capability turns out to be a *reader of an address that already exists* rather than new
+machinery:
+
+- the **surgical DOM update** — which bound node to touch
+- the **observer** — who cares that this changed
+- the **share/sync delta** — `{ path, value }` on the wire, unchanged across processes
+- the **agent surface** — `read`/`write`/`describe` are path-addressed by construction
+- a **type check on write**, and a **flight-recorder entry** if it fails
+
+This is why such features keep coming out "basically free," and it is worth naming, because
+the cheapness gets mis-attributed. It is not that the checks are cheap (though they are). It
+is that **the addressing was already paid for**, so each new consumer is a use of existing
+information rather than a new index to build and keep correct.
+
+Two things follow for design.
+
+**Prefer new readers of the path over new registries.** A feature that wants to know "what
+changed, where" should reach for the path. A feature that builds a parallel map keyed by
+something else has to keep that map correct under the same churn the path already survives —
+which is the mistake behind every rejected path→element index.
+
+**Check on writes, not reads.** Reads are self-limiting and constant — every binding
+evaluation and observer callback is a read. Writes are bounded by typing speed and network
+arrival, so validation lands exactly where traffic is low, often by orders of magnitude.
+Writes are also the dangerous direction: a bad read returns `undefined` and the caller
+copes, while a bad write *creates* the structure it walks through and silently grows state
+nothing is bound to.
+
+State that as typical traffic, not a guarantee. Animation driving state, high-frequency
+sync and drag operations are genuinely write-heavy — tosijs already routes drag through the
+raw proxy for that reason. Which is why any such check needs a **dial**, and why the dial
+should track the **trust level of the channel** rather than being one global setting: no
+single strictness is right for both a human keystroke (refusing breaks the app under their
+hands, and they can see the wrong result anyway) and an untrusted agent's tool call
+(refusing hands it a structured error it can act on, and silence corrupts state a human is
+blamed for later).
+
 ## Why the word matters
 
 Call it **observant** (observer / pub-sub), not "reactive." The vocabulary keeps the mental
