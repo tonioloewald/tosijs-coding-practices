@@ -166,6 +166,14 @@ Integration and browser tests do **not** auto-start their dependency:
   dev overlay off; a reused shared server would inject a DOM CI never sees)
 - Emulator-backed tests run **compiled** code — rebuild (`cd functions && bun run build`) and
   restart the emulator after editing, or you're testing stale output. — seen in: loewald-dot-com
+- **A dedicated port must be dedicated across the whole ECOSYSTEM, not just within one repo.**
+  The bullet above is right and still let two repos collide: tosijs and tosijs-ui both defaulted
+  their Playwright lane to **8799**, so a lane running in one made the other fail — and it
+  failed as `NS_ERROR_CONNECTION_REFUSED` on every test, which reads like a broken dev server,
+  not like a port conflict. (Playwright's own "port is already used" check only fires when the
+  neighbour is up at *launch*; start after it and you get the confusing failure instead.) Give
+  sibling repos distinct defaults, or let the config pick a free port, and always honour an
+  `E2E_PORT` override so a human can escape without editing config. — seen in: tosijs, tosijs-ui
 
 ## Live browser testing with Haltija
 

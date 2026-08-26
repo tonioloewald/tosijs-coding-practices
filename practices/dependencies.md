@@ -285,6 +285,52 @@ The test: if a security advisory landed on your oldest dependency tomorrow, coul
 take the fix in an afternoon? If not, the debt is already there — it just has not been
 called in yet.
 
+## 12. Sometimes the correct pin is the deprecated one — and a toolchain bump is validated by executing the artifact
+
+§11 says take your minors. This is its necessary counterpoint, because the two get
+confused: **currency is the default, not the rule.** A version can be simultaneously the
+newest, the only non-deprecated one, and wrong for you.
+
+Worked example (tosijs, `bc4d446..3c4fb43`). Bumping the build host from
+`tjs-lang@0.10.1` to `0.13.4` looked routine — the hold that had kept us on 0.10.1 was
+satisfied, and 0.13.4 was the only version npm did not flag as deprecated. But 0.13.x's
+`convert` strips `new` from every class declared in the module it is converting, so the
+converted module throws `Cannot call a class constructor without |new|` — at *import*
+time when the call site is a static field initialiser. Fifteen call sites across four
+modules, one of them a security guard's `Error` subclass.
+
+Three transferable things.
+
+**A toolchain bump is validated by EXECUTING THE PUBLISHED ARTIFACT, not by running the
+suite.** All 898 unit tests passed under the broken toolchain, because they exercise
+`src/` — and the bug lives in the *emitter*, downstream of everything the suite can see.
+The only thing that caught it was a build gate that imports each published bundle and
+asserts every export is defined. Any project whose build transforms its source (a
+transpiler, a codegen step, a bundler plugin) has this blind spot, and the suite will
+report green across it every time. The gate has to run the thing you ship.
+
+**Bisect before you file.** Six installs (`0.10.1, 0.11.0, 0.12.0, 0.13.0, 0.13.1,
+0.13.4`) against a ten-line repro turned "the new version broke our build" into
+"regressed in 0.13.0, here is the minimal input and the exact output." That is the
+difference between a complaint and a fixable issue, and it costs about five minutes.
+Script the loop; do not do it by hand.
+
+**When you pin backwards, write the reason where the pin is read.** We ended up on
+`0.12.0` — the last version whose `convert` is correct, and *itself npm-deprecated*, so
+every `bun install` now prints a deprecation notice. Left unexplained, that notice is an
+open invitation for the next session to helpfully bump it and re-introduce the bug. The
+note belongs in `CLAUDE.md`/`AGENTS.md` next to the version, and it must say the
+deprecation is **expected**, why the deprecation's stated reason does not reach your use,
+and what has to happen before the pin moves (here: an upstream issue closing).
+
+The general shape: **a pin is a claim, and a claim needs a measurement.** This same file
+previously carried the *opposite* failure — a pin justified by "that version peers a
+range we cannot satisfy," which nobody had checked and which turned out to be false of
+every version involved. It propagated into three files and cost two releases of
+duplicated config. Whether you are pinning forward or backward, the reason has to be
+something you verified, written where it will be read, with the condition for revisiting
+it stated.
+
 ## Choosing a dependency in the first place
 
 The cheapest supply-chain fix is the dependency you didn't add.
