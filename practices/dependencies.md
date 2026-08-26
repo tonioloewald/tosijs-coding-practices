@@ -355,6 +355,69 @@ duplicated config. Whether you are pinning forward or backward, the reason has t
 something you verified, written where it will be read, with the condition for revisiting
 it stated.
 
+## 13. Price the disposal tax, because nobody else does
+
+Everyone evaluates **adoption cost**: how hard is it to get this in? Almost nobody
+evaluates **disposal cost**: three years from now, how hard is it to get this *out*?
+The maintainer's name for the second one is the **disposal tax**, and it is worth
+adopting because having a name makes it askable.
+
+Note what the question is *not*. "Can I revert the file I converted this morning?" is
+`git checkout` — not a feature and not the risk. The case that matters is a hundred files
+and three years in, when the reason to leave is that the team changed, the project was
+abandoned, or the thing simply did not work out. That is when the bill arrives, and it is
+never the moment you have budget for it.
+
+**The counterexample proves the rule.** Languages and frameworks compete loudly on
+adoption — drop it in, migrate incrementally, works with your existing code — and
+essentially never on exit. Exit cost gets priced for data formats (export your data), for
+cloud (egress), for licensing, and almost never for tools. The exception is **TypeScript,
+whose disposal tax is close to zero: strip the annotations and you have JavaScript.** That
+may be the single biggest reason it beat CoffeeScript (which compiled to output you would
+not want to inherit), Flow, and Dart. Its real pitch was *you can always leave* — and it is
+almost never stated that way, which is exactly the point.
+
+**The uncomfortable corollary: value and lock-in are usually the same feature.** Everything
+a tool gives you over the thing it replaces is, by construction, something the replaced
+thing cannot express — and therefore something that cannot trivially come back. A
+mechanical, feature-free adoption has zero disposal tax *and* zero value. A deeply
+idiomatic one has real value *and* real disposal tax. They move together, necessarily. So
+the bar is not *value* — it is **value net of disposal tax**.
+
+### How to actually price it
+
+Not a vibe. Write the degradation table for the specific thing you are adopting, row by
+row, before you adopt:
+
+| what it carries | what it comes back as | lossy? |
+| --- | --- | --- |
+| … the things it stores or expresses … | … their form in the world without it … | … |
+
+Then sort the rows. **Mechanical** rows are free — a reverse transform exists. **Verbose**
+rows are payable — the result is ugly but correct. **Semantic** rows are the real tax:
+control flow, error propagation, guarantees that have no expression in the target. A tool
+whose rows are mostly mechanical is cheap to leave regardless of how deeply you use it.
+
+Two design patterns that pay the tax up front, both worth copying:
+
+- **The escape hatch is part of the syntax.** tjs-lang's `wasm { … } fallback { … }` cannot
+  be written without also writing the portable version — so the disposal payment is made
+  at authoring time, by construction, whether or not that was the intent.
+- **Refuse rather than silently degrade.** An exit path that quietly turns monadic errors
+  into `throw`, or drops the tests it cannot re-home, is worse than no exit path: it
+  produces something that compiles and lies. Name what would be lost and require an
+  explicit `--accept-loss`.
+
+### And if you are the one being adopted
+
+Say it in the README. **"Here is how you leave, and here is exactly what it costs"** is a
+stronger adoption argument than any migration guide, because it is the one objection that
+actually stops people — *what if this doesn't work out?* — and nobody else answers it. For
+anything pre-1.0, competing with an incumbent, it is close to the only answer that matters.
+
+Adoption tax is what everyone optimises. Disposal tax is what everyone pays and nobody
+quotes.
+
 ## Choosing a dependency in the first place
 
 The cheapest supply-chain fix is the dependency you didn't add.
