@@ -36,6 +36,14 @@ Then in `~/.claude/skills/pre-release-review/SKILL.md`, make sure the `scriptPat
 `$HOME/.claude/skills/pre-release-review/pre-release-review.workflow.js` — the shipped copy
 uses an absolute path; adjust it to your home directory).
 
+**Copies of this tooling must not pin model IDs.** The workflow's `agent()` calls deliberately
+omit `model` so every reviewer inherits the session's current model — a copy that pins one
+(observed: an adopter pinned `sonnet-4.6`, plausibly around a Vertex AI availability
+constraint) silently freezes review quality at that generation and keeps paying the
+constraint after it's gone. If a platform limitation genuinely forces a pin, record the
+reason and a revisit condition next to it — an unexplained pin is drift, not configuration.
+— seen in: a nine-lens adopter's copy, 2026-08
+
 **The install is a second copy, and it WILL diverge.** Real release runs improve the
 installed copy in place (that's where the tool actually gets exercised); repo edits land here.
 Both have happened without the other: an audit found the installed copy carrying four
