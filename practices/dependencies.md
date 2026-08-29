@@ -437,6 +437,44 @@ anything pre-1.0, competing with an incumbent, it is close to the only answer th
 Adoption tax is what everyone optimises. Disposal tax is what everyone pays and nobody
 quotes.
 
+## 14. Price compatibility caution against ACTUAL adoption, not aspirational adoption
+
+The mirror image of §12. Disposal tax says: think about leaving before you arrive.
+This says: **do not pay for consumers you do not have.**
+
+The failure is quiet and it feels like professionalism. You decline to rename a thing, or
+you keep two APIs that should be one, or you pick a merge over a deprecation — each time
+reasoning about migration pain for users who, checked, number about two. Meanwhile the
+design error sets.
+
+**A design error is cheapest to fix before anyone depends on it — which is exactly the
+moment when caution feels safest and costs the most.** The window for getting it right is
+the pre-adoption window, and it closes silently.
+
+Some calibration, since "be less cautious" is not advice:
+
+- **Count them.** Not "someone might be" — actually look. npm dependents, GitHub code search,
+  your own repos, and ask. In tosijs's case the honest answer was two external consumers, and
+  finding that out took ten minutes and changed several decisions.
+- **The number sets the ceremony**, not your ambitions for the number. A library with two
+  consumers can rename, deprecate and break in a minor with a note. A library with two
+  thousand cannot. Acting like the second while being the first buys nothing and forecloses
+  the fixes.
+- **Deprecation is cheap and it is not the same as breakage.** Keep the old name working,
+  warn once, point at the new one, delete at the next major. That path is available far more
+  often than the reflex to avoid it suggests.
+- **Two ways to do one thing is the expensive outcome**, more expensive than the migration
+  usually is. `var`/`let` is the standing example. When the choice is "merge the two APIs and
+  keep both" versus "deprecate one," the merge is often the *worse* option — it removes the
+  immediate pain and makes the duplication permanent.
+- **The asymmetry to hold onto:** an unnecessary deprecation costs a few consumers a small
+  edit. An unfixed design error costs every future consumer, forever, and gets more expensive
+  every month it survives.
+
+None of which licenses breaking things casually — §12 still applies, and a documented exit is
+still owed. It licenses being honest that "we might have users someday" is not a reason to
+ship a known-wrong design today.
+
 ## Choosing a dependency in the first place
 
 The cheapest supply-chain fix is the dependency you didn't add.
