@@ -46,6 +46,35 @@ be shared across repos.
 > recently (that deprecation notice is days old), so treat the shape below as the
 > intent rather than a transcription.
 
+## Design constraint from lived evidence: keep the human GO
+
+**Fully-automated publishing has been tried in this ecosystem and made things worse.**
+During a brief window (~48h) when npm still allowed stored keys, releases were fully
+automated — and that window produced **more problematic releases than the entire manual
+history**, including actively broken builds shipped. The manual gate's failure mode is
+*unavailability* (a tagged release nobody can install — bookkeeping at our consumer
+scale); automation's failure mode is *integrity* (broken builds published to the world).
+Those are not symmetric. The human GO is the mechanism that converts the second kind of
+failure into the first.
+
+Consequences for this plan:
+
+- **Do not use a bare tag-trigger** (`on: push: tags`) as drafted below — that recreates
+  the stored-key window. Use `workflow_dispatch` (human presses the button), or gate the
+  tag-triggered job behind a protected environment requiring manual approval. What OIDC
+  should remove is the *credential on the laptop* and the *OTP dance* — never the human
+  decision.
+- **The observed publish-integrity failures were reconciliation failures, not trigger
+  failures** — a publish from an unpushed tree, tags without publishes — and no trigger
+  design fixes those. The missing mechanism is divergence detection: confirm-the-publish
+  after (releasing.md), the weekly sweep's registry-vs-tag check (7-day latency), and
+  ideally a zero-latency check at tag time ("a tag exists whose version isn't on the
+  registry → say so before any new version work" — land-the-plane, enforced by a check
+  instead of prose).
+
+— seen in: the ecosystem's stored-key automation window (owner account, 2026); the
+tagged-never-published incidents in the weekly sweeps
+
 ## The workflow (draft)
 
 ```yaml
