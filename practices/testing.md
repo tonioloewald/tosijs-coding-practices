@@ -232,6 +232,53 @@ playground UI, not via CLI. — seen in: tjs-lang
   the browser. If a repo has no `*.test.ts`, that's the intended workflow, not an omission.
   — seen in: react-tosijs
 
+## Testing A→B and B→C does not test A→C
+
+A pipeline with stages invites a specific, quiet gap. You test the first stage, you test
+the second stage, both are green — and the composition is never exercised, because each
+stage was tested against inputs **somebody chose**.
+
+The reason it bites is not laziness about coverage. It is that **a generator's output is a
+different population from what a human writes.** The hand-written fixtures for stage two
+are, by construction, the intermediate forms someone thought of. The ones a generator emits
+in corner cases are the ones nobody did — and those are exactly the inputs that stage two
+has never seen.
+
+Worked example (tjs-lang, 2026-08). The compiler's `ts → js` path was implemented as a
+shortcut through tsc's own emission rather than as `ts → tjs → js`. `ts → tjs` was tested.
+`tjs → js` was tested. But `tjs → js` was only ever tested against TJS a person had
+authored, so anything the converter emitted that no one would write by hand went straight
+through unexercised.
+
+The bug that surfaced it downstream is the shape to remember: a transform stripped `new`
+from locally-declared classes. That is **correct** for hand-written source (the emitter
+wraps such a class so it is callable) and **wrong** for generated source (plain semantics,
+no wrap, so the `new` is load-bearing). Right for the authored population, wrong for the
+generated one — and only a consumer of the generated path ever saw it. It shipped in four
+releases.
+
+### How to close it
+
+- **Feed stage one's real output to stage two's real tests.** Not a fixture that resembles
+  it — the actual artifact. If stage two's suite contains only hand-authored inputs, then
+  stage one's output is an untested input, whatever the coverage number says.
+- **Run the ORIGINAL suite against the TRANSFORMED code.** For a source-to-source tool this
+  is unusually cheap and unusually strong: stage the transformed modules, point the existing
+  tests at them, and any behavioural divergence shows up as a failure written by someone who
+  was not thinking about the transform. tosijs did this for its TJS port — 35 test files
+  against 53 converted modules, **872 of 898 passed, and all 26 failures were staging
+  artifacts** (tests hardcoding `import.meta.dir`, or a cache-busting import with an
+  explicit extension), not behavioural differences. That is a real result about the
+  converter, obtained in an afternoon, from tests nobody wrote for it.
+- **Beware the shortcut that makes the composition look tested.** The `ts → js` path
+  *existed* and *passed*. It just was not the composition it claimed to be. A pipeline stage
+  implemented as a shortcut is worth an explicit comment saying so, because otherwise its
+  green tests are read as covering the path they bypass.
+
+Same family as the artifact-execution rule in
+[`dependencies.md`](dependencies.md) §12 — the suite tests the source, the bug lives in the
+emitter, and only running the built thing finds it.
+
 ## A regression test you wrote *after* the fix must be seen to fail
 
 "Reproduction-first" above assumes you write the failing case first. Often you can't: you find the
