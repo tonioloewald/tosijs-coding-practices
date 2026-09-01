@@ -33,6 +33,26 @@ entry should answer *why*, so the next reader can tell when it stops applying.
    (`practices/00-stack.md`), record the divergence and the reason under that doc's
    "Known divergences" — do not quietly rewrite the default.
 
+## Evidence grades, compositions, and the right to retire
+
+Adopted 2026-09-01, after an audit found the corpus at a 20:1 add:delete ratio with zero
+entries ever retired — and found that the owner's own assertions entered as law with no review.
+
+- **Every entry has a provenance, and it matters.** Incident-derived entries (a named project,
+  what happened, the consequence) are the gold standard. **Owner decrees** ("rule set by the
+  owner") are legitimate but *provisional* — they get the same eventual scrutiny as any agent's
+  claim, because the founder is the one contributor nothing else audits. **External/imported**
+  entries (marked `external:`) are hypotheses until an ecosystem incident vindicates them.
+- **Review rules in composition, not just in isolation.** Two individually-sound rules can
+  compose into a bad incentive (observed: version-by-narrative × nine-lens-on-every-minor →
+  minors became expensive → everything ships as patches → version numbers stop meaning what
+  the narrative rule promised). When adding a rule, ask what it multiplies against.
+- **The corpus must be able to shrink.** A knowledge base that only grows taxes every reader
+  and eventually gets skimmed instead of followed — the same failure as a noisy gate. Audits
+  should retire or merge at least as much as they confirm, or say explicitly why not.
+  Retirement is an edit like any other: append-only *history* is the safety net that makes
+  deletion of *current* text safe.
+
 ## Committing here: merge, never rebase
 
 **This repo inverts the ecosystem's usual git advice, and it matters.**
