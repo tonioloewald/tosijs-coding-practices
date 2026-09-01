@@ -312,9 +312,14 @@ Rate-limit high-frequency handlers (scroll, resize, input) with the stack's `thr
 
 ### tosijs-schema
 - **Allocation-free, O(1) validation via "prime-jump" sampling.** Arrays/dicts over 97
-  items are checked at prime-stride intervals unless `{ fullScan: true }`. `maxProperties`
-  is documented but intentionally *not* enforced at runtime. Don't "fix" the skipped check
-  or add per-item scanning — it's a deliberate hot-path tradeoff.
+  items are checked at prime-stride intervals unless `{ strict: true }` (`fullScan` is the
+  deprecated alias — verified against `schema.ts:602`, `strict` takes precedence). The
+  sampling is a deliberate hot-path tradeoff; don't add per-item scanning to the fast path.
+  ⚠️ Note an unresolved tension flagged by the 2026-09 practices audit: `maxProperties` is
+  documented but not enforced at runtime, and this entry used to say "don't fix it" — but
+  `review.md`'s fail-open doctrine holds that a documented divergence at a *gate* is still
+  fail-open. Where validation is used as a gate, treat the divergence as an open question
+  (enforce, refuse at construction, or make `strict` enforce it), not a settled instruction.
 
 ### tosijs-3d
 - **WebXR suspends `window.requestAnimationFrame`, freezing tosijs's rAF-batched binding
