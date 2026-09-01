@@ -1,32 +1,47 @@
 ---
 name: pre-release-review
-description: Run the nine-lens comprehensive pre-release review before a minor or major version bump — correctness, efficiency, DRYness, documentation accuracy, test coverage, developer experience, ecosystem/abstraction health, practices self-review, and blast radius (state outside the repo) — as independent adversarially-verified passes over the diff since the last release, ending in a GO / GO-with-followups / BLOCK recommendation. Use when preparing a release, cutting a version, or when the user asks for a release review / pre-release check. Part of the shared tosijs-coding-practices process (practices/review.md).
+description: Run the tiered pre-release review over a substantive diff — Tier 0 is the mechanical `release-doctor` script, then independent adversarially-verified lens passes (always-on: correctness + blast radius; pre-minor adds efficiency + security; quarterly: ecosystem, practices and the structural audit) ending in a GO / GO-with-followups / BLOCK recommendation. Trigger on the WORK, not the version letter: run it for any substantive change, and before cutting any tag. Use when preparing a release, cutting a version, after remediating a BLOCK, or when the user asks for a release review / pre-release check. Part of the shared tosijs-coding-practices process (practices/review.md).
 ---
 
 # Pre-release review
 
-A structured, multi-lens release-gate review. It runs **nine independent reviews** over the
-diff since the last release, **adversarially verifies** each finding, and returns a triaged
-report with a **GO / GO_WITH_FOLLOWUPS / BLOCK** recommendation.
+A structured, multi-lens release-gate review. It runs independent lens reviews over a diff,
+**adversarially verifies** the decision-changing findings, and returns a triaged report with a
+**GO / GO_WITH_FOLLOWUPS / BLOCK** recommendation.
 
-**Lenses 1–6 look at the change:** correctness, efficiency, DRYness, documentation accuracy,
-test coverage, developer experience.
+**The lens set is chosen by `tier`, not by the version letter** (see step 5). Measured over 28
+runs / ~1,100 findings: correctness + blast-radius produced 62% of blockers and every
+irreversible one; ecosystem + practices produced **0** blockers in 28 runs at ~24% of finding
+volume; the duplicate rate across lenses was 27%. So the cheap always-on tier is two lenses, the
+pre-tag tier is four, and the compounding-but-never-blocking lenses moved to a standing
+quarterly job. Full data: `reviews/2026-09-practices-audit.md`.
 
-**Lenses 7–8 look outward and inward** — and they are the compounding ones:
-- **Ecosystem & abstraction health** — is work happening in the wrong layer? Are we hand-rolling
-  around a missing seam in tosijs / tosijs-ui / tjs-lang / the build system? Nascent
-  anti-patterns, compensating complexity, friction we've normalized.
-- **Practices & process self-review** — did this release contradict or outdate our own
-  documented practices? What did we learn that belongs in the knowledge base?
-
-Canonical process doc: `tosijs-coding-practices/practices/review.md` → "Comprehensive
-pre-release review". This skill is the executable version of it.
+Canonical process doc: `tosijs-coding-practices/practices/review.md` → "The tiered review
+structure". This skill is the executable version of it.
 
 ## When to use
 
-- Before any **minor or major** version bump (patches get a lighter correctness + docs pass).
+**Trigger on the work, not the version letter.** Two recorded gate-dodges came from choosing the
+letter first and inheriting a weaker gate; the version number follows the narrative
+independently (`releasing.md`).
+
+- **Any substantive diff** — `tier: "always-on"`, `depth: "fast"`. Cheap enough to be routine.
+- **Before cutting any tag** — `tier: "pre-minor"`, `depth: "full"`. Once per coherent body of
+  work, whatever the bump turns out to be. A patch is not exempt: 0.6.5 was a patch that
+  shipped a broken tarball.
+- **After remediating a BLOCK** — re-run scoped to what each blocker named, which defaults to
+  correctness + blast-radius **over the remediation diff only**. Re-reading the whole span is
+  where review waves come from. A blocker whose fix is mechanical needs nothing beyond Tier 0.
 - Whenever the user asks to "review before release", "do the release review", "pre-release
   check", etc.
+
+**Before any model review, run Tier 0** — `bun tools/release-doctor.ts` from the project root.
+It is free and mechanical, and ~20% of all blockers were script-detectable.
+
+**Check the diff basis before any lens runs.** A dirty working tree means the lenses will review
+the wrong thing: one recorded run reviewed a 13-line committed diff while the entire release sat
+uncommitted, so nothing that shipped was reviewed. And reproduce any red suite from a **fresh
+install** before treating it as a code defect — a stale `node_modules` has faked one twice.
 
 ## How to run it
 
@@ -57,12 +72,12 @@ pre-release review". This skill is the executable version of it.
      args: { baseRef: "<tag>", bump: "<patch|minor|major>", depth: "full" }
    })
    ```
-   It fans out nine lens reviewers in parallel, verifies the decision-changing findings
-   adversarially, then triages. Runs in the background; notifies you when done.
+   It fans out the selected tier's lens reviewers in parallel, verifies the decision-changing
+   findings adversarially, then triages. Runs in the background; notifies you when done.
 
    **`depth` controls cost, and it's the knob to reach for when iterating.** Verification is
-   ~70% of the run, so it scales by how much it verifies, NOT by cutting lenses (all nine run
-   either way — they're cheap and they're where the value is):
+   ~70% of the run, so within a tier it scales by how much it verifies, not by cutting
+   lenses:
    - `depth: "fast"` — verify **blockers only**; majors and below ship reported-but-unverified.
      ~60% cheaper. This is the **every-iteration** check: "am I about to embarrass myself?"
    - `depth: "full"` (default) — verify **blocker + major**. The **pre-tag** gate. ~35% cheaper
@@ -136,7 +151,11 @@ gets waved away as "pre-existing" or "not mine." Treat every failing test as a f
   commit). All fixing happens after the review, deliberately.
 - **Stay in this repo.** Ecosystem findings are **filed as issues on the upstream repo**, never
   fixed by editing it. Wandering into another repo needs a specific reason and human signoff.
-- Scale: `patch` → light pass; `minor` → all nine lenses; `major` → all
-  nine + completeness critic + subsystem-level (not just diff) review.
+- **`bump` does not select the gate — `tier` does.** `bump` is passed through for the report's
+  framing only. The completeness critic (which names what was *not* reviewed, starting with
+  whether the diff basis is even the change about to ship) runs on `tier: "pre-minor"` — the
+  pre-tag gate, whatever letter the release ends up wearing. It used to be gated on
+  `bump === "major"`, which put the strongest pass behind a decision the release had already
+  made about itself.
 - To tune cost/depth, edit the bundled `pre-release-review.workflow.js` (lens list, verify
   strategy, models).

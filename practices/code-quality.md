@@ -368,4 +368,32 @@ lens can be forgotten; an enumeration cannot.
 `convertDirectory`) meant every defect had to be fixed twice, and three times running only
 one copy got fixed. Deduplicating them is more valuable than fixing another instance.
 
-— seen in: tjs-lang
+### The same-diff variant: one commit fixes a bug twice, and gets it wrong once
+
+The instances above are a fix landing at one site and not the others. The cheaper-to-catch
+variant is both sites landing **in the same commit**, written differently, one of them wrong —
+and it is cheaper to catch precisely because the diff contains its own counter-example.
+
+Seen in `tosijs-product` v0.6.5..9b98544: one commit set out to fix `Number(attr) || default`
+swallowing an explicit `0`. In `tosi-b3d-scroll.ts` it added a correct helper —
+`attr !== null && attr !== "" && Number.isFinite(n) ? n : fallback`. In `tosi-product.ts`, for
+the identical bug, it open-coded `Number.isFinite(Number(attr)) ? … : fallback`, which is
+**worse than the bug it replaced**: `getAttribute` returns `null` when absent, `Number(null)`
+is `0`, `0` is finite, so the fallback became unreachable and every default collapsed to zero.
+The suite stayed green (no test covered the default), `tsc` was clean, and the CHANGELOG
+confidently described the intended behaviour. A pre-release review caught it; nothing mechanical
+would have.
+
+**The rule:** when a diff fixes the same class of bug in more than one file, the copies must be
+*the same function*, not two spellings of one idea. If a diff introduces a helper and also
+open-codes that helper's logic somewhere else, that is the finding — no further argument
+needed. It is greppable at review time: for each new helper in a diff, search the diff for its
+body's distinguishing tokens.
+
+**And the general form:** the "obvious repair" for a swallowed-falsy bug is usually wrong,
+because the fix and the bug fail on *different* inputs. `|| fallback` loses `0`;
+`Number.isFinite(Number(x))` loses `null` and `""`. Enumerate the absent cases explicitly, in
+one place, with a test per case asserting both directions — fixing one direction by breaking
+the other is what actually happens.
+
+— seen in: tjs-lang, tosijs-product

@@ -475,6 +475,30 @@ None of which licenses breaking things casually — §12 still applies, and a do
 still owed. It licenses being honest that "we might have users someday" is not a reason to
 ship a known-wrong design today.
 
+**And the converse, because this section is easy to over-read.** Low adoption is a reason to
+break when compatibility is *buying you a design error*. It is not a reason to break when
+compatibility is **free**. The test is what the compatibility shim costs you:
+
+| the shim costs | do |
+| --- | --- |
+| nothing (a type alias, a re-export, a one-line forward) | **keep it**, with a stated removal version |
+| a warning and a branch | keep it if the branch is small; schedule the removal |
+| a design you cannot fix around it | **break**, and say so plainly |
+
+A worked pair from one week in tosijs. The `Xin*` → `Tosi*` type rename kept all 27 old
+names as `@deprecated` aliases — type-only, so zero runtime and zero bundle, and no design
+is compromised by their presence. The `initAttributes` / `contract.attributes` mutual
+exclusion was removed outright, because keeping it meant keeping a rule that was wrong
+(it threw on two *disjoint* declarations while the same pair merged cleanly when split
+across a prototype chain). Same project, same week, opposite calls — and the thing that
+decided it was not adoption, it was whether compatibility was preserving a mistake.
+
+**Two riders, both learned the hard way.** A deprecation with no stated removal version
+drifts: five blueprint types were renamed with aliases and the other 22 were missed and
+untracked for four releases. And **an inventory beats memory** — keep one list of everything
+scheduled for the next major, because a purge derived from grep-at-the-time will miss
+whatever moved since.
+
 ## Choosing a dependency in the first place
 
 The cheapest supply-chain fix is the dependency you didn't add.

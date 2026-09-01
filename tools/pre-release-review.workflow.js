@@ -1,9 +1,9 @@
 export const meta = {
   name: 'pre-release-review',
   description:
-    'Nine-lens adversarial pre-release review: correctness, efficiency, DRYness, docs, test coverage, developer experience, ecosystem/abstraction health, practices self-review, and blast radius',
+    'Tiered adversarial pre-release review: lens set selected by `tier` (always-on: correctness + blast radius; pre-minor adds efficiency + security; quarterly: ecosystem + practices)',
   phases: [
-    { title: 'Review', detail: 'nine independent lens reviewers over the diff' },
+    { title: 'Review', detail: 'independent lens reviewers over the diff, per the selected tier' },
     { title: 'Verify', detail: 'adversarially verify decision-changing findings (blockers always; majors unless depth=fast)' },
     { title: 'Triage', detail: 'dedupe, rank, GO / BLOCK recommendation' },
   ],
@@ -52,7 +52,7 @@ const VERIFY_SEVERITIES = depth === 'fast' ? ['blocker'] : ['blocker', 'major']
 // itself a decision-changing question — so it triggers verification too (review.md).
 const shouldVerify = (f) => VERIFY_SEVERITIES.includes(f.severity) || f.severityUncertain === true
 
-// ---- the nine lenses (criteria mirror practices/review.md) ------------------
+// ---- the lens pool; `tier` selects from it (criteria mirror practices/review.md) ----
 // 1-6 look AT THE CHANGE, and 9 at what the change touches BEYOND THE REPO
 // (global binaries, $HOME, other processes, ports — state with no test suite and
 // no rollback). 7-8 look outward (the tools we depend on) and inward (our own
@@ -340,9 +340,22 @@ log(`${survived.length} findings (${blockerCount} blockers; ${verifiedCount} adv
 // ---- phase 3: completeness critic (major only) + triage/report ---------------
 phase('Triage')
 let gaps = null
-if (bump === 'major') {
+/*
+Keyed to the TIER, not to `bump`. Gating this on `bump === 'major'` was the
+version-letter trigger the 2026-09 audit retired: it made the strongest pass
+available only to whoever had already decided to call the release major, and two
+recorded gate-dodges came from choosing the letter first. `pre-minor` is the
+pre-tag gate whatever letter the release ends up wearing, so the critic runs there.
+
+It is also told which lenses ACTUALLY ran. The old prompt hardcoded all nine, so
+under a narrower tier it asserted that docs, coverage, DX, ecosystem and practices
+had been covered — suppressing the very gaps it exists to find.
+*/
+if (tier === 'pre-minor') {
+  const ranNames = activeLenses.map((l) => l.key).join(', ')
+  const poolNames = LENSES.map((l) => l.key).join(', ')
   gaps = await agent(
-    `${READONLY}\n\nYou are the completeness critic for a MAJOR release review. The nine lenses (correctness, efficiency, DRYness, docs, test coverage, DX, ecosystem/abstraction health, practices self-review, blast radius) have run over \`${diffCmd}\`. Inspect the diff and repo and name what was NOT adequately reviewed — an untouched-but-affected subsystem, an unverified claim, a public-API surface or migration path nobody checked. Be specific and short.`,
+    `${READONLY}\n\nYou are the completeness critic for a pre-tag release review. EXACTLY these lenses ran over \`${diffCmd}\`: ${ranNames}. These did NOT run this time: ${poolNames.split(', ').filter((k) => !ranNames.includes(k)).join(', ') || '(none)'} — their concerns are covered by the Tier-0 script or deferred to the quarterly audit, so do not simply re-report them wholesale, but DO name anything they would have caught that actually matters here.\n\nFirst check the DIFF BASIS itself: is \`${diffCmd}\` the change that is about to ship? A dirty working tree or a wrong base ref means the lenses reviewed the wrong thing, and that is the single most important gap you can report.\n\nThen inspect the diff and repo and name what was NOT adequately reviewed — an untouched-but-affected subsystem, an unverified claim, a public-API surface or migration path nobody checked. Be specific and short.`,
     { label: 'completeness-critic', phase: 'Triage', schema: GAPS_SCHEMA, agentType: 'general-purpose' }
   )
 }

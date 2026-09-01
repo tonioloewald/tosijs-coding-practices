@@ -341,6 +341,31 @@ returned a confident wrong answer until the result was made to carry a warning �
   version of this rule is [cross-project.md "Adopters before abstraction"](cross-project.md#adopters-before-abstraction)).
 - **Done when:** no copy-pasted logic remains and every new helper earns its place.
 
+### 3b. A claim about what something LOOKS like requires looking at it
+
+If a change alters rendering — CSS, layout metadata, a template, a component's shadow DOM —
+then "the panel went from 704px to full window width" and "the heading no longer collides with
+the tagline" are **measurements**, and a review that repeats them without opening a browser is
+laundering the author's assertion into a verified finding.
+
+Seen in `tosijs-product` v0.6.5..9b98544: the release's largest surface-area change was visual —
+six inline `<style>` blocks rewritten, a new page-layout mode adopted across every demo page —
+and no lens loaded the page. The repo already prescribes a browser agent for exactly this, in
+its own `CLAUDE.md`.
+
+**The rule:** a visual claim is either backed by a browser session in the review, or it is
+labelled **unverified** in the report. Both are acceptable; silently inheriting the author's
+description is not. Two traps worth knowing when you do look, both of which produce
+plausible-but-wrong results rather than errors:
+
+- A **backgrounded tab has `requestAnimationFrame` stopped**. Frameworks that render on a frame
+  (tosijs among them) never finish, so element geometry reads as pre-layout. Bring the tab to
+  the front before believing a number.
+- Some agent "screenshots" are **schematic reconstructions, not pixel captures**. Fine for
+  structure, useless for judging whether something looks right. Check which you are getting.
+
+— seen in: tosijs-product
+
 ### 4. Documentation accuracy & up-to-dateness
 
 - **Regenerate and diff-check generated docs**: `bun run build` (or the doc generator) then
