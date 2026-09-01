@@ -9,7 +9,11 @@
  *   bun /path/to/tosijs-coding-practices/tools/release-doctor.ts
  *
  * Honesty rules (dependencies.md §1): a check that cannot run reports SKIP with a reason —
- * never a pass it didn't earn. Exit 1 on any FAIL.
+ * never a pass it didn't earn, and never a FAIL it didn't earn either. The second half
+ * matters as much as the first: a gate that cries wolf gets muted, and a muted gate is
+ * worse than no gate. An UNMET PRECONDITION (a lane whose runtime is too old, a binary
+ * that is not installed) is not a finding about the code — it is the check declining to
+ * run, and it must say so. Exit 1 on any FAIL.
  */
 
 import { $ } from 'bun'
@@ -42,6 +46,37 @@ async function run(cmd: string[]): Promise<{ ok: boolean; out: string }> {
   }
 }
 
+/**
+ * Did this lane FAIL, or was it unable to RUN?
+ *
+ * Reported by tosijs on release-doctor's first outing elsewhere: its
+ * `test:browser` lane exited non-zero with "You are running Node.js 14.17.3.
+ * Playwright requires Node.js 20 or higher." That is an unmet precondition, not
+ * a defect in the project — and reporting it as FAIL is exactly the
+ * cry-wolf that teaches people to skim past this output.
+ *
+ * Deliberately NARROW: these patterns are tools stating their own preconditions
+ * in the imperative. Anything ambiguous stays a FAIL, because swallowing a real
+ * failure is the worse error of the two.
+ */
+const CANNOT_RUN = [
+  /requires Node\.js \d+(\.\d+)* or higher/i,
+  /command not found/i,
+  /is not recognized as an internal or external command/i,
+  /Executable doesn't exist at .*(playwright|ms-playwright)/i,
+  /Please (install|run) .*(playwright install|browsers)/i,
+]
+const cannotRun = (out: string): string | undefined => {
+  for (const re of CANNOT_RUN) {
+    const m = out.match(re)
+    if (m) {
+      const line = out.split('\n').find((l) => re.test(l))?.trim() ?? m[0]
+      return line.slice(0, 160)
+    }
+  }
+  return undefined
+}
+
 // 1. Working tree state (context, not a gate)
 {
   const { out } = await run(['git', 'status', '--porcelain'])
@@ -62,6 +97,11 @@ async function run(cmd: string[]): Promise<{ ok: boolean; out: string }> {
   } else {
     for (const lane of lanes) {
       const r = await run(['bun', 'run', lane])
+      const blocked = r.ok ? undefined : cannotRun(r.out)
+      if (blocked) {
+        add(`tests (${lane})`, 'SKIP', `could not run: ${blocked}`)
+        continue
+      }
       add(`tests (${lane})`, r.ok ? 'PASS' : 'FAIL', r.ok ? '' : r.out.split('\n').slice(-8).join('\n'))
     }
   }
