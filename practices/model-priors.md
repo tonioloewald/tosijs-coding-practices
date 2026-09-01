@@ -170,9 +170,15 @@ findings were all real, the ambiguity warning named the actual problem. Its defe
 instance, two distributions under one version string. **Accurate-but-unusable earns trust far
 faster than the reverse**, and confusing the two costs you the tool's real signal.
 
-**The trust hierarchy is real and worth stating.** In this stack, **tosijs** (18+ months) and
-**b8r** (years) are beyond question: if you think the bug is in one of them, you are almost
-certainly on the wrong track. Newer components have not earned that and *should* be suspected.
+**The trust hierarchy is real and worth stating — as a search-ordering, not an exclusion.**
+In this stack, **tosijs** (18+ months) and **b8r** (years) have earned last-place in the
+hypothesis ordering: check them *last* — **but check**. "Beyond question" was the old wording,
+and the 2026-09 practices audit retired it: it excluded the ecosystem's most-depended-on
+library (17 internal manifests) from the search space, and `dependencies.md` §12 records an
+in-house dependency silently breaking 15 call sites while 898 tests stayed green. The rule
+that survives: trust sets how *late* you look, not *whether* — and to claim a mature source
+is wrong, **measure the source** (run the test on the actual device/library, don't infer).
+Newer components have not earned late placement and *should* be suspected early.
 The goal state is what one of us calls a **"does math even work" bug** — you have tested the
 entire reasoning chain, found nothing, and begun suspecting the transpiler or arithmetic itself,
 and it turns out to be a typo. A library is mature when it stays outside the search until you

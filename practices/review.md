@@ -25,6 +25,70 @@
   the same place, or a reader will assume the stricter one runs everywhere.
   — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, kith-email, react-tosijs
 
+## The tiered review structure (adopted 2026-09, from the practices audit)
+
+Measured over 28 review runs / 6 releases (~1,100 findings): correctness + blast-radius
+produced 62% of blockers and every irreversible one; docs + coverage blockers were 100%
+mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of finding volume;
+~20% of all blockers were script-detectable; duplicate rate 27%. Full data:
+`reviews/2026-09-practices-audit.md`. The structure that follows from it:
+
+- **Tier 0 — the script, every release, free.** `bun tools/release-doctor.ts` from the
+  project root: test lanes, typecheck, build, CHANGELOG entry + freshness, license,
+  **tag/publish reconciliation** (land-the-plane, mechanized — a divergence blocks version
+  work regardless of audience), unresolved BLOCK verdicts. Plus mechanical clone detection
+  where configured. Retires the old docs/coverage lenses' blocker classes.
+- **Tier 1 — always-on (`depth: fast`), any substantive change.** **Correctness +
+  blast-radius**, blockers-only verification. **Never keyed to the version letter** — two
+  recorded gate-dodges came from letter selection; the trigger is a substantive diff, and
+  the version number follows the narrative independently (releasing.md).
+- **Tier 2 — pre-minor (`depth: full`), once per coherent body of work.** Adds
+  **efficiency** and **security** (subsystem-scoped: sandbox/VM, capability boundaries,
+  auth, untrusted input — the escalation rule below already prescribed the depth; now it has
+  its own lens). Diff-level DRY and DX ride inside correctness/blast-radius as framings, not
+  separate agents (27% duplicate rate; DX never originated a blocker). **Re-reviews cover
+  the remediation diff only** — four runs found blockers introduced by the previous wave's
+  own fixes; re-reading the whole span is where review waves came from.
+- **Tier 3 — the structural audit, quarterly (or per-major), whole-codebase scope.** The
+  things diff-scoped review is structurally blind to:
+  - **Redundant code paths / structural twins** (the emit-convert and double-`initAttributes`
+    class — flagged three times, deferred three times, double-fixed three times). Hard
+    disposition rule: **a structural-twin finding cannot be deferred** — kill the path, or
+    record a deliberate keep with reason and owner. This debt compounds; deferral is a
+    decision to pay twice per fix.
+  - **Examples audit**: does sample code exemplify current best practice? (Observed: doc-site
+    examples emitting deprecation warnings — anti-documentation.)
+  - **Style conformance**: code vs the style guide (code-quality.md + the project's CLAUDE.md
+    deltas).
+  - **Render-creep characterization** (tosijs component projects): count and classify
+    `render()` use in component leaves — judicious vs drift — and report the distribution
+    before arguing. The philosophy says static-by-default; the measurement says whether
+    reality agrees.
+  - **Ecosystem + practices dispositions**, with a deadline and an owner — not a release to
+    block (0 blockers in 28 runs; their findings re-printed verbatim across consecutive
+    reviews when release-gated).
+- **Lens 0 (what KIND of thing is this)** is a once-per-project recorded artifact
+  (`reviews/PROJECT-KIND.md`), not a per-release pass.
+
+**Verdict semantics (adopted 2026-09, owner):**
+
+- **BLOCKER is a status, not a severity.** It means exactly "the release waits for this" —
+  nothing more. A misspelled function name in the docs is a blocker; it is not evidence of
+  poor work. Reviewers report blockers without moral weight, and consumers of a review must
+  not read blocker counts as a performance grade — observed failure: agents
+  self-flagellating over "three blockers in three iterations," which distorts the next
+  iteration's judgment (rumination, over-caution, under-reporting). The metric that says
+  anything about quality is finding→fix latency and escape rate, not the count of things a
+  careful process caught before anyone was harmed. Catching them *is the process working*.
+- **A BLOCK verdict must name its re-review scope.** "Fix and re-run" is how review waves
+  happen. Each blocker states what must be re-examined after remediation — which lens(es),
+  over what (default: correctness + blast-radius over the remediation diff only). A blocker
+  whose fix is mechanical (typo, missing entry) needs no re-review beyond Tier 0; say so
+  explicitly, so the cheap case stays cheap.
+
+The section below defines the lens criteria in full; run them per the tiers above. The old
+"all nine on every minor" trigger is retired — reviews trigger on work, not letters.
+
 ## Comprehensive pre-release review (minor & major)
 
 Before any **minor or major** version bump, run a structured multi-lens review — not one

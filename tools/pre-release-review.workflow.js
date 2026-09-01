@@ -35,6 +35,17 @@ const diffCmd =
 // The lens set does NOT shrink in either mode: lenses are cheap (~0.3 MB each) and are where
 // the value is (blast-radius alone found 8 blockers). Cutting lenses would cut value, not cost.
 const depth = opts.depth || 'full'
+// Tier structure (reviews/2026-09-practices-audit.md D2): which lenses run depends on tier.
+//   'always-on'  — correctness + blast-radius, every substantive change, pair with depth:'fast'
+//   'pre-minor'  — adds efficiency + security; DRY/DX ride inside correctness/blast-radius
+//   'quarterly'  — ecosystem + practices dispositions (never release-gating)
+// Docs & coverage lenses are retired to the Tier-0 script (tools/release-doctor.ts).
+const tier = opts.tier || 'pre-minor'
+const TIERS = {
+  'always-on': ['correctness', 'blast-radius'],
+  'pre-minor': ['correctness', 'efficiency', 'security', 'blast-radius'],
+  quarterly: ['ecosystem', 'practices'],
+}
 const VERIFY_SEVERITIES = depth === 'fast' ? ['blocker'] : ['blocker', 'major']
 // Key on the severity you'd ACT on, not just the label the finder typed: a reviewer who is
 // unsure a "minor" isn't really a blocker sets severityUncertain, and that uncertainty is
@@ -112,6 +123,11 @@ Report 7b findings even when they are not defects in the diff (e.g. "issue #N ha
 Findings here are proposed CHANGES TO THE PRACTICES (or to this repo's agent docs), not to the shipping code. Severity is usually minor/major, rarely a blocker. Returning zero findings is suspicious — it usually means nobody looked.`,
   },
   {
+    key: 'security',
+    title: 'Security (subsystem-scoped)',
+    checks: `Review security-critical subsystems the diff touches OR sits adjacent to — sandbox/VM, capability and tool boundaries, RBAC/auth, URL/SSRF guards, regex/ReDoS and other untrusted-input paths, secrets handling, network listeners. Security holes are LATENT: they sit in already-shipped code outside the diff, so escalate any touched security subsystem to WHOLE-SUBSYSTEM depth regardless of diff size (a minor bump's review once found five VM blockers, four latent in the prior shipped release). Check: unauthenticated reachable surfaces (who can hit this endpoint/port/handler, from where, with what Origin); input validation at every trust boundary; fail-open vs fail-closed on every gate (a gate must never report a pass it didn't earn, and a documented divergence at a gate is still fail-open); what a compromised or malicious caller could make this code do; whether tests cover the hostile input class, not just the happy path. Findings whose subject is an isolation, capability, or auth guarantee get adversarially verified regardless of reported severity.`,
+  },
+  {
     key: 'blast-radius',
     title: 'Blast radius (what propagates outside the repo — cost or benefit)',
     checks: `Lenses 1-6 review the code. You review what this change PROPAGATES beyond the repo. Blast radius has a SIGN, and the amplitude multiplies whichever sign it has: a bug in a widely-used library is catastrophic for the same reason an improvement in it is enormously valuable. Run BOTH directions.
@@ -153,6 +169,15 @@ Ask of each: WHO ELSE CAN THIS SURPRISE, AND CAN THEY UNDO IT? Prefer additive a
 Findings that touch the user's machine — a global binary, a kill policy, a test that writes to \$HOME — are BLOCKERS, not nits. A change that is correct in-repo and hostile on the machine has not passed review.`,
   },
 ]
+
+// Fold the retired DRY/DX lenses into the survivors as framings (27% duplicate rate;
+// DX never originated a blocker — 2026-09 audit). Structural-twin DRY lives in Tier 3.
+const FOLDED = {
+  correctness: `\n- DIFF-LEVEL DRY AS CORRECTNESS: a copy-paste that has already drifted is a correctness bug wearing two addresses — report the drift AND name both copies. New near-duplicate logic in the diff: flag it once, here.\n- DX AS CORRECTNESS: emitted types that lie (required->optional drift), error messages that misdirect, a footgun reintroduced — report as the defects they are.`,
+  'blast-radius': `\n- STRUCTURAL DUPLICATION AS SEVERED PROPAGATION: if the diff adds or entrenches a parallel code path / structural twin (two implementations of one behavior), report it HERE with the propagation argument — and note it CANNOT be deferred without a recorded keep-decision (structural twins compound: every future fix must land twice).`,
+}
+LENSES.forEach((l) => { if (FOLDED[l.key]) l.checks += FOLDED[l.key] })
+const activeLenses = LENSES.filter((l) => (TIERS[tier] || TIERS['pre-minor']).includes(l.key))
 
 const SEVERITY = ['blocker', 'major', 'minor', 'nit']
 
@@ -245,7 +270,7 @@ Scope: run \`${diffCmd}\` and \`git diff --stat ${base}...HEAD\` to see everythi
 Review ONLY through the ${lens.title} lens:
 ${lens.checks}
 
-Report concrete, ranked findings. Each finding needs a real failure scenario (or, for non-correctness lenses, the concrete cost/risk) and an actionable recommendation. Prefer a few high-signal findings over an exhaustive dump; if the diff is clean on this lens, return an empty findings array. Severity: blocker (must fix before release) / major / minor / nit. If you are not confident in a severity label — especially "this minor might really be a blocker" — set severityUncertain: true so it gets adversarially verified regardless of the label.`
+Report concrete, ranked findings. Each finding needs a real failure scenario (or, for non-correctness lenses, the concrete cost/risk) and an actionable recommendation. Prefer a few high-signal findings over an exhaustive dump; if the diff is clean on this lens, return an empty findings array. Severity: blocker (must fix before release) / major / minor / nit. BLOCKER IS A STATUS, NOT A SEVERITY: it means only "the release waits for this" — a typo'd name in docs can be a blocker without being poor work. Report blockers without moral weight; do not frame them as failures of whoever wrote the code. For each blocker, ALSO state its RE-REVIEW SCOPE: which lens(es) must re-examine what after the fix — default "correctness + blast-radius over the remediation diff only"; for mechanical fixes (typo, missing entry) say "Tier 0 only" so the cheap case stays cheap. If you are not confident in a severity label — especially "this minor might really be a blocker" — set severityUncertain: true so it gets adversarially verified regardless of the label.`
 
 const verifyPrompt = (f, lens) =>
   `${READONLY}
@@ -262,7 +287,7 @@ Return: confirmed (real, reproducible as described), plausible (likely real but 
 // ---- phase 1+2: review each lens, verify its findings as they land ----------
 phase('Review')
 const reviewed = await pipeline(
-  LENSES,
+  activeLenses,
   (lens) =>
     agent(reviewPrompt(lens), {
       label: `review:${lens.key}`,

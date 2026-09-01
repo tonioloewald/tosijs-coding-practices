@@ -142,6 +142,26 @@ one publish-before-gate-cleared. The skill's own text anticipates abandonment ("
 review that runs beats a thorough one that doesn't"). No token/duration costs recorded
 anywhere — worth instrumenting in the Tier-1 harness from day one.
 
+## Verdicts (owner, 2026-09-01)
+
+**All recommendations accepted** (D1–D9, including the DRY amendment to D2). **D10: tosijs-product
+gets reviewed** — not a control group; schedule it under the new tiers.
+
+Three additions from the verdict discussion:
+
+- **Examples audit** (per project, part of Tier 3): does the sample code exemplify current best
+  practices? Observed failure: tosijs-ui's examples emit deprecation warnings on load — examples
+  teaching deprecated API are anti-documentation. Connects to the existing doc-example test
+  discipline (testing.md); the audit extends it from "examples run" to "examples exemplify."
+- **Style guide**: a general "what does good code look like here" distillation (code-quality.md
+  owns it), with per-project deltas living in each project's CLAUDE.md (link-don't-paraphrase).
+  Tier 3 checks conformance drift.
+- **Render-creep measurement** (Tier 3, tosijs component projects): the philosophy says the DOM
+  stays static by default and `render()` should rarely be needed, yet render-heavy code creeps
+  into component leaves. The owner's hedge is recorded: it may be judicious. So the check is a
+  *characterization*, not a presumption — count and classify `render()` usage in leaves
+  (judicious vs drift), report the distribution, and only then argue.
+
 ## What this audit retired, added, and still owes
 
 Added: grade K proposal, the security lens proposal, this document. Fixed: one factual

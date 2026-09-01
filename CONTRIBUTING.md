@@ -38,6 +38,11 @@ entry should answer *why*, so the next reader can tell when it stops applying.
 Adopted 2026-09-01, after an audit found the corpus at a 20:1 add:delete ratio with zero
 entries ever retired — and found that the owner's own assertions entered as law with no review.
 
+- **Grade K (constitutional):** some rules are justified structurally, not incidentally —
+  the boundary rule, the practices-repo standing exception, append-only history,
+  merge-never-rebase. Preventive rules never accumulate incidents *precisely when they
+  work*, so grading them "decree" mislabels deterrence as folklore. Mark them K; they are
+  exempt from incident-evidence expectations but **not** from composition review.
 - **Every entry has a provenance, and it matters.** Incident-derived entries (a named project,
   what happened, the consequence) are the gold standard. **Owner decrees** ("rule set by the
   owner") are legitimate but *provisional* — they get the same eventual scrutiny as any agent's

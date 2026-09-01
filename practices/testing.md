@@ -99,8 +99,13 @@ browser / IPC / framework bridge in a separate file.
   network. Advance time only via an explicit `dt`/`tick`, never `Date.now`/`Math.random`; mint
   ids from a counter. Determinism makes state models reproducible and lets a headless driver
   run them (the pure integrator that drives live behavior is the SAME one prediction/tests use).
-- When source depends on browser/IPC globals, duplicate a pure copy of the algorithm (merge,
-  unread counts, interpolation, gating) into the `*.test.ts` and test that.
+- When source depends on browser/IPC globals, **extract the pure algorithm into its own
+  module and import it from both the source and the test** (the tosijs-3d three-file split is
+  the reference shape). Copying the algorithm *into* the test file — the old form of this
+  rule, retired by the 2026-09 audit — is the severed-propagation defect lens 9 exists to
+  catch: when the tested copy isn't the shipping copy, fixes reach nobody (the recorded
+  instance: `bin/hj.mjs` drifting from the tested `src/sessions.ts`). A copy-in-test is
+  acceptable only as a spike, with extraction as the recorded follow-up.
 - Concentrate coverage on the deterministic core (interpolation, clamping, easing, waypoints,
   ballistics) — full scroll/layout/render choreography is impractical to unit-test, so don't try.
 — seen in: tosijs-3d, kith-email, tosijs-product, loewald-dot-com
@@ -278,6 +283,19 @@ releases.
 Same family as the artifact-execution rule in
 [`dependencies.md`](dependencies.md) §12 — the suite tests the source, the bug lives in the
 emitter, and only running the built thing finds it.
+
+## Examples are load-bearing — audit that they *exemplify*, not just run
+
+The doc-example discipline above proves examples still execute; the examples **audit**
+(Tier 3, quarterly — see review.md's tier structure) asks the stronger question: does the
+sample code teach *current* best practice? An example that runs but emits deprecation
+warnings, uses a retired API shape, or contradicts the style guide is anti-documentation —
+it trains every reader (human and agent) to write yesterday's code, and agents especially
+copy examples verbatim. Observed: tosijs-ui's doc-site examples emitting deprecation
+warnings on load, releases after the deprecations shipped. Check: load the doc site with a
+console open (zero warnings expected — see the log-spam discipline), and diff each example
+against what you'd write today. An example you wouldn't write today gets updated or deleted.
+— raised by the repo owner 2026-09-01; observed in tosijs-ui
 
 ## A regression test you wrote *after* the fix must be seen to fail
 

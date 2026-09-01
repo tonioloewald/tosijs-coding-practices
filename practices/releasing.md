@@ -259,9 +259,14 @@ rc briefly exposed as `latest`, an unpublished tag, or a breaking minor is propo
   tjs-lang ×8, tosijs-schema ×7, haltija ×4 as a dependency plus CLI use everywhere).
   Absence can't be proven (vendored copies, CDN script tags, and private repos are invisible)
   — so re-measure at each decision rather than caching this conclusion.
-- **On a zero-consumer package, a publish-integrity slip is bookkeeping, not an incident.** Fix
-  it (the record still matters — see "Land the current release" above), but don't grade it
-  major, don't build ceremony against it, and don't let it gate unrelated work. Reviews and
+- **Severity scales with audience; SEQUENCING does not** (amended 2026-09 — the practices
+  audit found the original wording pre-graded the ecosystem's most-recurring defect class as
+  ignorable, self-fulfillingly: unlanded releases prevent the consumers that would raise the
+  grade). On a zero-consumer package a publish-integrity slip is still not an *incident* —
+  but "Land the current release before starting the next" outranks this calibration: a
+  tag/publish/tree divergence **always blocks further version work on that package** until
+  reconciled. `tools/release-doctor.ts` makes the check mechanical. Don't grade it major,
+  don't build ceremony against it — just land the plane before touching the throttle again. Reviews and
   sweeps should grade breakage/publish-state findings **against the measured base**: major on a
   package with real users, notable on one without.
 - **The error is live in both directions, and the same instrument fixes both.** Assuming users

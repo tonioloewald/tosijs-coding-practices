@@ -86,8 +86,9 @@ rather than duplicating. — seen in: static-assets, tosijs-3d
   manifest — keep it usable by apps that know paths, not browsable as a bundle. — seen in: static-assets
 - **Cloudflare Pages caps at <20k files** — trim the served set (via metadata excludes) to
   stay under it or deploys break. — seen in: static-assets
-- Invoke the Cloudflare Claude Code skills (Workers, Pages, R2, D1, Durable Objects,
-  `wrangler`) before running `wrangler` or writing Worker code, rather than working from memory.
+- Invoke the Cloudflare Claude Code skills before `wrangler` work rather than working from
+  memory. (Scoped to what the ecosystem actually uses — Pages and R2; the 2026-09 audit
+  trimmed the Workers/D1/Durable-Objects list, which no project runs.)
 
 ## Tauri desktop apps
 

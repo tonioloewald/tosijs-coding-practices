@@ -131,6 +131,26 @@ references (DAGs), not just true cycles.**
 — seen in: tjs-lang#21 — its own `expect`/`deepEqual`/`format` and the user-facing `Is` all blew
   up on DAGs; same class as bun's assertion-formatter OOM (oven-sh/bun#34178)
 
+## The style guide — what good code looks like here
+
+This file *is* the general style guide; this entry makes that role explicit and gives it a
+shape (owner-requested, 2026-09-01). Three levels:
+
+1. **General** (this file): the house style (single quotes, no semicolons, 2-space indent,
+   ES5 trailing commas), match-the-surrounding-file, DRY-when-downhill, small surfaces,
+   comments only for what code can't say, errors as curriculum.
+2. **Per-project deltas** live in that project's `CLAUDE.md` — as *deltas that link here*,
+   never paraphrases (cross-project.md). A project with no deltas section inherits this file
+   wholesale, and that's the common, correct case.
+3. **Exemplars over rules**: each project's examples and doc-site samples are the style
+   guide's executable form — which is why the examples audit (testing.md, Tier 3) checks
+   that they exemplify current practice. When a rule here and a shipped example disagree,
+   one of them is a bug; fix whichever is wrong, in the same change.
+
+Tier 3's style-conformance check measures drift between this guide and the code actually
+being written — including render-creep in component leaves (see review.md Tier 3), where
+philosophy says static-by-default and the measurement says whether reality agrees.
+
 ## Naming & idioms
 
 - Match the file you're in. House convention for component callbacks is `handle<Event>`

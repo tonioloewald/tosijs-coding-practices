@@ -68,6 +68,17 @@ pre-release review". This skill is the executable version of it.
    - `depth: "full"` (default) — verify **blocker + major**. The **pre-tag** gate. ~35% cheaper
      than the old verify-everything behavior; minor/nit are never adversarially verified.
 
+   **`tier` selects the lens set** (reviews/2026-09-practices-audit.md D2). Run
+   `bun tools/release-doctor.ts` (Tier 0, free, mechanical) before ANY model review:
+   - `tier: "always-on"` + `depth: "fast"` — correctness + blast-radius, for any substantive
+     change; never keyed to the version letter.
+   - `tier: "pre-minor"` (default) + `depth: "full"` — adds efficiency + security; the
+     once-per-coherent-body-of-work gate. Re-reviews after remediation scope to the
+     remediation diff only, per each blocker's stated re-review scope.
+   - `tier: "quarterly"` — ecosystem + practices dispositions; a standing job with a
+     deadline, never a release gate. The structural audit (redundant code paths, examples
+     audit, style conformance, render-creep) runs at this cadence too.
+
    A run you're going to repeat several times during a release should be `fast`; the one right
    before you cut the tag should be `full`. If cost is making you skip the review entirely, use
    `fast` — a cheap review that runs beats a thorough one that doesn't.

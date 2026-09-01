@@ -184,8 +184,10 @@ These recur in every app in the ecosystem. Internalize them.
 - **`.claude/tosijs-notes.md`:** a distilled cheat-sheet of tosijs / tosijs-ui /
   tosijs-schema gotchas — copy it into any tosijs project as an agent primer. — seen in:
   loewald-dot-com
-- **Extract pure-function copies of stateful logic into `bun:test` files** to unit-test
-  algorithms without browser/localStorage/IPC dependencies. — seen in: kith-email
+- **Extract stateful logic's pure core into its own module and import it from source AND
+  tests** — never a copy living only in the test file (severed propagation; see testing.md
+  "What to test" and review.md lens 9). — seen in: kith-email (original copy-in-test form),
+  tosijs-3d (the corrected three-file shape)
 
 ## Project-specific practices
 

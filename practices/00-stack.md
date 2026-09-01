@@ -73,6 +73,10 @@ the dependency count.
 
 ## Bun is mid-rewrite — pin it, treat a major bump as a migration
 
+> **as-of: 2026-07 — external state, UNVERIFIED since.** Everything in this section
+> describes upstream Bun at the time of writing; re-check before relying on any of it
+> (documentation-surface move 5, applied by the 2026-09 audit).
+
 Bun **1.4.0 is a ground-up rewrite from Zig to Rust** (AI-generated, merged upstream). The whole
 toolchain — runtime, test runner, bundler — assumes Bun, so this is the stack's single largest
 upstream risk.
