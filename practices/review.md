@@ -728,6 +728,37 @@ was still executing accessors that afternoon.
 > of thing and say explicitly whether each was checked. "Fixed in X" is not an answer;
 > "fixed in X, and Y/Z don't have this shape because…" is.
 
+**Escalate to the precondition.** When a lens returns N findings that share one enabling
+condition, **the finding is the condition**, not the N instances.
+— seen in: tosijs 1.9.0 (`v1.8.2..5dea259`)
+
+> tosijs patched four `describe()` secret leaks across four review rounds. Every one was
+> reachable *only* because `enableAgentInterface()` with no arguments exposed the whole
+> registry. Each fix was correct and each round found the next. Closing the default made
+> all four unreachable and demoted the redaction machinery from "the boundary" to defence
+> in depth. Two MORE addresses of the same invariant surfaced afterwards — the rule's own
+> vindication, since the per-site approach had already been tried six times.
+>
+> The tell that you are patching instances: your fix comment says "and this is the
+> durable fix because it cannot drift out of sync." Ask *out of sync with what, in which
+> configurations* — one tosijs gate was keyed to the `closed` posture and was perfectly
+> durable there while the `manifest` posture leaked everything.
+
+**A guard test whose fixture contains one of the N shapes it guards is VACUOUS.**
+— seen in: tosijs 1.9.0, twice, and flagged in its own round-3/4 reviews before recurring
+
+> `expect(describe().wiring).toEqual([])` passed while four records leaked, because the
+> fixture held only the element types that were already gated. `expect(json).not.toContain(secret)`
+> passes trivially against an empty map. **Every negative assertion needs a positive
+> control in the same test** — assert the benign thing IS present, or the guard proves
+> nothing about the guard.
+>
+> Corollary: **an environment-suppressed assertion is a passing test that tests nothing.**
+> happy-dom returns zero geometry from `getBoundingClientRect`, and tosijs drops
+> zero-area elements — so an entire tier of the agent map was invisible to every test in
+> the suite, in a way no real browser reproduces. If a guard depends on geometry, layout,
+> or timing, make the environment supply it rather than trusting the green tick.
+
 **Comment-vs-code.** Prose doesn't execute. A validator commented _"matches declarations at
 statement level (not inside strings/comments)"_ did no such thing — the claim was in the
 comment, not the code, and a keyword inside a template literal made a legal file

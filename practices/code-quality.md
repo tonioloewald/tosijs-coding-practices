@@ -264,6 +264,33 @@ The test: **does the old spelling still describe a real choice?** If yes, alias 
 named a choice that no longer exists, make it an error and say what replaced it.
 — seen in: tjs-lang (nine mode directives abolished in 0.13.0)
 
+**Deprecation is a claim about a REPLACEMENT, so test the replacement — with the caller's
+actual value.** Two failure modes, both shipped, both in the same API.
+— seen in: tosijs 1.9.0 (`v1.8.2..5dea259`)
+
+> **Don't deprecate the primitive your own recommended sugar emits.** tosijs deprecated
+> the `bindList` element prop while `.tosi.listBinding()` — the recommended API — emitted
+> exactly that prop. The recommended path warned its own callers from inside itself, and
+> the message could not even be *written*: the replacement is a spread, not a `{ key:
+> value }` prop, so the advice string read `Use { .tosi.listBinding(): … }`. Routing
+> around the unwritable message, rather than questioning the deprecation, produced a
+> silent list-destroying key collision at two call sites and a breaking change to a
+> public return shape.
+>
+> **A deprecation can be right for one VALUE and wrong for another under the same key.**
+> `bindText: proxy` has an exact plain-prop replacement (`textContent: proxy`).
+> `bindText: 'some.path'` has none — `textContent: 'some.path'` sets the literal text and
+> silently does not bind, and the `disabled` equivalents assign an always-truthy string
+> that permanently disables the control. So the warning told a caller to write something
+> strictly worse than what they had, and `@deprecated` on the whole prop struck through
+> correct code in every editor. The rule that survived: **deprecated iff a plain
+> replacement expresses it exactly — evaluated per value, not per key.**
+>
+> The tell in both cases: *you cannot write the replacement as a concrete line of code the
+> caller could paste.* If the advice string won't compile, the deprecation is wrong, not
+> the wording. (A downstream consumer reached the second conclusion independently while
+> the upstream `.d.ts` had already conceded it in prose — read your own docs as evidence.)
+
 ## Errors as curriculum
 
 Every diagnostic is a teaching opportunity, and the measured difference between a good one
