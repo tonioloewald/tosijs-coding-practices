@@ -132,12 +132,111 @@ const cannotRun = (out: string): string | undefined => {
     const cl = readFileSync(clPath, 'utf8')
     if (version && cl.includes(version)) add(`changelog entry for ${version}`, 'PASS')
     else add(`changelog entry for ${version}`, 'FAIL', 'no heading mentions the version being released')
+    /*
+     * …AND THE CHECK ABOVE IS SATISFIABLE BY NOT BUMPING.
+     *
+     * With `version` still at the LAST published release, the entry for that
+     * release is obviously present, so the gate passes against the previous
+     * release's text. That is how a release with unbumped identity reached two
+     * consecutive pre-release reviews at full green: package.json, version.ts,
+     * the committed dist/ and the newest CHANGELOG heading all still named the
+     * prior version while the bundles carried new code. Published as-is, the
+     * artifact is byte-different from its predecessor but self-identifies as
+     * it — agent.version, the debug-bundle banner and every consumer bug
+     * report would name the wrong release.
+     *
+     * So: if the local version EQUALS what npm already publishes, this is not
+     * a release, it is the previous one wearing today's code.
+     */
+    if (!isPrivate && version) {
+      const { ok, out } = await run(['npm', 'view', pkg.name, 'version'])
+      const published = ok ? out.trim() : ''
+      if (published === '') {
+        add('release identity', 'SKIP', 'could not reach the registry')
+      } else if (published === version) {
+        add(
+          'release identity',
+          'FAIL',
+          `package.json is ${version} and npm already publishes ${published} — ` +
+            'bump before tagging, or the artifact ships self-identifying as its ' +
+            'predecessor'
+        )
+      } else {
+        add('release identity', 'PASS', `${version} (npm has ${published})`)
+      }
+    }
     const { out: lastClCommit } = await run(['git', 'log', '-1', '--format=%H', '--', 'CHANGELOG.md'])
     if (lastClCommit.trim()) {
       const { out: since } = await run(['git', 'rev-list', '--count', `${lastClCommit.trim()}..HEAD`])
       const n = parseInt(since.trim() || '0', 10)
       if (n > 15) add('changelog freshness', 'WARN', `${n} commits since CHANGELOG last touched`)
       else add('changelog freshness', 'PASS', `${n} commits since last touch`)
+    }
+  }
+}
+
+/*
+ * 5b. COMMITTED BUILD OUTPUT MUST MATCH THE SOURCE THAT WAS TESTED.
+ *
+ * Every project that commits `dist/` has the severed-propagation shape: the
+ * suite exercises `src/`, the consumer executes `dist/`, and nothing
+ * machine-checks that they agree. A tosijs release fixed a secret-redaction
+ * leak in src, passed 918 tests, and had a committed dist/ that predated the
+ * security commit entirely — the fix was correct and unshipped.
+ *
+ * Rebuild and diff. Cheap next to the failure it prevents.
+ */
+{
+  const tracked = ['dist', 'docs'].filter((d) =>
+    existsSync(join(process.cwd(), d))
+  )
+  const { out: trackedOut } = await run([
+    'git',
+    'ls-files',
+    '--error-unmatch',
+    ...tracked,
+  ])
+  if (tracked.length === 0 || trackedOut.trim() === '') {
+    add('artifact freshness', 'SKIP', 'no committed build output to check')
+  } else if (scripts.build == null) {
+    add('artifact freshness', 'SKIP', 'no build script')
+  } else {
+    const built = await run(['bun', 'run', 'build'])
+    if (!built.ok) {
+      add('artifact freshness', 'SKIP', 'build failed — see the build check')
+    } else {
+      const { ok: clean, out: drift } = await run([
+        'git',
+        'diff',
+        '--stat',
+        '--',
+        ...tracked,
+      ])
+      void clean
+      const changed = drift
+        .trim()
+        .split('\n')
+        .filter((l) => l.trim() !== '')
+      // some generators are nondeterministic (epub timestamps, build stamps);
+      // report rather than fail on a handful, fail when the code itself moved
+      const codeDrift = changed.filter((l) => /\.(js|mjs|cjs|d\.ts)\b/.test(l))
+      if (codeDrift.length > 0) {
+        add(
+          'artifact freshness',
+          'FAIL',
+          `committed build output is stale — rebuilding changed ${codeDrift.length} ` +
+            `code artifact(s). The tested source is not the shipped source:\n` +
+            codeDrift.slice(0, 6).join('\n')
+        )
+      } else if (changed.length > 0) {
+        add(
+          'artifact freshness',
+          'WARN',
+          `${changed.length} non-code artifact(s) differ (timestamps/stamps)`
+        )
+      } else {
+        add('artifact freshness', 'PASS', 'rebuild reproduces the committed output')
+      }
     }
   }
 }
