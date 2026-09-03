@@ -324,6 +324,28 @@ Corollary: **assert that the mutation applied.** A `replace(x, '', 1)` that sile
 wrong occurrence produces a "test still passes" result that reads as a vacuous test when in fact
 nothing was mutated. If the harness can't prove it changed the code, the run proved nothing.
 
+### And if the FIX breaks no tests, the suite has a hole
+
+One step earlier than the above. When you change behaviour and the whole suite stays green, that is
+evidence about the **suite**, not about the change: nothing in it was watching the thing you just
+altered. The move is to add the tests the fix *would* have broken, then confirm they fail against
+the old code.
+
+Seen in tosijs, fixing a proxy discontinuity (leaf proxies were empty and path-resolving, object
+proxies still wrapped their target, so a held object box's `.value` was frozen — tosijs#35). The fix
+broke nothing, so tests were written that it would break; making *all* proxies empty then broke
+almost nothing else, with one real finding — array proxies must wrap an empty array, or
+`Array.isArray` fails. A green suite would have reported "no impact" and hidden both the hole and
+that constraint. — seen in: tosijs
+
+**A test that reads through the same broken accessor as the code proves nothing.** The consumer-side
+half of the same bug: I asserted "the write did not land", wrote a test, and it *passed* — because it
+read the value back through the very accessor that was stale. That confirmed my wrong theory, and I
+went on to "fix" a line that was already correct. What broke it open was reading the same state two
+different ways (`box.tosi.value` vs `box.n.value`) and finding them disagree. When a test and the
+code under test share a dependency, agreement between them is not evidence.
+— seen in: tosijs-3d-ensemble
+
 ## A ratchet measures a RATE, not a count
 
 A "floor" test — *this number must not go down* — is the standard way to stop a metric
