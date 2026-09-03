@@ -130,16 +130,19 @@ Anything that expects plain data — a JSON serialiser, a validator, a builder,
 
 Three specific traps, each of which cost real time in `tosijs-3d-ensemble`:
 
-- **A held box disagrees with itself.** A box carries a path and resolves live,
-  so *traversing* a captured box is correct — but `.value` on it returns the
-  target it was constructed over, permanently, however many times that path is
-  reassigned. One object, two answers, and the wrong one is the cheap read
-  everything reaches for. It presents as a failed *write*, so every diagnosis
-  goes to the wrong end: a test asserting "the write did not land" passed for
-  the wrong reason, and a correct line of code got "fixed". **Never hold a boxed
-  proxy — read it through the chain each time** (every access mints a fresh one;
-  `store.q === store.q` is `false`). Filed as tosijs#35.
-  — seen in: tosijs-3d-ensemble
+- **A held OBJECT box disagrees with itself** (leaf boxes are fine). Leaf proxies
+  are *empty* — path only — so they resolve live. Object proxies still wrap their
+  target, so `.value` on a held one returns whatever it closed over, permanently.
+  Within one object box, `objBox.n.value` traverses and is correct while
+  `objBox.tosi.value` is the original: two mechanisms, one object. It presents as
+  a failed *write*, so every diagnosis goes to the wrong end — a test asserting
+  "the write did not land" passed for the wrong reason, and a correct line of
+  code got "fixed". **Never hold a boxed proxy — read it through the chain each
+  time** (every access mints a fresh one; `store.q === store.q` is `false`).
+  Historical, per the author: leaves used to be bare values, then wrapped
+  primitives (stale, and `new Boolean(false)` truthy), then honest empty
+  proxies — and objects were left behind. tosijs#35 tracks emptying them too,
+  after which holding a box becomes safe. — seen in: tosijs-3d-ensemble
 - **An observed path is the path you OBSERVED, not the leaf that changed** — and
   sometimes it *is* the leaf path, which is worse, because code that parses it
   appears to work. Treat the notification as "something under here moved" and
