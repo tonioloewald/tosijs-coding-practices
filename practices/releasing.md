@@ -738,12 +738,39 @@ time (`v0.13.9..c967ec2`):
    GHSA, a consumer pinned to a vulnerable version gets **zero** findings from every automated
    channel, and a deprecation notice only prints on install, which a lockfile'd CI never does.
    File the advisory; it is the only path into the tooling people actually rely on.
-4. **"No known consumers" is a measurement, not an assumption — and it is usually wrong.** That
-   sentence justified skipping all of the above, was contradicted by five places in the
-   project's own files naming a production consumer, and was refuted outright by 6,658
-   downloads/month. It also shipped, inside the published tarball. Run `npm view <pkg>` and
-   check your own docs before writing a sentence like that; if you cannot be bothered to
-   measure, you cannot claim it.
+4. **"No known consumers" is a measurement, not an assumption — and so is its refutation.**
+   That sentence justified skipping all of the above, and it shipped inside the published
+   tarball, which is reason enough to fix it. But the review "refuted" it with 6,658
+   downloads/month, and **that was the same error pointed the other way** — an unvalidated
+   number used as evidence.
+
+   Checked properly, the download count was almost entirely the maintainer's own CI. The
+   diagnostic that settles it takes two minutes and is worth doing before ever citing a
+   download total:
+
+   - **`https://api.npmjs.org/versions/<pkg>/last-week`** — per-version. Real adopters cluster
+     on `latest` and on a few recent ranges. Here `latest` had **zero** downloads while
+     traffic spread across nine ancient versions, each of which matched a lockfile in one of
+     the maintainer's own repos — a shared UI component pulled the package into every one of
+     their projects' CI.
+   - **`https://api.npmjs.org/downloads/range/last-month/<pkg>`** — per-day. Correlate spikes
+     with your own commit dates. A **zero-download day** is near-proof that no distributed
+     population exists; the largest spike here landed exactly on the day a sibling repo gained
+     a new pin.
+
+   A public package also has a nonzero floor from registry mirrors and security scanners, so
+   "downloads > 0" never means "someone depends on this."
+
+   **The consequence is that remediation should be sized to the real population, not the
+   headline number** — and that cuts in the helpful direction. A named consumer you can
+   message directly (this project had one, in its own docs) is better evidence *and* a better
+   channel than a GHSA. Where the affected population is your own repos, updating them IS the
+   fix. Reserve the full advisory machinery for a population you have actually shown exists —
+   see "Responsibility scales with the MEASURED user base" above, which this file already
+   said and which the review and I both walked past.
+
+   What survives regardless of audience size: **deprecation strings that point at vulnerable
+   versions are simply wrong**, and correcting them costs minutes. Do that part always.
 
 The recurrence is the point: this was filed as a blocker in one review, left unticked, and
 found again as a blocker in the next. A distribution step that lives only in a review report is
