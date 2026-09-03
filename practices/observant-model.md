@@ -130,13 +130,15 @@ Anything that expects plain data — a JSON serialiser, a validator, a builder,
 
 Three specific traps, each of which cost real time in `tosijs-3d-ensemble`:
 
-- **A captured proxy reads STALE after its parent is replaced.** The write lands
-  — read through the parent and it is there — but a reference captured before
-  the write answers with the old value forever, silently. It presents as a
-  failed *write*, so every diagnosis goes to the wrong end; a test asserting
-  "the write did not land" passed for the wrong reason, and a working line of
-  code got "fixed". **Never hold a boxed proxy across a write to its parent —
-  re-read it through the chain.** Filed as tosijs#35.
+- **A held box disagrees with itself.** A box carries a path and resolves live,
+  so *traversing* a captured box is correct — but `.value` on it returns the
+  target it was constructed over, permanently, however many times that path is
+  reassigned. One object, two answers, and the wrong one is the cheap read
+  everything reaches for. It presents as a failed *write*, so every diagnosis
+  goes to the wrong end: a test asserting "the write did not land" passed for
+  the wrong reason, and a correct line of code got "fixed". **Never hold a boxed
+  proxy — read it through the chain each time** (every access mints a fresh one;
+  `store.q === store.q` is `false`). Filed as tosijs#35.
   — seen in: tosijs-3d-ensemble
 - **An observed path is the path you OBSERVED, not the leaf that changed** — and
   sometimes it *is* the leaf path, which is worse, because code that parses it
