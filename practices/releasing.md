@@ -716,3 +716,37 @@ deprecations across six versions, of which **one** met the bar):
    you did not do.
 
 — seen in: tjs-lang
+
+### The security case inverts the bar — and needs a channel `npm deprecate` cannot reach
+
+Everything above is about **not** over-deprecating. A security fix is the other direction, and
+the same restraint applied there produces a package that quietly points users at vulnerable
+versions. Four failures, all found in one review of tjs-lang 0.13.10 and all still live at the
+time (`v0.13.9..c967ec2`):
+
+1. **Deprecate the RANGE, not the version you happened to be looking at.** One version was
+   deprecated; four others carrying the same execution path were not. If the defect predates
+   the fix, the affected set is `<=<last vulnerable>`, and you must establish the lower bound by
+   inspection (`git grep` the vulnerable construct at old tags), not by assuming it arrived when
+   you noticed it.
+2. **Audit the EXISTING strings — a deprecation can aim at a vulnerable target.** Five strings
+   said "Upgrade to X" where X was itself vulnerable, because each was written when X was
+   current and none was revisited. A stale pointer is worse than no pointer: it is a
+   machine-readable instruction to install something broken. After any security release, re-read
+   every existing deprecation message on the package.
+3. **`npm deprecate` does not reach `npm audit` or Dependabot — only an advisory does.** With no
+   GHSA, a consumer pinned to a vulnerable version gets **zero** findings from every automated
+   channel, and a deprecation notice only prints on install, which a lockfile'd CI never does.
+   File the advisory; it is the only path into the tooling people actually rely on.
+4. **"No known consumers" is a measurement, not an assumption — and it is usually wrong.** That
+   sentence justified skipping all of the above, was contradicted by five places in the
+   project's own files naming a production consumer, and was refuted outright by 6,658
+   downloads/month. It also shipped, inside the published tarball. Run `npm view <pkg>` and
+   check your own docs before writing a sentence like that; if you cannot be bothered to
+   measure, you cannot claim it.
+
+The recurrence is the point: this was filed as a blocker in one review, left unticked, and
+found again as a blocker in the next. A distribution step that lives only in a review report is
+not a process step, which is why it is here.
+
+— seen in: tjs-lang (`v0.13.9..c967ec2`)

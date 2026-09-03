@@ -208,6 +208,25 @@ That is the whole ceremony. **No DNS change** (a `*.dev` wildcard already resolv
   pushing content to a host as publishing (it may be cached/indexed even if later removed).
 - Prefer reproducible builds: the same `bun run build` that runs in review produces the
   artifact you ship.
+- **A release that fixes a deployed path is not finished until that path is redeployed and
+  read back.** Publishing to npm and deploying a service are separate acts, and the gap is
+  invisible: the suite is green, the tag is pushed, the registry is updated, and the running
+  service is still on the old version because a deploy runs `npm ci` against a lockfile that
+  pins it. Expose the deployed version (`/health` reporting the dependency version, generated
+  at build time from the real dependency — not hand-written), then **assert on it**: a test
+  comparing the deployed version to `package.json` turns "did anyone redeploy?" from something
+  you have to remember into something that goes red. Generating the version and never reading
+  it back is the failure mode — the endpoint exists precisely so this is answerable.
+  — seen in: tjs-lang, twice (`cac3c62` shipped a pre-membrane VM to a public endpoint; the
+  0.13.10 review found the code-execution endpoints two security releases behind, on the exact
+  path the release rewrote)
+- **A gitignored build artifact is invisible to every "working tree is clean" gate.** If
+  `dist/` is gitignored, a prepublish check that asserts a clean tree proves nothing about it,
+  and a CI lane that rebuilds before asserting freshness cannot fail. The check has to run at
+  the **publish boundary** and assert the artifact exists, contains the files `exports` names,
+  and is newer than the newest tracked source — otherwise the "fixed in src, not in dist"
+  release ships again.
+  — seen in: tjs-lang 0.13.7 → 0.13.8, still ungated at 0.13.10
 
 ## Project-specific practices
 

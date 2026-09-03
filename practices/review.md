@@ -38,6 +38,19 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   **tag/publish reconciliation** (land-the-plane, mechanized — a divergence blocks version
   work regardless of audience), unresolved BLOCK verdicts. Plus mechanical clone detection
   where configured. Retires the old docs/coverage lenses' blocker classes.
+
+  **Caveat, measured after the fact:** "docs blockers were 100% mechanical" is only a safe
+  retirement if the mechanical check actually covers them, and Tier 0 checks CHANGELOG
+  *presence and freshness* — not whether shipped prose asserts something false. Two defects
+  reached the tarball through that gap in one release (a README crediting the current
+  release's bundle win to the *previous* version, so a reader pinning it gets the old sizes;
+  and an instruction doc still describing a flag the same release removed, routing readers
+  onto a path that had just become unsafe). Both are in `package.json`'s `files`. If a diff
+  touches `README.md` / `CHANGELOG.md` / the agent-instruction doc, either run the docs lens
+  or extend Tier 0 to assert the checkable claims in them — a version stamp beside measured
+  numbers should equal `package.json`'s version, and a removed identifier should not survive
+  anywhere in shipped prose. A grep is enough for both.
+  — seen in: tjs-lang 0.13.10 (`v0.13.9..c967ec2`)
 - **Tier 1 — always-on (`depth: fast`), any substantive change.** **Correctness +
   blast-radius**, blockers-only verification. **Never keyed to the version letter** — two
   recorded gate-dodges came from letter selection; the trigger is a substantive diff, and
