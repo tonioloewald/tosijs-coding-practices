@@ -111,6 +111,74 @@ importing the reactive habit: putting conditional/dynamic logic in `content()`, 
 DOM in `render()`, or reaching for a re-render to reflect a change. The fix is always the
 same — **build once, bind, mutate state, let the observer do the pin-point update.**
 
+## Boxes are not transparent, and the three ways that bites
+
+A tosijs proxy resolves a *path*; it is not the value at that path. Reads through
+it come back **boxed**, and JavaScript cannot make a box behave like its
+contents — an object wrapper is always truthy, so `new Boolean(false)` is truthy,
+and no proxy can fix that. (`.tjs` can: native `==` there is a footgun-free
+`===` that unwraps boxed primitives. In `.ts` you do not get it.) So:
+
+    store.pieces.find(p => p.id === 'a')   // {} — p.id is a box, === is false
+    if (box) …                             // true even when it holds false
+    structuredClone(store)                 // DataCloneError
+
+**Use the proxy for binding and observing; use `.value` for everything else.**
+Anything that expects plain data — a JSON serialiser, a validator, a builder,
+`structuredClone` — gets `.value`. In a component, make the plain document a
+*getter* over the store rather than a second copy.
+
+Three specific traps, each of which cost real time in `tosijs-3d-ensemble`:
+
+- **A captured proxy reads STALE after its parent is replaced.** The write lands
+  — read through the parent and it is there — but a reference captured before
+  the write answers with the old value forever, silently. It presents as a
+  failed *write*, so every diagnosis goes to the wrong end; a test asserting
+  "the write did not land" passed for the wrong reason, and a working line of
+  code got "fixed". **Never hold a boxed proxy across a write to its parent —
+  re-read it through the chain.** Filed as tosijs#35.
+  — seen in: tosijs-3d-ensemble
+- **An observed path is the path you OBSERVED, not the leaf that changed** — and
+  sometimes it *is* the leaf path, which is worse, because code that parses it
+  appears to work. Treat the notification as "something under here moved" and
+  read the document; use the path only where a coarse value is harmless, such as
+  a coalescing key. — seen in: tosijs-3d-ensemble
+- **Do not write a box from inside an observer.** The write notifies again and
+  that second notification is indistinguishable from a fresh edit — it recorded
+  an undo step for a change the user never made. Mutate the plain object under
+  the store instead when the point is to normalise what was just written.
+  — seen in: tosijs-3d-ensemble
+
+## Do not roll your own coalescing, memoization, or dirty-checking
+
+Updates are queued on an rAF and tosijs skips writes that change nothing.
+Measured: **50 writes to one path produce 1 notification, and an unchanged write
+produces 0.** If you find yourself debouncing, memoizing, or comparing a "new"
+value against the last one you saw, the framework already did it — you are
+adding work, losing its performance, and taking on the correctness burden its
+test suite already carries.
+
+The same applies one level up: do not decide *when* to re-render. In
+`tosijs-3d-ensemble` I wrote a `_changesPanelShape()` predicate, a `describe`-string
+coalescing key for undo, and a `chrome: false` flag threaded through the mutation
+path — three mechanisms, all worse versions of what the store does for free, all
+deleted once the panel was bound.
+
+## `Component` disables `tsc` for your whole class
+
+`Component` declares `[key: string]: any`, and an index signature propagates to
+every subclass. So on any component, `this.typoedMethod()` and
+`const n: number = this.notAThing` both type-check under `--strict`.
+
+This is not theoretical: a mis-splice deleted five method definitions from a
+component and `tsc --noEmit` stayed green, as did 312 tests — the methods were
+only reachable from a browser path. It failed at runtime with
+`this._box is not a function`.
+
+**So for components, a green typecheck is weaker evidence than it looks.** After
+any refactor that moves or renames members, exercise the component in a browser
+before believing it. Filed as tosijs#36. — seen in: tosijs-3d-ensemble
+
 ## Act on committed state (the Enter-commit race)
 
 A recurring variant of the same imported habit, seen in demo after demo: a
