@@ -191,7 +191,24 @@ private named Haltija server**, not the Claude-in-Chrome extension.
   boundary — one server per project — is the isolation primitive.
 - Enable serve-time injection via `haltijaDev: true` in the site config (localhost-gated, never
   bundled) so an agent can `hj navigate/eval/screenshot` the live page.
-— seen in: kith-email, tosijs-3d, tosijs-ui, haltija
+- **A green `hj doctor` does not mean the page is painting.** It prints its hidden-tab advisory
+  and `✓ ready to drive` in the same breath — `! 1 of 2 tab(s) are hidden …` followed by the
+  tick — so an agent scanning for the tick reads a false green, and every geometry number it
+  then collects is pre-layout. In any lane where a wrong conclusion is expensive, run
+  `hj --strict <cmd>` (or `HALTIJA_STRICT=1`), which turns those advisories into non-zero exits
+  so you fail on the real cause instead of a later timeout.
+- **`visibilityState: 'visible'` is not sufficient either — probe rAF directly.** A tab can be
+  foregrounded and still rAF-starved: with the display asleep the whole window reports
+  `hidden`, and even awake, a second Electron instance in the background is throttled. So the
+  check is not "is the tab visible" but "did a frame actually run":
+  `hj eval "new Promise(r => { const t = setTimeout(() => r({rafFired:false, visibility:document.visibilityState}), 500); requestAnimationFrame(() => { clearTimeout(t); r({rafFired:true}) }) })"`.
+  Do that *before* concluding anything about rendering, and re-do it after any hard navigate.
+- **Corollary: never A/B two browser instances at once.** The backgrounded one is throttled, so
+  the comparison measures focus, not the change.
+— seen in: kith-email, tosijs-3d, tosijs-ui, haltija, snowfox-app (a rAF-starved-but-"visible"
+tab produced a confident, wrong "the routes don't render" finding; and a haltija 1.12.1
+co-tenancy A/B manufactured a 3-of-3 reproducible phantom regression — `hj doctor` read green
+throughout both)
 
 ## Doc / live-example tests
 

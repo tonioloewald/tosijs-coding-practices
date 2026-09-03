@@ -359,12 +359,14 @@ description is not. Two traps worth knowing when you do look, both of which prod
 plausible-but-wrong results rather than errors:
 
 - A **backgrounded tab has `requestAnimationFrame` stopped**. Frameworks that render on a frame
-  (tosijs among them) never finish, so element geometry reads as pre-layout. Bring the tab to
-  the front before believing a number.
+  (tosijs among them) never finish, so element geometry reads as pre-layout. Fronting the tab is
+  **not** sufficient to clear this, and neither is a green `hj doctor` — probe rAF directly
+  before believing a number; [`testing.md`](testing.md#live-browser-testing-with-haltija) has
+  the one-liner and why the two cheap checks lie.
 - Some agent "screenshots" are **schematic reconstructions, not pixel captures**. Fine for
   structure, useless for judging whether something looks right. Check which you are getting.
 
-— seen in: tosijs-product
+— seen in: tosijs-product, snowfox-app
 
 ### 4. Documentation accuracy & up-to-dateness
 
