@@ -115,9 +115,34 @@ const cannotRun = (out: string): string | undefined => {
   } else add('typecheck', 'SKIP', 'no typecheck script')
 }
 
+/**
+ * The full build is not always called `build`.
+ *
+ * tjs-lang calls its `make`, deliberately: `bun build` is a Bun BUILTIN (the bundler), so a
+ * `build` script means `bun build` silently runs the builtin while `bun run build` runs the
+ * script, and the two drift. Ordered, so a repo with both still gets `build`.
+ *
+ * Defined ONCE, because it was defined twice: check 4 knew about `make` and the
+ * artifact-freshness check below read `scripts.build` directly, so it reported
+ * `no build script` forever in exactly the repo that had renamed it.
+ *
+ * That cost a security-vulnerable publish. tjs-lang 0.13.7 shipped a sandbox-escape fix in
+ * `src/` and a `dist/` built 35 minutes earlier; Bun resolves that package to `src/` and Node
+ * to `dist/`, so every Node consumer got the vulnerable build. Artifact freshness is the check
+ * for precisely that, and it had never run there. A SKIP that can never become a PASS is worse
+ * than a missing check — it reads as coverage, and this tool's own summary line ("skips are
+ * NOT passes") is aimed at a reader who will believe it anyway.
+ */
+const buildScript = scripts.build
+  ? 'build'
+  : scripts.make
+    ? 'make'
+    : scripts['build:all']
+      ? 'build:all'
+      : null
+
 // 4. Build (build or make — never assume it ran tests)
 {
-  const buildScript = scripts.build ? 'build' : scripts.make ? 'make' : null
   if (buildScript) {
     const r = await run(['bun', 'run', buildScript])
     add(`build (${buildScript})`, r.ok ? 'PASS' : 'FAIL', r.ok ? '' : r.out.split('\n').slice(-6).join('\n'))
@@ -198,10 +223,10 @@ const cannotRun = (out: string): string | undefined => {
   ])
   if (tracked.length === 0 || trackedOut.trim() === '') {
     add('artifact freshness', 'SKIP', 'no committed build output to check')
-  } else if (scripts.build == null) {
+  } else if (buildScript == null) {
     add('artifact freshness', 'SKIP', 'no build script')
   } else {
-    const built = await run(['bun', 'run', 'build'])
+    const built = await run(['bun', 'run', buildScript])
     if (!built.ok) {
       add('artifact freshness', 'SKIP', 'build failed — see the build check')
     } else {
