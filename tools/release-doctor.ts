@@ -311,9 +311,25 @@ const buildScript = scripts.build
   const blocked: string[] = []
   for (const dir of dirs)
     for (const f of readdirSync(dir).filter((f) => f.endsWith('.md')))
-      if (/verdict[:*\s]+block/i.test(readFileSync(join(dir, f), 'utf8'))) blocked.push(join(dir, f))
+      {
+        const body = readFileSync(join(dir, f), 'utf8')
+        if (!/verdict[:*\s]+block/i.test(body)) continue
+        /*
+        A RESOLVED report is not a finding.
+
+        Every gate a project ever failed stays on disk, so grepping for the
+        verdict alone means this warning grows monotonically and names the same
+        historical reports forever — and a check that fires on its most common
+        input teaches you to skim past it, which is exactly when it will be
+        right. A report that records its own resolution is answered: that IS the
+        confirmation this check asks for.
+        */
+        if (/\*\*STATUS:[^*\n]*\b(CLEARED|SUPERSEDED|RESOLVED)\b/i.test(body))
+          continue
+        blocked.push(join(dir, f))
+      }
   if (blocked.length > 0)
-    add('review verdicts', 'WARN', `reports with Verdict: BLOCK on disk — confirm each was resolved: ${blocked.join(', ')}`)
+    add('review verdicts', 'WARN', `reports with an UNRESOLVED Verdict: BLOCK — resolve each, or record the outcome as \`**STATUS: CLEARED**\` (or SUPERSEDED): ${blocked.join(', ')}`)
   else if (dirs.length > 0) add('review verdicts', 'PASS')
   else add('review verdicts', 'SKIP', 'no reviews/ directory')
 }
