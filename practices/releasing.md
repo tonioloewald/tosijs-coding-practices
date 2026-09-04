@@ -350,6 +350,35 @@ For a browseable published library, ship **per-file, unminified** JS + sourcemap
 `removeComments:false` (a `tsconfig.build.json` override; keep root `tsconfig` on `noEmit`) so
 consumers and agents read real source with `/*# */` doc blocks intact. — seen in: tosijs-3d
 
+### A per-file build must write `.js` in its import specifiers
+
+If you ship **per-file** rather than bundled, every relative specifier in the source survives
+verbatim into the published JS — so `from './thing'` reaches the consumer, and **Node's ESM
+resolver rejects it** (`ERR_MODULE_NOT_FOUND`). Bundlers resolve extensionless specifiers;
+Node does not. The same applies to deep package subpaths (`@babylonjs/core/Misc/observable`)
+when the dependency publishes no `exports` map.
+
+Write the extension in the source — `from './thing.js'`, the TypeScript convention. `tsc`
+passes it through and bundlers resolve it fine, so it is correct everywhere and costs nothing.
+
+**Why nobody catches it:** every loop in this stack is a bundler or Bun — dev server, doc site,
+tests, games — so the one consumer that would notice is the one nobody runs. Bundling hides it
+entirely, which is why `tosijs` has never hit it despite 293 extensionless imports in its
+source. — seen in: tosijs-3d-ensemble (shipped it three times), tosijs-3d (394 in `dist`)
+
+Two things make it stick:
+
+- **Test the SOURCE, not the output** — assert no extensionless relative specifier exists, so it
+  fails at authoring time instead of after a publish.
+- **Verify by installing the tarball into an empty directory and importing it under `node`.**
+  Both projects found this only that way. Reading the build output does not surface it.
+
+> **Resolving is not evaluating.** Once resolution is fixed, a browser library may still die on
+> `HTMLElement is not defined` because importing the barrel registers custom elements. If pure
+> modules were split out to be usable headlessly, they need **subpath exports** to actually be
+> reachable — otherwise the only door is the barrel, and the split bought nothing.
+> — seen in: tosijs-3d (`tosijs-3d/light-settings`)
+
 ## Track bundle size on every release
 
 The whole selling point of these libraries is being small, so make size regressions visible:
