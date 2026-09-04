@@ -425,6 +425,44 @@ over the generated paths. — seen in: haltija, tosijs-ui, tosijs, tosijs-3d, to
   and run `git config merge.ours.driver true` once per clone, then rebuild — resolving those
   conflicts by hand is pointless since the next build overwrites them. — seen in: tosijs-ui
 
+## One `[release] vX.Y.Z` commit per version
+
+tosijs-3d's 0.8.0 accumulated **three** commits all titled `[release] v0.8.0`,
+none tagged, because work kept arriving after the first one was written. The
+cost is that the release has no readable provenance: nobody can say which tree
+0.8.0 *is*, and any gate that ran, ran against one of three different trees.
+
+It is not bookkeeping. That release's one BLOCKER was a direct consequence — a
+⚠️ Breaking note written in the first "release" commit said four widget families
+were *not* migrated, and the commit that migrated them never revisited it. The
+stale sentence survived because the release commit happened before the work it
+described.
+
+If more work lands, **amend or re-title**. A release commit is a claim that the
+tree is the release; make it once, last.
+
+## If the release renames anything, sweep the docs and demos
+
+A rename is only done when the corpus that teaches it is done too. At tosijs-3d
+0.8.0 the flagship `/ui/` page still taught the deprecated spelling on eight
+call sites — and one of them, `iconGrid3d({onSelect})`, was **silently dead**
+rather than deprecated, because that widget had only ever had the new name. The
+page documenting the fix demonstrated the exact bug the release was cut to
+eliminate, and every visit printed deprecation warnings at load.
+
+The file *had* been edited that release (its table of contents gained a link to
+the new page); nobody checked its body. No lens owned the docs corpus.
+
+One grep, before the tag:
+
+```sh
+# for each spelling the release deprecates
+grep -rn 'onSelect:' src/docs/ demo/ src/*.ts
+```
+
+Include `/*# */` doc comments — in a literate-programming setup that is where
+the examples live, and it is not type-checked, so nothing else will catch it.
+
 ## Tagging
 
 **Land the current release before starting the next.** If the current version's tag is not

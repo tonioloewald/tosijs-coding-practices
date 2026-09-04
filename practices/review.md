@@ -1,5 +1,35 @@
 # Code review
 
+## Tell the lens what the diff basis IS, and what is out of scope
+
+A lens reviews `git diff <base>...HEAD`. It is not told that the working tree,
+not HEAD, is what ships — nor that some of what it is reading is generated. Both
+gaps produce confident, wrong blockers.
+
+**Generated artifacts are out of lens scope.** In `tosijs-ui/site` projects
+`dist/` and `docs/` are rebuilt on every file change by the dev server, so they
+are *expected* to be stale or dirty between releases; `releasing.md` says so
+almost verbatim. At tosijs-3d's 0.8.0 gate **two independent lenses each spent a
+blocker** on "committed `dist` is one commit behind `src`" — both correct about
+the bytes, both wrong about the conclusion. One built its case on an inverted npm
+mechanism, citing the *absence* of a `prepack` script as the reason stale code
+would ship; with no `prepack`, `npm publish` packs the on-disk tree, which is the
+*correct* rebuild.
+
+That two careful readers landed there independently says the guidance is
+unreachable from where a lens sits. State it in the lens preamble:
+
+> `dist/`, `docs/` and other generated output are NOT under review. Review
+> sources. The tree that ships is built at release time from the sources you are
+> reading, so staleness in committed artifacts is expected between releases and
+> is a release-step concern, not a finding.
+
+**And state the basis.** If the review runs against committed HEAD while work
+sits uncommitted, the lenses review the wrong thing — one recorded run reviewed
+a 13-line diff while the entire release sat unstaged. Print the basis
+(`git describe`, dirty-path count, and which paths are excluded) into the report
+header so a reader can see what was actually looked at.
+
 ## Tooling
 
 - **`/code-review`** (Claude Code) reviews the current diff at a chosen effort level. Use it
