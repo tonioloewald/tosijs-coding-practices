@@ -8,7 +8,20 @@ artifacts are committed to git so they must be regenerated, never hand-edited.
 For where the built site goes (GitHub Pages / Firebase / Cloudflare), see
 [deployment](./deployment.md). This doc is about **packaging, versioning, tagging, and publishing**.
 
-> **Publishing is plain `npm publish`. Do NOT tell the maintainer to pass `--otp`.**
+> **The maintainer publishes, not the agent — npm requires an interactive
+> biometric 2FA confirmation** (observed on tosijs 1.10.0, 2026-09-04). There is
+> no flag for it and no code to pass through; it is a hardware prompt on the
+> maintainer's machine. So an agent's release work ends at *"pushed, gates
+> green, ready to publish"* — offer that state and stop. Do not narrate a
+> publish you cannot perform, and do not treat "we can publish" as authority to
+> try. **What the agent SHOULD do is everything on the far side of it:**
+> step 8b (`npm view <pkg> dist-tags` — did `latest` move, and only that?),
+> step 8c (install the published tarball into a scratch dir and exercise the
+> headline feature), byte-compare the published bundles against the release
+> commit, then tag and push the tag. Those are the steps that catch a bad
+> publish, and they are all agent-runnable.
+>
+> **Publishing is otherwise plain `npm publish`. Do NOT tell the maintainer to pass `--otp`.**
 > This note used to say an OTP was required. It has not been for weeks (as of 2026-09-04),
 > and the stale line caused an agent to prescribe `--otp=<code>` twice in one session — the
 > second time after being corrected. Release instructions get copied and run, not read
