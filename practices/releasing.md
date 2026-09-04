@@ -433,6 +433,23 @@ superseded pre-release (tosijs-3d `next`). "Confirm the publish landed" (below) 
 this rule is the ordering that keeps the check meaningful. — seen in:
 tosijs-timezone-picker, tosijs-ui, tosijs-3d (weekly sweep findings); rule set by the owner
 
+**A tag is part of publishing, not a step ahead of it — and never fix an unpublished tag with
+a new version number.** The rule above says land the current release before starting the next;
+this is its other half, for when the "release" never left the machine. tosijs tagged `v1.10.0`,
+found two defects before publishing, and cut `v1.10.1` for them — then a subsequent additive
+change made `1.11.0`. Three version numbers, npm still on `1.9.2`, nothing shipped. Each bump
+was individually defensible (semver says a fix is a patch, an addition is a minor) and the
+aggregate was pure inflation, because **semver describes what CONSUMERS observe between
+releases, and consumers had observed none of it.** An unpublished tag has no audience to
+protect compatibility for.
+
+So: if the version is not on the registry, **amend it** — fold the fixes into the pending
+number, delete the redundant tags (`git tag -d` plus `git push origin :refs/tags/vX.Y.Z`),
+and let the single published version carry the whole story. Check before deleting anything:
+`npm view <pkg> versions --json`. Deleting a tag someone could have installed is a different
+and much worse act than deleting one that names nothing. — seen in: tosijs 1.10.0/1.10.1/1.11.0
+(2026-09-04); rule set by the owner
+
 Tag `vX.Y.Z` at the release commit and push tags. **Contradiction in the ecosystem:** some
 repos use **lightweight** tags (tosijs, tosijs-ui), others use **annotated** tags (tosijs-3d,
 haltija). Rule of thumb: prefer **annotated** (`git tag -a` — it carries a message and date);
