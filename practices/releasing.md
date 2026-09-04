@@ -8,13 +8,18 @@ artifacts are committed to git so they must be regenerated, never hand-edited.
 For where the built site goes (GitHub Pages / Firebase / Cloudflare), see
 [deployment](./deployment.md). This doc is about **packaging, versioning, tagging, and publishing**.
 
-> **Local publishing is under pressure from npm's side.** npm is restricting tokens that
-> bypass 2FA for direct publishing, so a local `npm/bun publish` now needs an OTP
-> (`bun publish --otp=<code>` works and needs no second browser tab). The planned
-> replacement — publish from a tag via GitHub OIDC, which also removes the long-lived
-> publish credential from the maintainer's laptop — is drafted in
-> [publishing-via-oidc.md](./publishing-via-oidc.md). **Not yet implemented**; `tosijs-ui`
-> is the intended pilot.
+> **Publishing is plain `npm publish`. Do NOT tell the maintainer to pass `--otp`.**
+> This note used to say an OTP was required. It has not been for weeks (as of 2026-09-04),
+> and the stale line caused an agent to prescribe `--otp=<code>` twice in one session — the
+> second time after being corrected. Release instructions get copied and run, not read
+> critically, so a wrong flag here costs a failed publish and a round trip every time.
+>
+> The underlying situation does move — npm has been tightening tokens that bypass 2FA — so if
+> publishing ever demands a one-time code again, **fix this note in the same commit** instead
+> of working around it locally. The planned replacement, publishing from a tag via GitHub
+> OIDC (which also removes the long-lived credential from the maintainer's laptop), is
+> drafted in [publishing-via-oidc.md](./publishing-via-oidc.md). **Not yet implemented**;
+> `tosijs-ui` is the intended pilot.
 
 ## Before a minor or major release: run the comprehensive review
 
