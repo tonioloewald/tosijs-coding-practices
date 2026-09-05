@@ -43,6 +43,12 @@ suspicious of friction that has become invisible through habituation — it accu
 where the person able to fix it has stopped noticing (see
 [`practices/development.md`](practices/development.md) "Laziness with the right sign").
 
+And on any claim that something works: **intention ≠ result.** Automated process beats
+structure beats qualitative assessment — *does it work* beats *is it set up to work* beats
+*does it look like it should work*. Ideas that demonstrate results get promoted up that ladder
+toward structure and automation; ideas that don't get retired, however good the intention
+(see [`CONTRIBUTING.md`](CONTRIBUTING.md) "The promotion ladder").
+
 ## How to use this (agents, read this section)
 
 1. **Start here — fresh.** This README is the index; every practice lives in `practices/`.

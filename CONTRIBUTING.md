@@ -58,6 +58,36 @@ entries ever retired — and found that the owner's own assertions entered as la
   Retirement is an edit like any other: append-only *history* is the safety net that makes
   deletion of *current* text safe.
 
+### The promotion ladder — intention does not equal result (owner, 2026-09)
+
+We do things to accomplish goals, and the corpus records the doing — but **intention ≠
+result**, and an entry's existence is an intention. The evidence hierarchy, strongest first:
+
+> **Automated process beats structure beats qualitative assessment.**
+> *Does it work* beats *is it set up to work* beats *does it look like it should work.*
+
+Every idea in the corpus sits on one rung — a vibe/judgement ("keep the scoreboard fresh"),
+a structure (a numbered release step, a cascade gate, a template), or an automation (a
+script, a test, a generated artifact) — and the grades above tell it which way to move:
+
+- **Promote what works, up the ladder.** An entry that keeps earning its keep (fires in
+  AARs, catches real defects) should climb: judgement → cascade gate or checklist step →
+  script. Lived examples: scoreboard freshness went vibe → release step 9 → `scoreboard.ts`;
+  land-the-plane went incident → rule → `release-doctor` check. The top rung is the goal
+  because a script is never skipped, never re-litigated, and its failure is a fact.
+- **Retire what doesn't.** An entry that never fires, or whose observed effect contradicts
+  its intent (a gate that changed what it measured, a fix whose test couldn't fail), is
+  retired or reframed — not kept because the intention was good. The AAR loop's periodic
+  pass is where both moves happen, in bounded batches (review.md "the series must
+  converge").
+- **Never confuse the rungs when assessing.** "It looks like it should work" (plausible
+  prose, a sensible-sounding rule) is the weakest claim; "it is set up to work" (the check
+  exists, the step is documented) is the middle — and this corpus has repeatedly caught
+  checks that were *set up* and did not *work* (vacuous fixtures, wrong-scope gates,
+  never-seen-red checks). Only an observed result — the check seen red, the defect caught,
+  the friction measurably gone — is the top claim, and it is the only one that justifies
+  promotion.
+
 ## Committing here: merge, never rebase
 
 **This repo inverts the ecosystem's usual git advice, and it matters.**
