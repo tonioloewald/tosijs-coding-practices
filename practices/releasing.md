@@ -539,6 +539,55 @@ would have shipped JS with no types. Found by the consumer, not by us. For any
 library whose public API includes a mixin or generic factory, that is the check.
 — seen in: tosijs (#38, reported by tosijs-ui)
 
+## Checkpoint tags — a tree worth returning to, that is not a release
+
+Sometimes a body of work is worth being able to come back to, and the person who
+would cut the version is not available, or the gates have not run, or it simply
+is not a release yet. The choices used to be "tag it a version and lie" or "do
+not tag it and lose the point in history". Neither is good, and the first is
+worse: a `v*` tag is a **claim that a released artifact exists**, and the record
+of what that claim being false costs is directly above this section.
+
+So: a checkpoint tag.
+
+```sh
+git tag -a checkpoint/2026-09-05-0.8.1-candidate -m "…"
+git push origin checkpoint/2026-09-05-0.8.1-candidate
+```
+
+**Format: `checkpoint/<YYYY-MM-DD>[-<slug>]`.** The slug may name the version it
+would become — that is informative, not a claim, because the namespace already
+says it is not one.
+
+**The message is the point.** A checkpoint that says only "checkpoint" is a
+commit hash with extra steps. Write down:
+
+- what is in it, in terms of what changed for a consumer
+- **what has NOT been done** — bump, gates, review, publish. This is the part
+  that stops it being mistaken for a release later.
+- how to promote it: tag the same commit `vX.Y.Z` after taking the release
+  steps. The checkpoint stays as the record of what was true before the gates
+  ran.
+
+### ⚠️ It must not poison release-base detection
+
+Any tag outside `v*` breaks a bare `git describe --tags --abbrev=0`, which is
+how several tools find "the last release". With a checkpoint in history that
+returns the checkpoint, so the next review diffs the **wrong span** — and
+reviews the wrong span silently, which is the failure this whole document exists
+to prevent.
+
+**Every place that derives the last release must pass `--match 'v*'`:**
+
+```sh
+git describe --tags --abbrev=0 --match 'v*'
+```
+
+Verified when the convention was introduced: `release-doctor` and tosijs-3d's
+`RELEASING.md` already glob `v*` and were fine; the `pre-release-review` skill
+used a bare `describe` and was not. Check your own repo's before adopting this —
+the trap is silent and one-time.
+
 ## Tagging
 
 **Land the current release before starting the next.** If the current version's tag is not
