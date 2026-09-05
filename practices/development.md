@@ -68,6 +68,44 @@ How to work in a project day-to-day.
   `bun start` connects to *production* Firebase; use `bun start-emulated` + `bun seed` for
   isolated local work. Know your target before you write data. — seen in: loewald-dot-com
 
+## Laziness with the right sign — minimize everyone's work
+
+Laziness is a legitimate engineering motivation, stated as policy by the owner: **DRY is, at
+bottom, applied laziness.** But like blast radius, laziness has a *sign*. Doing less work is
+good only when it saves work downstream too; a shortcut that offloads work onto consumers,
+future agents, or readers has the wrong sign and is not laziness, it is debt transfer. Treat
+**everyone** as someone whose work should be minimized: no one should have long build loops;
+no one should put up with spam.
+
+The corpus already contains sign-correct calls made on exactly this basis — use them as
+calibration:
+
+- tosijs 1.9.1 removed a deprecation warning entirely because it was "console spam in someone
+  else's build for a stylistic preference" — a nudge cheap for the producer, paid by every
+  consumer forever.
+- The review tax (a gate expensive enough to avoid gets avoided) is the same failure at
+  process level: work offloaded onto every release decision.
+- Log output is signal, not narration (`review.md`) — breadcrumb logging offloads the filtering
+  onto every reader.
+
+**Friction you have stopped seeing is the dangerous kind.** It accumulates precisely where the
+person able to fix it has habituated: the owner reports build bloat became *invisible to him*
+by exposure; agents absorb a slow loop without complaint because each session only pays it
+once, so nobody's annoyance ever crosses the threshold that triggers a fix. Countermeasures:
+
+- **Print the numbers so drift is a diff, not a feeling** — build wall-clock, bundle gzip
+  delta, suite duration, lines of output. Annoyance habituates; a printed number that grew
+  does not.
+- **Treat "I've gotten used to it" as a finding**, in yourself and in the repo. If you are
+  routing around something (skipping a gate, pre-filtering output, alt-tabbing during builds),
+  that routing is the measurement.
+- **Agents: flag friction instead of politely absorbing it.** An agent that tolerates a slow
+  loop or spammy output teaches it to stay — and the owner cannot see what only agents endure.
+  Same speak-up norm as for stale docs (README §5).
+
+— stated by the owner (decree, with corroborating incidents above); seen in: tosijs,
+tosijs-ui, the 2026-09 review-economics audit
+
 ## Spawning background processes: capture the PID, tear them down
 
 - **Never `pkill -f <pattern>` (or any broad-pattern kill) on a shared dev machine.** Multiple

@@ -36,6 +36,13 @@ makes this concrete): did it *capture* that leverage, or *leak* it? A local fix 
 problem leaks it. Duplicated logic leaks it — worse, it severs the propagation path, so a fix
 reaches no one.
 
+The same sign test applies to **effort**. Laziness is a legitimate engine here — DRY is applied
+laziness — but doing less work only counts if it saves everyone downstream work too, never if it
+offloads it. No one should have long build loops; no one should put up with spam. And be
+suspicious of friction that has become invisible through habituation — it accumulates exactly
+where the person able to fix it has stopped noticing (see
+[`practices/development.md`](practices/development.md) "Laziness with the right sign").
+
 ## How to use this (agents, read this section)
 
 1. **Start here — fresh.** This README is the index; every practice lives in `practices/`.
