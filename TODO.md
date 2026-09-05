@@ -70,3 +70,20 @@ not schedule the pyramid):
 metadata correctly and nothing rots.* The markdown is the single source; the site is a pure
 view over it; anything factual (versions, dates, activity) is generated at build time, never
 hand-maintained. A second copy of a fact is where rot starts.
+
+**Implementation split (Tonio): two natural pieces.**
+
+- **Policies — this repo.** What the metadata *is* and *means* (the scoreboard fields, the
+  project list, fact-vs-prose division), the site-branch policy as RFC #10 lands (deploy
+  output disposable, vended artifacts durable, the secrets rule), the content itself
+  (practices, journal, books, AAR conventions), and what the hub is allowed to display.
+- **System — tosijs-ui.** The machinery that consumes the metadata: the site scaffold,
+  `deployBranch` support (the config line every other repo then inherits), hub/scoreboard
+  components, build-time fact fetching, the book/ePub pipeline.
+
+The seam is the metadata contract, and the discipline at the seam is the usual one: this repo
+consumes tosijs-ui like any other project, so every missing seam the hub build surfaces is a
+**filed issue on tosijs-ui** (lens 7a — file, don't fix), which makes the practices site a
+real consumer exercising the system half rather than a special case inside it. Policy work
+can proceed now (scoreboard tool ✓, RFC adjudication pending); system work rides tosijs-ui's
+roadmap.
