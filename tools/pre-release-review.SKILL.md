@@ -92,7 +92,11 @@ install** before treating it as a code defect — a stale `node_modules` has fak
      remediation diff only, per each blocker's stated re-review scope.
    - `tier: "quarterly"` — ecosystem + practices dispositions; a standing job with a
      deadline, never a release gate. The structural audit (redundant code paths, examples
-     audit, style conformance, render-creep) runs at this cadence too.
+     audit, style conformance, render-creep) runs at this cadence too, as does the **AAR
+     pattern review** — reading the short after-action reports each release appends to
+     `reviews/AAR.md` (releasing.md step 10) for patterns and opportunities. Per-release
+     reviews record facts; this pass does the analysis, in one bounded batch — process
+     changes originate here only, and each batch names what it retires.
 
    A run you're going to repeat several times during a release should be `fast`; the one right
    before you cut the tag should be `full`. If cost is making you skip the review entirely, use

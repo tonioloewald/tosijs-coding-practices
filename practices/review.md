@@ -125,6 +125,12 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
     `render()` use in component leaves — judicious vs drift — and report the distribution
     before arguing. The philosophy says static-by-default; the measurement says whether
     reality agrees.
+  - **AAR pattern review**: read the after-action reports accumulated since the last audit
+    (`reviews/AAR.md` per project — releasing.md step 10) and mine them for patterns and
+    opportunities: recurring friction → a tooling opportunity; recurring blocker→fix→blocker
+    cycles → the two why-questions ("Lenses are cascades" below); recurring "went well" → a
+    candidate practice. This is where process analysis lives — the per-release loop only
+    records facts, deliberately.
   - **Ecosystem + practices dispositions**, with a deadline and an owner — not a release to
     block (0 blockers in 28 runs; their findings re-printed verbatim across consecutive
     reviews when release-gated).
@@ -173,10 +179,19 @@ reviewer works the facts in order and reports which branches closed on fact and 
 into judgement — "no findings" from a lens should mean "the gates all answered no," not
 "nothing occurred to me."
 
-**The blocker→fix→blocker cycle is itself a cascade trigger.** The trigger is deterministic:
-a re-review finds a blocker *in the remediation of a prior blocker*, or the same lens blocks
-twice in one release cycle (both observable in `reviews/`). When it fires, the release stops
-being the only patient — ask two questions and record the answers in the re-review report:
+**A cascade must shorten the review, not decorate it** (owner). The gates exist to replace
+open-ended judgement with cheap facts and to close branches early; a lens change that adds
+reviewer work without closing branches earlier fails its own test. Process improvement does
+NOT flow through more in-review machinery — it flows through the **AAR loop**: a short
+factual after-action report per release cycle (releasing.md, "The after-action report"),
+mined *periodically* for patterns and opportunities (Tier 3). Reviews record facts; the
+quarterly pass does the thinking.
+
+**The blocker→fix→blocker cycle illustrates the split.** The trigger is deterministic — a
+re-review finds a blocker *in the remediation of a prior blocker*, or the same lens blocks
+twice in one release cycle (both observable in `reviews/`). The **in-review action is one
+line**: note the cycle in the report and the AAR. The **why-questions are asked at the
+periodic AAR review**, where patterns across cycles are visible:
 
 1. **Why didn't the review frame the problem better the first time?** The known failure mode
    is reporting an *instance* when the finding was a *class*: "when N findings share one
@@ -189,8 +204,6 @@ being the only patient — ask two questions and record the answers in the re-re
    against the broken code — a marker on the wrong element, a fixture declaring something at
    every level, an unwired host. The fix for a recurring blocker includes the demonstration
    that the *class* is closed, not the instance.
-
-Two cycles without these questions asked is a process finding in its own right (lens 8).
 
 **And this applies to the review rules themselves.** When you add or change a criterion —
 here, or in `tools/pre-release-review.workflow.js` (keep them in sync) — hold it to the same
@@ -206,6 +219,13 @@ standard:
    The lens data that built the tier structure existed only because verdicts were recorded;
    a rule that can't be measured can't be retired, and unretirable rules are how the corpus
    bloats.
+4. **The series must converge** (owner): continuous improvement must not become a test of
+   whether an infinite series converges. Concretely: process changes originate in **one
+   place** — the periodic AAR review — in **batches**, at most quarterly, never continuously
+   mid-cycle; each batch **names what it retires** (net process weight must not grow
+   monotonically — this corpus measured 20:1 add:retire before the quota existed); and each
+   change must be **checkable against the next few AARs** — if its benefit never shows up
+   there, revert it. An improvement that only adds obligations is the divergent term.
 
 ## Comprehensive pre-release review (minor & major)
 
@@ -777,10 +797,12 @@ tested against reality.
 3. **Did this release contradict or vindicate a documented practice?** (judgement, triggered
    by an observed divergence between what the practice says and what actually happened —
    name the practice and the observation)
-4. **Did the process hold?** Deterministic sub-triggers: a blocker→fix→blocker cycle occurred
-   (→ run the two why-questions from "Lenses are cascades"); a lens returned zero findings
-   twice running (→ dead weight or nobody looked — say which); a check fired that has never
-   been seen red (→ recorded-red-run debt).
+4. **Did the process hold?** Read the AARs accumulated since the last pass (releasing.md
+   step 10) — this lens is where their analysis happens. Deterministic sub-triggers: a
+   blocker→fix→blocker cycle recorded (→ run the two why-questions from "Lenses are
+   cascades"); recurring friction lines (→ a tooling opportunity); a lens returning zero
+   findings twice running (→ dead weight or nobody looked — say which); a check that fired
+   but has never been seen red (→ recorded-red-run debt).
 
 - Did this release **contradict, outdate, or vindicate** a documented practice? A practice
   that didn't match reality is a **bug in the knowledge base** — fix it (with attribution),

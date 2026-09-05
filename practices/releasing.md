@@ -205,6 +205,25 @@ helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was th
    `CONTRIBUTING.md`). Do it even for a beta/patch: a stale scoreboard is worse than none,
    and the row is how other agents (and the human) see the ecosystem at a glance.
 
+10. **Post a short after-action report** — append a section to `reviews/AAR.md` in the
+   project repo (newest first). **Five minutes, 3–6 bullets, facts not analysis:**
+
+   ```markdown
+   ## <version> — YYYY-MM-DD
+   - Went well: …
+   - Didn't: …
+   - Surprised: …
+   - Friction: …            (what felt slow or annoying — the habituation check)
+   - Cycle: none | <blocker→fix→blocker, one line>
+   ```
+
+   Do **not** analyze in the AAR — no root-causing, no proposals; that would lengthen the
+   release loop, which is the thing this replaces. The whys are asked *periodically*: the
+   Tier 3 quarterly audit reads accumulated AARs across projects for patterns and
+   opportunities (recurring friction → a tooling opportunity; recurring cycles → the two
+   why-questions in `review.md` "Lenses are cascades"; recurring "went well" → a candidate
+   practice). A pattern is visible across five AARs that is invisible inside any one release.
+
 > **Stop the dev server before you build/commit.** `bun start` continuously rewrites
 > `docs/iife.js` on every change and re-dirties the tree between `git add` and `git commit`,
 > so a running watcher will strand a half-committed release. — seen in: tosijs-3d, tosijs
