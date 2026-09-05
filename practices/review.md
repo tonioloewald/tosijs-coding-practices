@@ -69,6 +69,24 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   work regardless of audience), unresolved BLOCK verdicts. Plus mechanical clone detection
   where configured. Retires the old docs/coverage lenses' blocker classes.
 
+  **Dependency-declaration checks** (added 2026-09, from
+  [tosijs-ui#61](https://github.com/tonioloewald/tosijs-ui/issues/61) §2, which measured eight
+  issues on one repo collapsing into four mechanical rules):
+  - **peer/dev agreement** — every declared peer must be satisfied by what is actually
+    *installed* here. Reads `node_modules`, not `devDependencies`, because the installed tree
+    is what the tests and the build ran against; a manifest that agrees with itself but not
+    with the tree means the combination you ship is a combination nobody tested.
+  - **bin shebangs** — every `bin` target starts with `#!`. Filed twice on one repo.
+  - **packaged exports** — every file `main`/`module`/`types`/`exports` names is in the
+    tarball, **and so is every relative re-export reached from a packed `.d.ts`**. The second
+    half is the one that matters: `tosijs-product` shipped an `index.d.ts` re-exporting seven
+    siblings while `files` packed two, so `exports` was satisfied and five modules were still
+    missing — for two releases, invisible to tests, typecheck and build, because all three run
+    against the repo rather than the tarball.
+  - **dependency ranges** — a range that excludes `latest` FAILS when latest is the same major
+    (a stale floor with no excuse) and WARNs when latest is a newer major (legitimately "not
+    supported yet").
+
   **Caveat, measured after the fact:** "docs blockers were 100% mechanical" is only a safe
   retirement if the mechanical check actually covers them, and Tier 0 checks CHANGELOG
   *presence and freshness* — not whether shipped prose asserts something false. Two defects

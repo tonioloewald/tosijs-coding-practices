@@ -334,6 +334,171 @@ const buildScript = scripts.build
   else add('review verdicts', 'SKIP', 'no reviews/ directory')
 }
 
+/*
+Dependency declarations as a release gate — tosijs-ui#61 §2.
+
+Eight issues on that repo are one missing script: peers whose range excludes the
+version anyone would install, peers the repo does not itself install (so the
+combination shipped is not the combination tested), runtime imports that were
+never declared, and bins without a shebang — that last one filed TWICE.
+
+Each check FAILS only where the answer is unambiguous and WARNs where a
+maintainer could reasonably have meant it. A gate that cries wolf gets muted,
+and a muted gate is worse than no gate.
+*/
+{
+  const peers: Record<string, string> = pkg.peerDependencies ?? {}
+  const peerMeta: Record<string, { optional?: boolean }> = pkg.peerDependenciesMeta ?? {}
+  const deps: Record<string, string> = pkg.dependencies ?? {}
+  const devDeps: Record<string, string> = pkg.devDependencies ?? {}
+
+  // --- peers vs what is actually installed here -----------------------------
+  // Read node_modules, not devDependencies: the installed tree is what the test
+  // suite and the build actually ran against. A range that agrees with the
+  // manifest but not with the tree is the interesting failure.
+  const untested: string[] = []
+  for (const [name, range] of Object.entries(peers)) {
+    const mp = join(process.cwd(), 'node_modules', name, 'package.json')
+    if (!existsSync(mp)) {
+      if (!peerMeta[name]?.optional) untested.push(`${name} (declared ^peer but not installed here)`)
+      continue
+    }
+    try {
+      const installed = JSON.parse(readFileSync(mp, 'utf8')).version
+      if (!Bun.semver.satisfies(installed, range))
+        untested.push(`${name}: declares "${range}", tests against ${installed}`)
+    } catch {}
+  }
+  if (Object.keys(peers).length === 0) add('peer/dev agreement', 'SKIP', 'no peerDependencies')
+  else if (untested.length)
+    add('peer/dev agreement', 'FAIL',
+      `a declared peer is not what this repo builds and tests against — the shipped combination is untested:\n${untested.join('\n')}`)
+  else add('peer/dev agreement', 'PASS')
+
+  // --- bin shebangs (tosijs-ui#35 and #36 — the same bug, filed twice) -------
+  const bins: Record<string, string> =
+    typeof pkg.bin === 'string' ? { [pkg.name]: pkg.bin } : (pkg.bin ?? {})
+  const noShebang: string[] = []
+  for (const [binName, rel] of Object.entries(bins)) {
+    const f = join(process.cwd(), rel)
+    if (!existsSync(f)) { noShebang.push(`${binName} → ${rel} (missing)`); continue }
+    if (!readFileSync(f, 'utf8').startsWith('#!')) noShebang.push(`${binName} → ${rel}`)
+  }
+  if (Object.keys(bins).length === 0) add('bin shebangs', 'SKIP', 'no bin entries')
+  else if (noShebang.length)
+    add('bin shebangs', 'FAIL', `a bin without a shebang is not executable when npm links it:\n${noShebang.join('\n')}`)
+  else add('bin shebangs', 'PASS')
+
+  // --- every exports target must actually be IN the tarball -----------------
+  /*
+  `files` is an allowlist and `exports` is a promise; nothing checks that the
+  promise is covered by the allowlist. Caught for real in tosijs-product:
+  `dist/index.d.ts` re-exported seven modules while `files` shipped two of them,
+  so five declaration files were missing from the published package and every
+  TypeScript consumer importing anything but the theme API got an unresolved
+  module. Present for two releases; invisible to tests, typecheck and build,
+  because all three run against the repo and not the tarball.
+  */
+  if (isPrivate) add('packaged exports', 'SKIP', 'private package')
+  else {
+    const packed = await run(['npm', 'pack', '--dry-run', '--json'])
+    if (!packed.ok) add('packaged exports', 'SKIP', 'npm pack --dry-run failed')
+    else {
+      try {
+        const jsonStart = packed.out.indexOf('[')
+        const files: string[] = JSON.parse(packed.out.slice(jsonStart))[0].files.map((f: any) => f.path)
+        const targets = new Set<string>()
+        const collect = (v: unknown) => {
+          if (typeof v === 'string') { if (v.startsWith('./') || v.startsWith('dist/')) targets.add(v.replace(/^\.\//, '')) }
+          else if (v && typeof v === 'object') Object.values(v).forEach(collect)
+        }
+        for (const k of ['main', 'module', 'types', 'typings', 'browser']) collect(pkg[k])
+        collect(pkg.exports)
+        /*
+        Follow relative re-exports one level out of every packed declaration file.
+        The entry points being present is NOT the bug: tosijs-product shipped a
+        `dist/index.d.ts` that re-exported seven siblings while `files` packed two
+        of them, so `exports` was satisfied and five modules were still missing.
+        The promise a .d.ts makes is the whole graph it names, not its own path.
+        */
+        const declTargets = new Set<string>()
+        for (const f of files.filter((x) => x.endsWith('.d.ts'))) {
+          const abs = join(process.cwd(), f)
+          if (!existsSync(abs)) continue
+          const dir = f.includes('/') ? f.slice(0, f.lastIndexOf('/')) : ''
+          for (const m of readFileSync(abs, 'utf8').matchAll(/from\s+['"](\.[^'"]+)['"]/g)) {
+            const rel = m[1].replace(/^\.\//, '')
+            const base = (dir ? dir + '/' : '') + rel
+            /*
+            A declaration written for ESM says `from './x.js'` — the emitted
+            neighbour is `x.d.ts`, NOT `x.js.d.ts`. Getting this wrong made the
+            check report four phantom files on tosijs-ui, which is precisely the
+            cry-wolf this file warns about elsewhere. Candidates, in order; the
+            target counts as present if ANY of them is packed.
+            */
+            const norm = (x: string) => {
+              const out: string[] = []
+              for (const seg of x.split('/')) {
+                if (seg === '.' || seg === '') continue
+                if (seg === '..') out.pop()
+                else out.push(seg)
+              }
+              return out.join('/')
+            }
+            const cands = base.endsWith('.d.ts')
+              ? [base]
+              : [base.replace(/\.(js|mjs|cjs)$/, '') + '.d.ts', base + '.d.ts', base + '/index.d.ts']
+            declTargets.add(cands.map(norm).join('|'))
+          }
+        }
+        const missing = [...targets].filter((t) => !t.includes('*') && !files.includes(t))
+        // Alternatives are '|'-joined: satisfied if any candidate is in the tarball.
+        for (const alts of declTargets)
+          if (!alts.split('|').some((c) => files.includes(c))) missing.push(alts.split('|')[0])
+        if (missing.length)
+          add('packaged exports', 'FAIL',
+            `package.json points at files the tarball does not contain — consumers get an unresolved module:\n${missing.join('\n')}`)
+        else add('packaged exports', 'PASS', `${targets.size + declTargets.size} target(s) (${targets.size} declared, ${declTargets.size} re-exported) present in ${files.length} packed files`)
+      } catch { add('packaged exports', 'SKIP', 'could not parse npm pack output') }
+    }
+  }
+
+  // --- declared peers vs what a consumer would actually install --------------
+  // Network-dependent, so it SKIPs offline rather than failing. A newer MAJOR
+  // outside the range is a legitimate "not supported yet" and only WARNs; a
+  // latest that is the SAME major and still out of range is a stale floor or
+  // ceiling with no such excuse.
+  const stale: string[] = []
+  const behindMajor: string[] = []
+  /*
+  CONCURRENT, and only over peers + runtime deps. Serially this walked every
+  dependency at one `npm view` apiece and blew a two-minute budget on a repo with
+  a normal-sized manifest — and a gate slow enough to interrupt you is a gate
+  people stop running, which costs more than the check is worth.
+  */
+  const rangeTargets = Object.entries({ ...peers, ...deps }).filter(
+    ([, r]) => !r.startsWith('file:') && !r.startsWith('workspace:')
+  )
+  await Promise.all(
+    rangeTargets.map(async ([name, range]) => {
+      const res = await run(['npm', 'view', name, 'version'])
+      if (!res.ok) return
+      const latest = res.out.trim().split('\n').pop() ?? ''
+      if (!/^\d+\.\d+\.\d+/.test(latest)) return
+      if (Bun.semver.satisfies(latest, range)) return
+      const latestMajor = latest.split('.')[0]
+      const rangeMajor = (range.match(/(\d+)\./) ?? [])[1]
+      if (rangeMajor && latestMajor !== rangeMajor) behindMajor.push(`${name}: "${range}" vs latest ${latest}`)
+      else stale.push(`${name}: "${range}" excludes latest ${latest} (same major)`)
+    })
+  )
+  if (stale.length)
+    add('dependency ranges', 'FAIL', `a range excludes the version a consumer installs today:\n${stale.join('\n')}`)
+  else if (behindMajor.length)
+    add('dependency ranges', 'WARN', `a newer MAJOR exists outside the declared range — deliberate, or stale?\n${behindMajor.join('\n')}`)
+  else add('dependency ranges', 'PASS')
+}
+
 // Report
 const icons = { PASS: '✅', FAIL: '❌', WARN: '⚠️ ', SKIP: '⏭️ ' } as const
 console.log(`\nrelease-doctor — ${pkg.name}@${version}\n`)
