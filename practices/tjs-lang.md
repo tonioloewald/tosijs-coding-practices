@@ -4,6 +4,56 @@ A type-safe JavaScript dialect: TypeScript-like source with **runtime validation
 **safety boundaries**, **monadic errors**, inline tests, and a **fuel-metered sandboxed VM**
 (AJS) for untrusted code. It transpiles to validated JS.
 
+## Why TJS exists: the gap neither lane covers
+
+The case for TJS is usually stated as "runtime validation at boundaries". True,
+but the sharper argument comes from a measured corpus — one tosijs release week,
+where the evidence points somewhere more specific than "static types are
+insufficient".
+
+**A wrong type declaration is invisible to BOTH lanes.** The suite exercises the
+runtime. `tsc` exercises the declaration. **Nothing compares them.** So a
+declaration that describes the opposite of the runtime is checked rigorously,
+passes, and every call site is verified against a lie:
+
+| declared | actual |
+| --- | --- |
+| `observe: (path: string) => void` | takes a **callback**, returns an unsubscribe — the working call was a type error and the type-prescribed call *threw* |
+| `ElementPart` excludes proxies | a bare proxy is a **live** bound text child, the most-used spelling |
+| `TosiProps` has no `tosiBinding` | present at runtime on both proxy kinds |
+
+Four such declarations shipped. None was detectable by type-checking, because
+type-checking cannot ask whether the type is *true* — only whether the code
+agrees with it. **Executable signatures close this by construction**, and that
+is the strongest argument for TJS in the evidence rather than in principle.
+
+**The complement, stated fairly: static analysis found one thing execution never
+could.** `tsc --declaration` from a scratch consumer caught a mixin whose return
+type made downstream `.d.ts` emit impossible — 34 files in the adopting library
+would have shipped with no types. There is no runtime moment at which that
+manifests. **Use static analysis for shape at the seams (export surfaces,
+declaration emit); use execution for behaviour.** Neither is "the safety
+argument", and a process that treats one as such will keep being surprised.
+
+**And a checker can be wrong about correct code.** Where a library decides
+things by asking live objects, some correct spellings are simply not
+representable:
+
+- a proxy whose read type differs from its write type — asymmetric `get`/`set`
+  works on a hand-written interface, but **mapped types have no such modifier**,
+  and widening the property to a union poisons every read;
+- an element-creator that dispatches attribute-vs-property on
+  `(el as any)[key] !== undefined` — the same source line writes an attribute
+  before `customElements.define` and a property after.
+
+**Operational rule for any repo in this ecosystem: when `tsc` and the runtime
+disagree, establish which is wrong before changing anything, and never rewrite
+working code to satisfy the checker.** A repo whose types are a lossy projection
+of a JS-first design should say so out loud — see tosijs's `CLAUDE.md`,
+*"TypeScript is autocomplete, not a source of truth"* — otherwise every future
+contributor, human or agent, will read a red squiggle as a defect and "fix" it.
+— seen in: tosijs (1.10.x); rule set by the owner
+
 ## When to use TJS — and the reality check
 
 - New library modules where runtime validation at boundaries pays off.
