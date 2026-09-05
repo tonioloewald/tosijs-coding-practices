@@ -259,6 +259,43 @@ file gets footgun-free `==` unconditionally; see `practices/tjs-lang.md`.) Cavea
 `tjs run` CLI does **not** inject the `expect` harness — `test { … }` blocks only pass in the
 playground UI, not via CLI. — seen in: tjs-lang
 
+## The instrument hierarchy — coverage is not a goal
+
+An owner confession, recorded with its corroboration so nobody re-inherits the mistake:
+**much of the ecosystem's unit coverage was written for coverage's sake** — the metric
+chased as a goal, out of conventional notions of code quality rather than because each test
+pinned a promise. The corpus independently corroborates that the chased number bought little:
+a 956-test green suite coexisted with 7/7 release blockers; 898 green tests missed an emitter
+stripping `new` from every class; the vacuous-fixture record (almost all UI) measured where
+the light was. Coverage percentage is a middle-rung metric — "set up to work" — and chasing
+it manufactures echoes (see "A test that fails when the code is right…").
+
+The instruments, ranked by what they actually prove here:
+
+1. **Eyeballing the doc system.** Tests passing has **never** been a good substitute for
+   looking at the doc site — it is the dogfood instrument: real components, real build, real
+   content, real browser, and the failures that matter surface there first. Budget review
+   time for *looking* (review lens 3b) before budgeting for more tests.
+2. **The in-browser lanes and Haltija** — built as the *honest* tests, deliberately: real
+   geometry, real events, real focus, none of happy-dom's structural blindness.
+3. **Small tests asserting a specific promise** — pure-logic contracts, peer floors,
+   failing-first regressions. Highest value per line in the measured record.
+4. **Coverage-shaped tests** — tests that exist to move a number. Net negative: they cost
+   the update-chore forever and assert nothing a consumer relies on.
+
+Standing implications:
+
+- **Never add a test to move a number; add it to pin a promise.** A coverage gap is a
+  question ("is there an unpinned promise here?"), not a deficit to fill.
+- The deliberate exception survives: **security-critical surfaces keep targeted high
+  coverage against a written audit** — that is promise-pinning at density, not a percentage.
+- **Retirement applies to suites too.** The quarterly pass may delete echo tests outright —
+  removing a test that measures nothing is a win, not a coverage loss, and the assertion-count
+  meter (below) distinguishes deliberate pruning from silent scope loss.
+
+— seen in: owner (confessed, 2026-09); corroborated: tosijs (7/7 under green), tjs-lang
+(emitter), the UI vacuous-fixture record
+
 ## What to test
 
 - Behavior at the public API edge and the known-hard cases (async settling, id-path surgical
