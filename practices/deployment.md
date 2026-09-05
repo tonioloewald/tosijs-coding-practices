@@ -227,6 +227,16 @@ That is the whole ceremony. **No DNS change** (a `*.dev` wildcard already resolv
   and is newer than the newest tracked source — otherwise the "fixed in src, not in dist"
   release ships again.
   — seen in: tjs-lang 0.13.7 → 0.13.8, still ungated at 0.13.10
+- **An ignore rule protects a path, not a secret.** If a build copies files, the copy is not
+  covered by the rule that names the original: a `static/manifest.webmanifest` gitignored
+  *specifically because it carries a preview token* was copied by the doc build into a tracked
+  `docs/`, which carried the token into history across every subsequent commit — through an
+  ignore rule naming the exact file. The general form: **generated output tracked in source
+  history will eventually contain a copy of something that was excluded from source history.**
+  Either the whole output directory is untracked (or on a deploy-only branch), or every
+  copied-through secret needs its own rule — and only the first of those fails safe. Sweep
+  check: for each gitignored path under `static/`/assets, grep the tracked output tree for its
+  basename. — seen in: manta-recon
 
 ## Project-specific practices
 

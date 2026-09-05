@@ -184,6 +184,18 @@ helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was th
    — seen in: haltija 1.12.0-rc, where installing the candidate and importing `haltija/test`
    revealed that a module-scope singleton made a new warning fire on IMPORT — scolding callers
    who had done the right thing. Reasoning about the manifest would never have shown it.
+
+   **Why dogfooding cannot substitute for this step: dogfood catches behaviour and is blind to
+   packaging, by construction.** The dev loop shares the library's environment — sibling
+   checkout on disk, Bun, a bundler — so packaging bugs are invisible *because of* it, not
+   despite it: an unexported symbol resolves against the sibling checkout; extensionless
+   `dist/` imports resolve under any bundler; a duplicate-instance hazard is flattened by the
+   bundler, so even an explicit `instanceof` assertion passes vacuously in a bundled consumer
+   (measured). A scratch consumer's entire value is *not having your environment* — it is not
+   "more dogfood," and it is not in tension with a dogfood-first practice.
+   — seen in: manta-recon (four of its five cross-repo integration failures were this class),
+   tosijs-3d-ensemble ("this project's own loop is Bun and a bundler, and so is the doc site,
+   and so was the first consumer")
 9. **Update your row in the shared scoreboard** — the "Project scoreboard" table in the
    practices repo's `README.md`. **The fact cells are machine-written**: run
    `bun tools/scoreboard.ts` (in that repo) to refresh Version and "As of" from the registry
