@@ -281,6 +281,45 @@ playground UI, not via CLI. — seen in: tjs-lang
   the browser. If a repo has no `*.test.ts`, that's the intended workflow, not an omission.
   — seen in: react-tosijs
 
+## A test that fails when the code is right is a defect in the test
+
+The lived pattern (owner): you establish the code works — by dogfooding, by driving it — and
+now the suite fails, and updating it is a chore. Name what that red actually is: the test is
+not reporting a broken promise, it is demanding bookkeeping for its own stale copy of the
+implementation. **Red-when-right and green-when-wrong are the same defect class** — in both,
+the test is not measuring the promise — and red-when-right is the more corrosive over time:
+every ritual "test failed → update test" session trains the reflex of making tests agree
+with code *without asking which one is right*, and the suite decays from oracle to echo.
+(The reflex has fired both ways here: one reporter wrote a passing test for the wrong
+hypothesis and "fixed" working code — tosijs#35.)
+
+When a change you have verified working turns tests red, classify each red test **before**
+touching it:
+
+1. **A promise broke** — the test caught a real regression, or a deliberate break. Keep the
+   test; fix the code, or accept the break explicitly (changelog, migration). This is the
+   test doing its job.
+2. **An implementation detail legitimately changed** — the test asserted the *how*, not the
+   promise. Defect in the test: rewrite it against the promise it should have asserted.
+   Do not just re-record the new *how* — that's the echo reflex.
+3. **The test was only ever an echo** — snapshots, exact output strings, DOM-structure
+   asserts. These can only fail on legitimate change (any behavior change just re-records
+   them), so they have no oracle value: replace with a promise-level assertion or delete.
+
+Two amplifiers:
+
+- **Mass failure on one legitimate change is a coupling measurement**, same signal as rebase
+  pain: the tests were written against the wrong seam. Don't update forty tests — move the
+  assertion to the seam that was stable.
+- **The chore is friction — log it.** A recurring test-update chore belongs in the AAR
+  friction bullet, and the periodic pass promotes it into action (rewrite that suite region
+  against promises). Quietly paying the chore forever is how a suite becomes a tax that
+  buys nothing — the measured local record is that *small tests asserting a specific
+  promise* age well and catch nearly everything real, while echo-tests only ever cost.
+
+— seen in: owner (recurring, cross-project); tosijs-3d-ensemble (promise-asserting tests as
+the only ones that ever caught defects); tosijs#35 (the echo reflex inverted)
+
 ## Testing A→B and B→C does not test A→C
 
 A pipeline with stages invites a specific, quiet gap. You test the first stage, you test
