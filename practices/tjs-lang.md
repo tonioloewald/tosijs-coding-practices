@@ -60,6 +60,29 @@ library's non-test source, including the public return type of its flagship
 API. Assertions are unchecked by construction; at least one of them was false in
 production for two releases.
 
+### The counterweight: this is not a licence to validate everything
+
+"The runtime is the truth" invites the wrong inference — that every argument
+should be checked. That is the same ceremony from the other direction, and it
+taxes paths that run constantly. **Validate at boundaries; dispatch everywhere
+else.** The two are indistinguishable in a grep and opposite in intent:
+
+- **Dispatch** asks *what does this value mean here* and proceeds. It is the
+  design, not a concession — an element creator deciding attribute-vs-property,
+  a proxy trap branching on `typeof _prop === 'symbol'`.
+- **Validation** asks *is this the right type* and refuses. It earns its cost
+  only where a wrong value corrupts state or fails far from its cause.
+
+Measured in tosijs, which already had the shape before it was written down: the
+proxy handler is **243 lines with a single throw** and runs on every property
+access, while public entry points like `touch()` validate and throw. **Take the
+performance win of not checking unless skipping it would blow something up.**
+
+This is precisely what TJS's `safety inputs` / `safety none` encodes, and it is
+the part most likely to be lost if "runtime validation" is read as a slogan:
+the value is in choosing the boundary, not in checking everywhere.
+— seen in: tosijs; rule set by the owner
+
 ### Where static analysis IS authoritative, stated fairly
 
 Types are a source of truth about **one** thing: themselves. `.d.ts` emit is the
