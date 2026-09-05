@@ -164,6 +164,14 @@ helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was th
    Check `latest` specifically when publishing a **prerelease**: the point of `--tag rc` is that
    `latest` does not move, and the only way to know it didn't is to look.
 
+   **Registry reads lag publishes — ask with the cache off.** `npm view` answers from cache and
+   can serve a stale version minutes after a publish: one repo's `npm view` said 0.7.8 while a
+   direct registry fetch returned 0.8.0, producing a wasted "the publish failed" detour in one
+   project and a **wrong changelog entry** in another (it recorded that a version never reached
+   npm when it had). Any check that asks the registry a question uses `--prefer-online` or a
+   direct fetch (`curl https://registry.npmjs.org/<pkg>`), or it answers confidently and
+   wrongly. — seen in: tosijs-3d, tosijs-3d-ensemble
+
 8c. **Install what you published, from the registry, and run it.** Not the local tarball —
    `npm pack` proves the files you *have*; only a registry install proves what a consumer *gets*.
    ```bash

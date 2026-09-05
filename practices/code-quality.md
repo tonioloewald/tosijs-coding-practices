@@ -291,6 +291,36 @@ actual value.** Two failure modes, both shipped, both in the same API.
 > the wording. (A downstream consumer reached the second conclusion independently while
 > the upstream `.d.ts` had already conceded it in prose — read your own docs as evidence.)
 
+## Fail loudly; degrade honestly
+
+Silent failure is the dominant defect class in this ecosystem, measured: **14 of 56 issues
+(25%) on one repo's entire backlog** were "it did nothing and said nothing" — a component
+rendering empty on a resolution failure, an orchestrator swallowing `tsc` errors, a dev server
+serving stale artifacts after a failed rebuild, a destructive `rm -rf` with no guard. Adopt as
+a design rule and a review lens, not as one-at-a-time fixes:
+
+- **No empty render on failure.** A component that can't resolve its input renders an error
+  state, not nothing. Blank-forever is the failure mode that most punishes a consumer who
+  can't file an issue and get a same-day fix.
+- **No swallowed exceptions** in orchestrators, dev servers, or build pipelines. Exit nonzero
+  or surface the error; "kept going" is not resilience.
+- **No destructive filesystem op without a guard** (`rm -rf` of a directory that could contain
+  source is the recorded worst case — silent data loss).
+- **Degrading is fine; lying about it is not.** A fallback (screenshot → schematic, rich →
+  plain) must say it's the fallback. A low-fidelity result presented as the real thing is a
+  *third* failure mode, distinct from failing and from succeeding — a failed screenshot is at
+  least honest about having failed.
+- **A partial failure is worse than a total one.** A total mismatch is a hypothesis you can
+  test in one step; a partial one leaves the surrounding machinery working, which actively
+  *supports* the wrong hypothesis (the bug must be in the code you just wrote). Recorded
+  twice: a partially-deduped duplicate dependency where state worked and the view silently
+  didn't; a scanner corrupting four fixture suites of which only one turned red — the other
+  three converted cleanly and lied at runtime. The rule it yields: **a defect is visible in
+  proportion to how badly it breaks things, which is exactly backwards from how much it
+  costs** — so weight review attention toward the failures that would present quietly.
+
+— seen in: tosijs-ui (#61), tosijs, tjs-lang, tosijs-platform, manta-recon
+
 ## Errors as curriculum
 
 Every diagnostic is a teaching opportunity, and the measured difference between a good one

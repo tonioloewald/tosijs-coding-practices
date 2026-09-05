@@ -507,6 +507,27 @@ The cheapest supply-chain fix is the dependency you didn't add.
   consumers' problem — their audit output, their overrides, their install size.
 - **Gate a new dependency on a measured number**, not a vibe. For a browser library
   that is the printed gzip delta. "It's only one package" is not a measurement.
+- **Own it or require it — decided by who is on the other end, not by mechanism.**
+  *If your consumer might not know the dependency exists, own it (a real
+  `dependency`). If reaching your code requires them to already be using it, require
+  it (a peer).* `tosijs-ui`'s `<tosi-code>` is a finished editor component — its user
+  may never have heard of CodeMirror, so tosijs-ui owns the 12 packages and
+  re-exports the extension surface (`tosijs-ui/codemirror`) so extenders share the
+  same instance **by construction**. `tjs-lang/editors/codemirror` is a thin adapter
+  nobody reaches without already writing CodeMirror config by hand — optional peers
+  behind an explicit subpath are correct there, and a missing install fails loudly at
+  import. The two repos are not an A/B (they differ in everything); the rule is what
+  survives. Beware phrasing the reason as an implementation detail (e.g. "because
+  elements register eagerly") — details refactor away, the audience distinction
+  doesn't. — seen in: tosijs-ui, tjs-lang
+- **A peer declaration is a contract, not a detector.** Package managers warn on
+  unsatisfied peers *unreliably*: bun 1.4.0 said nothing about an installed
+  `tosijs-3d@0.8.0` against a declared `^0.7.8` (caret on 0.x pins the minor, so the
+  range excludes it) while warning about a *different* unsatisfied peer in the same
+  run. Declare peers because they state the contract and a resolver *can* act on
+  them — but anything that needs the mismatch **caught** wants a mechanical check
+  (release-doctor's peer/dev-agreement and dependency-range checks), not the package
+  manager's mood. — seen in: manta-recon, tosijs-3d-ensemble
 - **A justified exception must be written down.** `tosijs-ui` takes 12 CodeMirror
   packages as real runtime dependencies because the editor, its language modes, and
   the tjs extension must share one `@codemirror/state` instance — a naive optional

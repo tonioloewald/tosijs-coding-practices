@@ -174,7 +174,10 @@ const buildScript = scripts.build
      * a release, it is the previous one wearing today's code.
      */
     if (!isPrivate && version) {
-      const { ok, out } = await run(['npm', 'view', pkg.name, 'version'])
+      // --prefer-online on every registry read: npm view answers from cache and
+      // has served a version minutes stale right after a publish, turning this
+      // check into a confident wrong answer (releasing.md step 8b).
+      const { ok, out } = await run(['npm', 'view', '--prefer-online', pkg.name, 'version'])
       const published = ok ? out.trim() : ''
       if (published === '') {
         add('release identity', 'SKIP', 'could not reach the registry')
@@ -282,7 +285,7 @@ const buildScript = scripts.build
   if (isPrivate) add('tag/publish reconciliation', 'SKIP', 'private package')
   else {
     const name = pkg.name
-    const { ok, out } = await run(['npm', 'view', name, 'version'])
+    const { ok, out } = await run(['npm', 'view', '--prefer-online', name, 'version'])
     if (!ok) add('tag/publish reconciliation', 'SKIP', `npm view failed (${out.trim().split('\n')[0]}) — could not check; do not read this as clean`)
     else {
       const npmVersion = out.trim()
@@ -459,6 +462,71 @@ and a muted gate is worse than no gate.
           add('packaged exports', 'FAIL',
             `package.json points at files the tarball does not contain — consumers get an unresolved module:\n${missing.join('\n')}`)
         else add('packaged exports', 'PASS', `${targets.size + declTargets.size} target(s) (${targets.size} declared, ${declTargets.size} re-exported) present in ${files.length} packed files`)
+
+        /*
+        --- every bare import in SHIPPED code must be declared -----------------
+        Check the files against the manifest, never the manifest against itself
+        — a manifest is always self-consistent. tjs-lang shipped
+        editors/codemirror importing five @codemirror/* packages with no
+        peerDependencies block at all, resolving purely by hoisting luck: green
+        tests, green build, green typecheck, hard failure in any consumer with
+        an isolated install. Nominated for this script independently from two
+        threads (tosijs-ui#131, tosijs-ui#61 — ensemble's undeclared runtime
+        import is the same class). Scans only what `npm pack` would ship.
+        Dynamic import() of an undeclared package WARNs instead of failing:
+        `try { await import('optional-peer') } catch {}` is a recorded
+        deliberate pattern (performance.md).
+        */
+        try {
+          const { builtinModules } = await import('node:module')
+          const builtin = new Set(builtinModules)
+          const declared = new Set([
+            ...Object.keys(pkg.dependencies ?? {}),
+            ...Object.keys(pkg.peerDependencies ?? {}),
+            ...Object.keys(pkg.optionalDependencies ?? {}),
+            pkg.name,
+          ])
+          const pkgOf = (spec: string) =>
+            spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0]
+          const undeclared = new Map<string, string[]>()
+          const dynOnly = new Map<string, string[]>()
+          const seen = (spec: string, file: string, dynamic: boolean) => {
+            if (spec.startsWith('.') || spec.startsWith('/') || spec.startsWith('node:') || spec.startsWith('bun')) return
+            const p = pkgOf(spec)
+            if (builtin.has(p) || declared.has(p)) return
+            const map = dynamic ? dynOnly : undeclared
+            const list = map.get(p) ?? []
+            if (!list.includes(file)) list.push(file)
+            map.set(p, list)
+          }
+          for (const f of files.filter((x) => /\.(js|mjs|cjs)$/.test(x))) {
+            const abs = join(process.cwd(), f)
+            if (!existsSync(abs)) continue
+            const src = readFileSync(abs, 'utf8')
+              .replace(/\/\*[\s\S]*?\*\//g, '')
+              .replace(/^[ \t]*\/\/.*$/gm, '')
+            for (const m of src.matchAll(/(?:^|[^\w$.])(?:import|export)\s*(?:[\w${},*\s]+from\s*)?['"]([^'"\n]+)['"]/g))
+              seen(m[1], f, false)
+            for (const m of src.matchAll(/(?:^|[^\w$.])require\s*\(\s*['"]([^'"\n]+)['"]\s*\)/g))
+              seen(m[1], f, false)
+            for (const m of src.matchAll(/(?:^|[^\w$.])import\s*\(\s*['"]([^'"\n]+)['"]/g))
+              seen(m[1], f, true)
+          }
+          for (const k of dynOnly.keys()) if (undeclared.has(k)) dynOnly.delete(k)
+          const fmt = (m: Map<string, string[]>) =>
+            [...m.entries()]
+              .map(([p, fs]) => `${p} (${fs.slice(0, 3).join(', ')}${fs.length > 3 ? ', …' : ''})`)
+              .join('\n')
+          if (undeclared.size)
+            add('shipped imports declared', 'FAIL',
+              `shipped code imports packages the manifest never declares — resolves only by hoisting luck:\n${fmt(undeclared)}`)
+          else if (dynOnly.size)
+            add('shipped imports declared', 'WARN',
+              `dynamic import() of undeclared package(s) — deliberate optional-peer pattern, or a missing declaration?\n${fmt(dynOnly)}`)
+          else add('shipped imports declared', 'PASS')
+        } catch (e) {
+          add('shipped imports declared', 'SKIP', `scan failed: ${String(e).slice(0, 120)}`)
+        }
       } catch { add('packaged exports', 'SKIP', 'could not parse npm pack output') }
     }
   }
@@ -481,7 +549,7 @@ and a muted gate is worse than no gate.
   )
   await Promise.all(
     rangeTargets.map(async ([name, range]) => {
-      const res = await run(['npm', 'view', name, 'version'])
+      const res = await run(['npm', 'view', '--prefer-online', name, 'version'])
       if (!res.ok) return
       const latest = res.out.trim().split('\n').pop() ?? ''
       if (!/^\d+\.\d+\.\d+/.test(latest)) return
