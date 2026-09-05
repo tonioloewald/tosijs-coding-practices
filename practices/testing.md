@@ -317,6 +317,24 @@ Two amplifiers:
   buys nothing — the measured local record is that *small tests asserting a specific
   promise* age well and catch nearly everything real, while echo-tests only ever cost.
 
+**UI code is where this is worst, and the reason is the streetlight effect** (owner): the
+promise of UI is what a user experiences — visible, responsive, correct — which is hard to
+measure, so tests assert what is *easy* to measure instead: element counts, class names,
+tag nesting, innerHTML. Those are implementation details wearing assertion syntax, echoes by
+default. Note the local vacuous-fixture record is almost entirely UI: the shadow-DOM marker
+asserted on a wrapper instead of the host, the `describe()` test on an unwired `<div>`, the
+happy-dom zero-geometry that hid an entire behavioral tier from every test. Discipline:
+
+- Assert at the behavior seam that *does* exist even in UI: **user event → observable state
+  change → DOM *semantics*** (the bound value updated, the row appeared, the control is
+  disabled), never structure for its own sake.
+- **Structure is a promise only when it is a contract** — roles, labels, ARIA state,
+  form-association are promise-level (a screen reader consumes them); div-nesting and class
+  names are not.
+- What something **looks like** is checked by looking (review lens 3b: browser session or
+  labelled unverified) — a DOM assert is not a substitute, and happy-dom's zero geometry
+  means layout claims are *unmeasurable* in the unit tier by construction.
+
 — seen in: owner (recurring, cross-project); tosijs-3d-ensemble (promise-asserting tests as
 the only ones that ever caught defects); tosijs#35 (the echo reflex inverted)
 
