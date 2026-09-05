@@ -264,11 +264,23 @@ playground UI, not via CLI. — seen in: tjs-lang
 An owner confession, recorded with its corroboration so nobody re-inherits the mistake:
 **much of the ecosystem's unit coverage was written for coverage's sake** — the metric
 chased as a goal, out of conventional notions of code quality rather than because each test
-pinned a promise. The corpus independently corroborates that the chased number bought little:
-a 956-test green suite coexisted with 7/7 release blockers; 898 green tests missed an emitter
-stripping `new` from every class; the vacuous-fixture record (almost all UI) measured where
-the light was. Coverage percentage is a middle-rung metric — "set up to work" — and chasing
-it manufactures echoes (see "A test that fails when the code is right…").
+pinned a promise. The corpus corroborates that the chased number bought little **as an
+oracle of the thing being changed**: a 956-test green suite coexisted with 7/7 release
+blockers; 898 green tests missed an emitter stripping `new` from every class; the
+vacuous-fixture record (almost all UI) measured where the light was. Coverage percentage is
+a middle-rung metric — "set up to work" — and chasing it manufactures echoes (see "A test
+that fails when the code is right…").
+
+**But the coverage does not buy nothing** (owner): a broad suite is a **tripwire mesh**, and
+a mesh's value concentrates in its *out-of-scope* reds — a test failing in an area you
+didn't touch is high signal precisely because it should almost never happen (the scope rule
+under the echo entry). That is the real justification for the existing review rule "every
+failing test is in scope, never dismissed as unrelated": the mesh's whole product IS the
+unexpected red. The record shows it working — a drift guard going red mid-session on an
+upstream change nobody was working on is the mesh doing its job. So the two roles get
+different accounting: as oracles of the changed thing, coverage-shaped tests earned little;
+as tripwires for unintended reach, breadth earns its keep — which is why the echo purge
+below weighs reach before deleting.
 
 The instruments, ranked by what they actually prove here:
 
@@ -280,8 +292,12 @@ The instruments, ranked by what they actually prove here:
    geometry, real events, real focus, none of happy-dom's structural blindness.
 3. **Small tests asserting a specific promise** — pure-logic contracts, peer floors,
    failing-first regressions. Highest value per line in the measured record.
-4. **Coverage-shaped tests** — tests that exist to move a number. Net negative: they cost
-   the update-chore forever and assert nothing a consumer relies on.
+4. **Coverage-shaped tests** — tests that exist to move a number. As oracles, net negative:
+   they cost the update-chore forever and assert nothing a consumer relies on. As part of
+   the tripwire mesh they may still earn a place — judge each by **reach**: a test whose red
+   could ever be an out-of-scope surprise is a tripwire (keep it, and triage its reds by
+   scope); one that can only fail on deliberate change to its own subject is a pure echo
+   (delete).
 
 Standing implications:
 
@@ -349,6 +365,19 @@ touching it:
    the echo reflex as standard procedure. **Always-red and always-green are the same
    defect**: a check informs only insofar as its failure probability differs between right
    and wrong code.
+
+   **The refinement (owner): an echo's information lives in its SCOPE, not its failure.**
+   A golden for the thing you changed fails with certainty — zero bits. A golden for a thing
+   you *didn't touch* should almost never fail, so when it does, that's huge signal: your
+   change reached somewhere you didn't intend. Echoes are worthless oracles and excellent
+   **tripwires** — a blast-radius instrument, not a correctness one (the same
+   reclassification as rebase pain: the signal is in the unexpected reach). So for any
+   golden-shaped check (rebuild-and-diff, docs-drift, artifact freshness): **partition the
+   mismatches by expected scope** — in-scope mismatch is bookkeeping, out-of-scope mismatch
+   is a finding, and the two must never be presented identically. That was the one-click
+   updater's real crime: it flattened the scope distinction, making the distant golden as
+   cheap to accept as the local one — bulk-accepting away exactly the bits the system still
+   carried.
 
 Two amplifiers:
 
