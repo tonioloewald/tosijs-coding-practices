@@ -321,6 +321,41 @@ a design rule and a review lens, not as one-at-a-time fixes:
 
 — seen in: tosijs-ui (#61), tosijs, tjs-lang, tosijs-platform, manta-recon
 
+## A warning is not a boundary
+
+The sharper companion to *fail loudly*: once you know a call can do harm, **warning about it is
+not a mitigation** — it is documentation with a `console` prefix. If the harm is real, refuse;
+if it is not, say nothing. The middle option is the one that gets walked through.
+
+Measured, in haltija, twice in one week:
+
+- `haltija/test` resolved an unset target to the shared default port and **warned on stderr** that
+  it was about to drive a browser nobody chose. The code carried a long comment describing the
+  exact hazard. Its own integration suite then adopted another project's live server and called
+  `navigate` and `click` against six of that developer's tabs. The warning fired. Nobody read it,
+  because nothing was watching stderr — nothing ever is, in a green test run.
+- The machine-control surface (shell execution, filesystem read/write) was reachable by any caller
+  on the port. The mitigation shipped for months was a *documented* threat model. What actually
+  closed it was refusing the whole route prefix.
+
+**The test for whether you have a boundary:** can the wrong thing still happen? If yes, you have a
+label. This is why "we should warn about X" is rarely the end of a design discussion — it is
+usually the point at which the real question (refuse, or allow?) gets deferred.
+
+Corollary, and the more expensive half:
+
+> **A hazard fixed in your own lane but left in your published library is not fixed.**
+
+haltija fixed its *own* test suite to refuse the shared default, then shipped the next release with
+the library's default unchanged — so every adopter's CI inherited the original hazard, on machines
+where the damage lands least expectedly and where nobody has commit rights to file the bug fast.
+Fixing the local instance is the natural stopping point because it makes your symptom go away; that
+is precisely why it needs to be a stated rule rather than a habit.
+
+Ask, on every fix to something you ship: *did I fix the instance, or the thing consumers get?*
+
+— seen in: haltija (#40, #42), tosijs-ui (#61)
+
 ## Errors as curriculum
 
 Every diagnostic is a teaching opportunity, and the measured difference between a good one
