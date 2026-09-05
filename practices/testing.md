@@ -342,6 +342,13 @@ touching it:
 3. **The test was only ever an echo** — snapshots, exact output strings, DOM-structure
    asserts. These can only fail on legitimate change (any behavior change just re-records
    them), so they have no oracle value: replace with a promise-level assertion or delete.
+   The degenerate endpoint (external: Google's automated golden testing, owner-witnessed —
+   "guaranteed to be broken by almost any change"): a test whose failure is near-certain
+   under *any* change carries zero information — its red doesn't discriminate regression
+   from progress, so the institutional response becomes "regenerate the goldens," which is
+   the echo reflex as standard procedure. **Always-red and always-green are the same
+   defect**: a check informs only insofar as its failure probability differs between right
+   and wrong code.
 
 Two amplifiers:
 
