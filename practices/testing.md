@@ -45,10 +45,54 @@ bun test src/               # unit tier only (when integration lives elsewhere)
   misunderstanding.** Four vacuous assertions in one haltija cycle were found by mutation testing
   and none by re-reading. If a regression test has never failed, it is unproven: break the fix on
   purpose and watch the test go red before you trust it. — seen in: haltija
+- **A CHECK YOU HAVE NOT WATCHED FAIL IS NOT A CHECK.** The mutation rule above
+  is stated for tests; it applies at least as hard to **gates** — build steps,
+  publish hooks, CI lanes — because a gate is written once and then trusted
+  forever, and unlike a test nobody re-reads it. Six gates written in a single
+  tosijs release week reported safety they had never established:
+
+  | the gate | why it was vacuous |
+  | --- | --- |
+  | "every `exports` target exists" | used `existsSync` — the **working tree**, not the commit. Went green over a commit whose bundles a dev run had deleted. |
+  | "every public type is importable" | regex-scanned a file that turned out to be a **24-line re-export stub**; compared two near-empty sets and still passed after the type was deliberately deleted. |
+  | same gate, v2 | *used* each type rather than importing it — arity errors on generics, so it failed for a reason unrelated to the thing under test. |
+  | "all non-markdown files are idempotent" | ran from the wrong directory: **"checked 0 files, unstable: 0."** |
+  | `exerciseContract()` (shipped, public) | classified refusals by substring-matching their prose; a message rewrite made a suite of pure counterexamples return `{passed: 2, failed: 0}`. |
+  | three new regression tests | fixture placed where the code under test never looked; a class chain where every level exercised the same branch; an element that was never wired, so the assertion examined nothing. |
+
+  Three corollaries, each of which cost real time:
+
+  - **Assert on the artifact a consumer resolves**, not a convenient proxy —
+    `git ls-files` not `ls`; the built `.d.ts` not the source compiling.
+  - **Any check with a scope query needs a floor assertion**
+    (`expect(filesChecked).toBeGreaterThan(50)`). "Scope is a silent
+    parameter" — seen independently in tosijs-3d-ensemble, whose peer-range
+    check guarded one of three peers and said nothing about the other two.
+  - **Prefer `test.skipIf` to an early `return`.** A silent skip is the one
+    form of skip nobody notices.
+
+  And the inverse failure, which is just as disabling: **a gate that cannot go
+  green.** `prettier --check` on a file whose printer is not idempotent is
+  unsatisfiable — `--write` then `--check` still fails — so it reports "not
+  formatted" when the truth is "cannot be formatted", and whoever meets it
+  disables it. Verify a new gate goes **both** red and green before trusting
+  it. — seen in: tosijs (1.10.x), corroborated in tosijs-3d-ensemble
+
+- **Findings deserve the same standard as gates: verified by observation, not
+  by inspection.** A pre-release review reported that nothing executed tosijs's
+  live ` ```js ` doc fences. False — the doc runner emits an implicit
+  `example loads without error` per fence, which is why the test total exceeded
+  the ` ```test ` fence count. Proved in ninety seconds by injecting an
+  undefined call and watching both engines go red; acting on the finding would
+  have meant building a second lane duplicating the first. The finding came
+  from reading a source comment rather than running the thing. — seen in: tosijs
+
 - **Never judge a run by a truncated tail.** `| tail -n` shows the summary and hides the failure
   lines above it; a pipeline's `$?` is the LAST command's, so `cmd | head` reports head's exit code.
   Assert on the failure/error count, or read the whole output. Three haltija commits merged on a red
-  Playwright gate this way. — seen in: haltija
+  Playwright gate this way. Recurred in tosijs: gates and the commit were run as
+  one command, the test tail read as green, and a commit landed with eslint red.
+  — seen in: haltija, tosijs
 - Capture noisy runs once, query many times: `bun test 2>&1 | tee /tmp/test-results.txt`
   then grep for failures. — seen in: tjs-lang
 

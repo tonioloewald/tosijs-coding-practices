@@ -476,6 +476,28 @@ grep -rn 'onSelect:' src/docs/ demo/ src/*.ts
 Include `/*# */` doc comments — in a literate-programming setup that is where
 the examples live, and it is not type-checked, so nothing else will catch it.
 
+## Every release check ships with a recorded red run
+
+Adding checks is the standard response to a release incident, and it is right —
+but a check added without watching it fail is as likely to encode the mistake as
+to catch it. See [`testing.md`](testing.md) → *a check you have not watched fail
+is not a check*, which tabulates six that shipped vacuous in one week, and the
+three corollaries (assert on the artifact a consumer resolves; floor-assert any
+scope query; `skipIf` over early `return`).
+
+**Include the failing output in the commit that adds the gate.** Ninety seconds,
+and it is the difference between a gate and a comment that looks like one.
+
+**Extend the scratch-consumer lane from "install and import" to "install,
+import, and `tsc --declaration`."** A producer cannot test what only a consumer
+does. tosijs 1.10.0's smoke lane executed all seven published bundles and was
+green; the release still shipped a `withAttributes()` return type that made
+**downstream declaration emit impossible** — `tsc --noEmit` clean, `tsc
+--declaration` failing on all 34 migrated files in the adopting library, which
+would have shipped JS with no types. Found by the consumer, not by us. For any
+library whose public API includes a mixin or generic factory, that is the check.
+— seen in: tosijs (#38, reported by tosijs-ui)
+
 ## Tagging
 
 **Land the current release before starting the next.** If the current version's tag is not
