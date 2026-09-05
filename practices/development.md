@@ -102,6 +102,15 @@ once, so nobody's annoyance ever crosses the threshold that triggers a fix. Coun
 - **Agents: flag friction instead of politely absorbing it.** An agent that tolerates a slow
   loop or spammy output teaches it to stay — and the owner cannot see what only agents endure.
   Same speak-up norm as for stale docs (README §5).
+- **Before you streamline a chore, ask whether the chore should exist.** Tooling that makes a
+  chore cheap is an *instrument reading*: someone measured the chore accurately — and then
+  aimed the laziness one level too low. The cautionary endpoint (external, owner-witnessed):
+  Google's golden-test tooling showed you the mismatches and updated the goldens *with one
+  click* — an institution recognizing its tests were a chore and then optimizing the chore
+  instead of questioning the tests. The friction of a wrong-sign chore is often the *last
+  remaining signal* that the underlying thing is broken; tooling the friction away makes the
+  broken state permanent and comfortable. Streamline work only after checking its sign — a
+  one-click "accept the new reality" button is the echo reflex (testing.md) given a UI.
 
 — stated by the owner (decree, with corroborating incidents above); seen in: tosijs,
 tosijs-ui, the 2026-09 review-economics audit
