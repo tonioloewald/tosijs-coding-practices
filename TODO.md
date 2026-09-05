@@ -45,3 +45,28 @@ learned the hard way, the history stops being evidence, and the no-signoff carve
 safe. The invariant *is* the permission.
 
 — raised while writing back the `<tosi-slot>` parent-trap lesson from tosijs-3d
+
+## The navigation hub — scoreboard as front end (approved direction)
+
+The site plan, in the order it should happen (this is downstream of manta/ariosto — it must
+not schedule the pyramid):
+
+- [ ] **`tools/scoreboard.ts` first** — regenerate the README scoreboard table from live
+      registry/GitHub metadata (`npm view --prefer-online`, repo activity). Kills the
+      staleness chore this week for ~50 lines; no site required. The markdown table remains
+      the artifact — the tool writes it, humans stop having to remember it.
+- [ ] **Then the site**: a tosijs-ui self-hosted demo. Scoreboard rows become the hub —
+      cards linking each project's docs site, repo, npm page, open issues. The books it
+      vends are the practices + journal ("The Blind Polymath").
+- [ ] **Adopt the demo-site branch from day 0** (RFC #10) — never track a generated file on
+      `main`. This repo volunteered as first adopter:
+      https://github.com/tonioloewald/tosijs-coding-practices/issues/10 (greenfield proves
+      the config; tosijs-ui's migration proves the repoint — don't confuse the two).
+- [ ] **Settle deploy-branch history semantics before the first deploy** (foresight-rpg's
+      caveat applies to us verbatim): site HTML is disposable, vended book artifacts (ePubs)
+      are durable and need history or a separate durable home.
+
+**Design principle (Tonio):** *expose what we write, and write what we expose — set up the
+metadata correctly and nothing rots.* The markdown is the single source; the site is a pure
+view over it; anything factual (versions, dates, activity) is generated at build time, never
+hand-maintained. A second copy of a fact is where rot starts.
