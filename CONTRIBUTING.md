@@ -87,6 +87,18 @@ script, a test, a generated artifact) — and the grades above tell it which way
   never-seen-red checks). Only an observed result — the check seen red, the defect caught,
   the friction measurably gone — is the top claim, and it is the only one that justifies
   promotion.
+- **Category reputation is middle-rung evidence, even for consecrated practices** (owner).
+  TDD is supposed to improve quality; what it measurably does is reduce velocity — it *can*
+  improve quality, but that is not a given. TypeScript is supposed to reduce bugs; the
+  measured results are unconvincing. This corpus holds both directions locally: a full green
+  suite coexisted with 7/7 release blockers and an emitter stripping `new` from every class
+  (898 tests exercised `src/`, not the artifact), while the small tests that *assert a
+  specific promise* (peer floors, Node-resolvable imports, failing-first regressions) have
+  caught nearly every real defect; a typecheck stayed green while an `any` index signature
+  swallowed five lost methods, while `withAttributes()` took a consumer from 413 type errors
+  to 0. The unit of evaluation is the **specific mechanism in this ecosystem**, never the
+  category — which is why imports enter as hypotheses and why "everyone does it" promotes
+  nothing.
 
 ## Committing here: merge, never rebase
 
