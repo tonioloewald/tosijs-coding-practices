@@ -4,17 +4,48 @@ A type-safe JavaScript dialect: TypeScript-like source with **runtime validation
 **safety boundaries**, **monadic errors**, inline tests, and a **fuel-metered sandboxed VM**
 (AJS) for untrusted code. It transpiles to validated JS.
 
-## Why TJS exists: the gap neither lane covers
+## Why TJS exists: TypeScript does not describe JavaScript
 
-The case for TJS is usually stated as "runtime validation at boundaries". True,
-but the sharper argument comes from a measured corpus — one tosijs release week,
-where the evidence points somewhere more specific than "static types are
-insufficient".
+Stated first because it is the root, and the rest follows from it.
 
-**A wrong type declaration is invisible to BOTH lanes.** The suite exercises the
-runtime. `tsc` exercises the declaration. **Nothing compares them.** So a
-declaration that describes the opposite of the runtime is checked rigorously,
-passes, and every call site is verified against a lie:
+**A TypeScript signature is not a description of the function. It is a policy
+imposed on call sites**, written in the grammar of a description. In tosijs:
+
+```
+declared:  debounce(origFn: VoidFunc, minInterval = 250)
+actual:    debounce("not a fn", 10)  -> returns a function, no complaint
+           throttle(fn, null)        -> returns a function, no complaint
+```
+
+A JS function has no parameter types. It has behaviour under arbitrary input.
+"Accepts a function and a number" is therefore false *about the function*; the
+failure surfaces later and elsewhere, when the returned callable is invoked.
+
+The instructive contrast in the same codebase: `touch` **is** truthfully
+declared — because someone hand-wrote `if (invalid) throw`. So **a signature is
+true only where the programmer independently made it true at runtime.** That is
+the whole thesis: TJS makes the signature *be* the check, rather than a claim
+sitting beside one that may or may not exist.
+
+**Three ways the vocabulary fails to reach the language**, in rising severity:
+
+1. **Simple cases: it lines up promises.** Declaration is checked against
+   declaration. Nothing is checked against the program.
+2. **Complex cases: imperative requirements must be expressed in a declarative
+   algebra with no equivalent construct.** "Reads give a proxy, writes accept
+   the raw value" is a fact about a `set` trap; there is no way to say it.
+3. **It refuses a base reality of the language: a member can differ on the left
+   and right of an assignment.** JS has this natively (accessors, Proxies). TS
+   expresses it on a hand-written interface and then **declines it in mapped
+   types** — so `{ [K in keyof T]: … }` over arbitrary `T` cannot say it, and
+   widening to a union poisons every read. This is not a feature gap TS has yet
+   to reach; it is a refusal to model what the language does.
+
+### The consequence: a wrong declaration is invisible to BOTH lanes
+
+The suite exercises the runtime. `tsc` exercises the declaration. **Nothing
+compares them.** So a declaration describing the opposite of the runtime is
+checked rigorously, passes, and every call site is verified against a lie:
 
 | declared | actual |
 | --- | --- |
@@ -22,37 +53,40 @@ passes, and every call site is verified against a lie:
 | `ElementPart` excludes proxies | a bare proxy is a **live** bound text child, the most-used spelling |
 | `TosiProps` has no `tosiBinding` | present at runtime on both proxy kinds |
 
-Four such declarations shipped. None was detectable by type-checking, because
-type-checking cannot ask whether the type is *true* — only whether the code
-agrees with it. **Executable signatures close this by construction**, and that
-is the strongest argument for TJS in the evidence rather than in principle.
+Four shipped. None was detectable by type-checking, which cannot ask whether a
+type is *true* — only whether the code agrees with it. Measured alongside:
+**118 type assertions** (`as any`, `as unknown as`) in ~40k lines of one
+library's non-test source, including the public return type of its flagship
+API. Assertions are unchecked by construction; at least one of them was false in
+production for two releases.
 
-**The complement, stated fairly: static analysis found one thing execution never
-could.** `tsc --declaration` from a scratch consumer caught a mixin whose return
-type made downstream `.d.ts` emit impossible — 34 files in the adopting library
-would have shipped with no types. There is no runtime moment at which that
-manifests. **Use static analysis for shape at the seams (export surfaces,
-declaration emit); use execution for behaviour.** Neither is "the safety
-argument", and a process that treats one as such will keep being surprised.
+### Where static analysis IS authoritative, stated fairly
 
-**And a checker can be wrong about correct code.** Where a library decides
-things by asking live objects, some correct spellings are simply not
-representable:
+Types are a source of truth about **one** thing: themselves. `.d.ts` emit is the
+seam between packages, and there the type *is* the artifact. `tsc --declaration`
+from a scratch consumer caught a mixin whose return type made downstream emit
+impossible — 34 files that would have shipped without types, with no runtime
+moment at which it manifests.
 
-- a proxy whose read type differs from its write type — asymmetric `get`/`set`
-  works on a hand-written interface, but **mapped types have no such modifier**,
-  and widening the property to a union poisons every read;
-- an element-creator that dispatches attribute-vs-property on
-  `(el as any)[key] !== undefined` — the same source line writes an attribute
-  before `customElements.define` and a property after.
+**So: static analysis for the contract you publish; execution for the behaviour
+you wrote.** Neither is "the safety argument", and a process treating one as
+such will keep being surprised.
 
-**Operational rule for any repo in this ecosystem: when `tsc` and the runtime
-disagree, establish which is wrong before changing anything, and never rewrite
-working code to satisfy the checker.** A repo whose types are a lossy projection
-of a JS-first design should say so out loud — see tosijs's `CLAUDE.md`,
-*"TypeScript is autocomplete, not a source of truth"* — otherwise every future
-contributor, human or agent, will read a red squiggle as a defect and "fix" it.
-— seen in: tosijs (1.10.x); rule set by the owner
+### The operational rule
+
+**When `tsc` and the runtime disagree, establish which is wrong before changing
+anything, and never rewrite working code to satisfy the checker.** A repo whose
+types are a lossy projection of a JS-first design should say so out loud — see
+tosijs's `CLAUDE.md`, *"TypeScript is autocomplete, not a source of truth"* —
+otherwise every future contributor, human or agent, reads a red squiggle as a
+defect and "fixes" it.
+
+**And a caveat that keeps this honest:** code is truth about *what happens*, not
+automatically about *what was meant*. A fix in the same corpus did exactly what
+its author intended — fail closed — and permanently over-redacted an entire
+state root. The value of executable signatures is not that runtime beats
+compile-time; it is that **intent gets written somewhere it can be falsified.**
+— seen in: tosijs (1.10.x); framing set by the owner
 
 ## When to use TJS — and the reality check
 
