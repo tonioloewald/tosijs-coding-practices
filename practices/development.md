@@ -295,11 +295,12 @@ is tracked by issues filed on each.
   Then rebuild to regenerate canonically. The driver isn't stored in the repo, so without it
   every generated-file conflict stalls the rebase — and hand-resolving is pointless since the
   next build overwrites them. — seen in: tosijs-ui
-- **CONTRADICTION — is the output committed or gitignored? Check per repo.** Most repos commit
-  `dist/`+`docs/` (a release diff includes big regenerated bundles; don't be alarmed). But
-  editor2 gitignores both, so its GitHub Pages publish is a separate/manual `gh-pages` step —
-  committing to `main` does *not* update the site there. Confirm before assuming. — seen in:
-  tosijs, tosijs-ui vs. editor2
+- **Is the output committed or gitignored? Check per repo** (contradiction resolved
+  2026-09-06). Most repos commit `dist/`+`docs/` (a release diff includes big regenerated
+  bundles; don't be alarmed). tosijs-editor (né editor2) gitignores both and serves Pages
+  from the `master` root instead — canonical detail in
+  [deployment.md](deployment.md) (the "manual `gh-pages` step" formerly claimed here was
+  wrong). Confirm before assuming. — seen in: tosijs, tosijs-ui vs. tosijs-editor
 
 ## Publishing a library: externalize peers, emit types separately
 

@@ -38,10 +38,14 @@ SEO `index.html` per doc, emits sitemap/robots/`llms.txt`, and can build an ePub
 **Contradiction — do you commit `docs/`?** Most projects **commit** `docs/` (and `dist/`):
 it's the Pages web root served from `main`, so a push auto-redeploys, and `dist/` is the
 published package. Expect large regenerated diffs; commit them, don't revert. — seen in:
-tosijs, tosijs-ui, tosijs-3d, tosijs-product. **But editor2 gitignores `docs/` + `dist/`**,
-so its Pages publish is a separate manual `gh-pages` step and a commit to `main` does NOT
-update the site. **Rule of thumb:** check `.gitignore` before assuming a push redeploys —
-commit `docs/` unless the repo deliberately ignores build output. — seen in: editor2
+tosijs, tosijs-ui, tosijs-3d, tosijs-product. **But tosijs-editor (né editor2) gitignores
+`docs/` + `dist/` and serves Pages from the `master` ROOT** (demo HTML committed at top
+level) — so a push there DOES redeploy, just from a different tree. The claim previously
+recorded here (a manual `gh-pages` step; pushes don't update the site) was **wrong on both
+counts** — no such branch exists (verified against the repo, 2026-09-06). **Rule of
+thumb:** check `.gitignore` AND the Pages source
+(`gh api repos/<owner>/<repo>/pages -q .source`) before assuming what a push does to the
+site. — seen in: tosijs-editor
 
 ## Firebase
 
