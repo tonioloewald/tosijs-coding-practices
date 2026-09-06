@@ -227,6 +227,21 @@ That is the whole ceremony. **No DNS change** (a `*.dev` wildcard already resolv
   and is newer than the newest tracked source — otherwise the "fixed in src, not in dist"
   release ships again.
   — seen in: tjs-lang 0.13.7 → 0.13.8, still ungated at 0.13.10
+- **Classify a token by its CAPABILITY, not by whether it pattern-matches "credential".**
+  Some tokens are *designed to ship in front-end code* — a Mapbox `pk.` token sits in every
+  visitor's devtools by design, and flagging its visibility as a "leak" is category
+  paranoia, not threat modeling (GitHub push protection does exactly this). Grade by what
+  the token can *do*: a public-scope read token's entire threat model is **billing/quota
+  freeloading** (someone embeds it in their site; their traffic drains your tier until your
+  own demos break) — no data exposure, recoverable in minutes. The proportionate responses,
+  in order: a URL restriction (kills the common copy-paste-freeloader case, because *their
+  visitors' browsers* send the wrong Referer — measured caveat: it does nothing against
+  spoofed scripted traffic); knowing your billing config (free tier worst case = "maps stop
+  loading"; a card with auto-scale is real cost exposure). Rotation alone is meaningless
+  for a published-by-design token — the replacement republishes in the next build. Secret
+  handling belongs to genuinely secret tokens (`sk.`, API keys with write scopes) — those
+  ARE leaks when visible, at any distance. — seen in: tosijs-ui (Mapbox, years public,
+  zero observed abuse), the weekly sweep's standing rule
 - **An ignore rule protects a path, not a secret.** If a build copies files, the copy is not
   covered by the rule that names the original: a `static/manifest.webmanifest` gitignored
   *specifically because it carries a preview token* was copied by the doc build into a tracked
