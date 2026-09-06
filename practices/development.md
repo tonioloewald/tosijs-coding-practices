@@ -7,6 +7,18 @@ How to work in a project day-to-day.
 - **Read the project's `CLAUDE.md`/`AGENTS.md` first.** It records the non-obvious: build
   entry points, watch-mode caveats, environment quirks. This shared repo is the *default*;
   the project file is the *exception*.
+- **The returning-from-a-gap checkpoint (owner, 2026-09): if this repo's HEAD is more than
+  ~24h old, re-sync with the world before working.** Two checks, both cheap, both facts:
+  1. **Practices updates**: pull the shared practices checkout (`git -C
+     <practices-checkout> pull --no-rebase`) and skim
+     `git -C <practices-checkout> log --oneline --since=<HEAD date>` — disposition anything
+     touching how this project works (adopt / already compliant / diverge-and-record).
+  2. **Open issues on THIS repo**: `gh issue list --state open` — issues are the ecosystem's
+     cross-repo mail, and a >24h gap means unread mail: a consumer may have filed the exact
+     defect you're about to trip over, or the fix you're about to duplicate.
+  Rationale: the structured practices consult otherwise happens only at review/release time,
+  so a repo touched rarely can run weeks on stale rules. The trigger is deterministic (HEAD
+  age), fires exactly when re-sync matters, and costs nothing on active repos.
 - **There is ONE build/dev entry per repo — find it, don't reinvent it.** Almost every
   project funnels dev server + build + version stamping + doc generation through a single
   hand-written script; looking for a webpack/vite config or extra npm scripts wastes time.

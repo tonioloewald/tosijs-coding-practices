@@ -47,7 +47,11 @@ install** before treating it as a code defect — a stale `node_modules` has fak
 
 1. **Confirm you're in the target git repo** and the working tree is committed (the review
    diffs against a release tag; uncommitted work should be committed or stashed first so the
-   diff is meaningful).
+   diff is meaningful). **Then freshen the inputs** (the returning-from-a-gap checkpoint,
+   development.md): pull the shared practices checkout — a stale copy reviews with last
+   week's rules and last week's release-doctor — and run `gh issue list --state open` on
+   this repo: an open issue is review input (don't re-derive a finding a consumer already
+   filed; do connect findings to issues they duplicate or resolve).
 
 2. **Determine the base ref** (what to diff against — the last release):
    ```bash
