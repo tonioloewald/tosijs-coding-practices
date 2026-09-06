@@ -269,6 +269,65 @@ The discipline that actually works:
 
 ---
 
+## 12. A permissive API is "missing validation"
+
+**The prior.** A function that accepts a value it does nothing useful with has a bug: it should
+have rejected it. Typed languages make this reflexive — an un-narrowed parameter reads as an
+oversight.
+
+**Why the corpus holds it.** Decades of "parse, don't validate", and a TypeScript ecosystem
+where a widened type is usually laziness.
+
+**What it does here.** tosijs dispatches on *what a value is at the moment of the call* —
+`elementSet` branches on the key's shape, the value's type, the element's identity, its current
+state, its runtime class, and the component's declared defaults. Permissiveness is the design,
+not an omission. A pre-release review flagged `elements.div(new Date())` as "silently accepts
+garbage" and listed it as a regression; it was not a regression (the previous release accepted
+it too), and "garbage" was the wrong frame — the real defect underneath was that it renders
+**nothing, with no warning**, which is silent failure, a class this ecosystem already tracks.
+Same symptom, opposite prescription: the prior says *reject it*, the corpus says *make it work
+or say why it didn't*.
+
+**The tell.** You are about to narrow a type, or add an argument check, to make a call site
+fail. Ask first what the runtime *does* with that value, and whether the user's intent was
+obvious. If it was, the fix is to honour it or warn — not to forbid it.
+
+## 13. Conditional children are written `cond && child`
+
+**The prior.** `<div>{cond && <span/>}</div>` — the `&&` short-circuit is how you conditionally
+include a child, so falsy values must render as nothing.
+
+**Why the corpus holds it.** It is the single most common conditional idiom in JSX.
+
+**What it does here.** It is a React idiom and it imports a constraint that need not exist.
+tosijs uses ternaries with `null`/`undefined` as the nothing-signal, which leaves booleans free
+to render as text — the owner's expectation for `div(false)` is `<div>false</div>`, not an empty
+div. An agent (this one) asserted the `&&` form was "idiomatic" here and used it to argue
+*against* rendering booleans, which would have frozen a React constraint into an API that had no
+reason to carry it.
+
+**The tell.** You justified a design decision by an idiom you did not find in this codebase.
+Grep for it before treating it as a requirement.
+
+## Reviews carry these priors too — separate the finding from its framing
+
+The above were both caught inside one release: #13 from an agent's own reasoning, #12 from a
+**pre-release review report**. That matters because a review arrives with authority — it is
+adversarial, evidenced, and usually right, so its *rationale* gets adopted along with its
+verdict.
+
+Keep them apart. In the same report, the same lens produced:
+
+- a **correct, important** blocker — a type had collapsed to `any`, deleting handler-type
+  inference and breaking compiling consumer code;
+- and a **mis-framed** minor beside it — "silently accepts garbage", which assumed an API
+  *should* reject a value its design deliberately dispatches on.
+
+Accepting the first is right. Accepting the second's reasoning would push the library toward
+exhaustive argument validation it has deliberately never had. **A finding can be true while its
+rationale is foreign. Judge the finding on this stack's terms, and say so in the remediation
+when you take the fix but not the framing.** — seen in: tosijs 1.10.1; rule set by the owner
+
 ## A prior that was vindicated: "the pre-tag gate is over-cautious"
 
 Worth recording the other direction too, since this file is about calibration and not only
