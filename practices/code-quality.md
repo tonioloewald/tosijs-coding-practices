@@ -208,35 +208,15 @@ the mapping made the divergence unrepresentable — tosijs-3d#10)
 
 ## A small API surface is what makes future refactoring cheap
 
-The API surface is not just a usability concern — it is the **contract that
-pins your internals**. Everything a consumer can name, you must keep true
-forever; everything else you are free to rewrite, rename, delete, or move to
-another package. That relationship is asymmetric and compounding:
-
-- **Small, clean surface → refactoring stays cheap.** Missed abstractions,
-  duplicated subsystems, a module that should have been extracted years ago:
-  all of it is fixable in one release, because nobody's code depends on how
-  it was arranged. tosijs extracted its entire schematic renderer into a
-  separate package, then re-vendored it, with zero consumer impact — because
-  what shipped was `schematicSVG(map)`, not the shape of its internals.
-- **Drifted surface → the same cleanup is a breaking change.** Every extra
-  export, every incidentally-public helper, every field a consumer discovered
-  and started using is a load-bearing wall you didn't mean to build. The
-  refactor doesn't get harder because the code got worse; it gets harder
-  because the *promises* multiplied.
-
-So the discipline is preventative, not curative: **be reluctant at the
-export, generous inside.** Prefer one function that takes options over five
-near-duplicates; keep helpers module-private until a second real consumer
-appears; put convenience behind the thing it's convenient for rather than
-beside it; and when you must expose something provisional, say so where
-consumers will see it (tosijs's agent surface ships marked EXPERIMENTAL for
-exactly this reason).
-
-The corollary for size work: a size regression in a project with a tight API
-is a *scheduling* question, not a design one. You can always go and fix it.
-That is what a small surface buys — see
-[performance.md](performance.md#bundle-size).
+Everything a consumer can name you must keep true forever; everything else you are free to
+rewrite (tosijs extracted and re-vendored its entire schematic renderer with zero consumer
+impact — what shipped was `schematicSVG(map)`, not its internals). Every
+incidentally-public helper is a load-bearing wall you didn't mean to build: the refactor
+gets harder because the *promises* multiplied, not the code. So **be reluctant at the
+export, generous inside** — one function with options over five near-duplicates; helpers
+module-private until a second real consumer appears; provisional surface marked
+EXPERIMENTAL where consumers see it. Corollary: a size regression behind a tight API is a
+*scheduling* question, not a design one — see [performance.md](performance.md#bundle-size).
 
 ## Deprecations
 

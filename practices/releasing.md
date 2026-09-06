@@ -34,20 +34,18 @@ For where the built site goes (GitHub Pages / Firebase / Cloudflare), see
 > drafted in [publishing-via-oidc.md](./publishing-via-oidc.md). **Not yet implemented**;
 > `tosijs-ui` is the intended pilot.
 
-## Before a minor or major release: run the comprehensive review
+## Before cutting any tag: run the tiered review
 
-For any **minor or major** bump, run the nine-lens
-[comprehensive pre-release review](review.md#comprehensive-pre-release-review-minor--major)
-**first** — correctness, efficiency, DRYness, documentation accuracy, test coverage,
-developer experience, **ecosystem & abstraction health**, **practices self-review**, and
-**blast radius** — each as an independent pass over `git diff vLAST..HEAD`. Runnable:
+**The review triggers on the work, not the version letter** (review.md "The tiered review
+structure" — the nine-lens-on-every-minor rule is retired; it distorted version numbering).
+Tier 0 (`bun tools/release-doctor.ts`) before any model review; `tier: "always-on"` for any
+substantive diff during development; `tier: "pre-minor"` once per coherent body of work,
+before the tag — whatever letter the release ends up wearing. Runnable:
 [`/pre-release-review`](../tools/README.md).
 
-Unresolved correctness/security findings **block** the release. Route the rest by lens:
-`TODO.md` for lenses 1–6, a **GitHub issue on the upstream repo** (mirrored in `UPSTREAM.md`)
-for ecosystem findings, and the shared practices repo for self-review findings — never
-silently drop one. Patches get a lighter correctness + docs pass. Only start the flow below
-once that review is clean or its open findings are consciously deferred.
+Unresolved correctness/security findings **block** the release. Route the rest by lens
+(review.md's routing table) — never silently drop one. Only start the flow below once the
+review is clean or its open findings are consciously deferred.
 
 **Settle your incoming issues.** Before releasing, check what consumers have filed against you
 and act on it — a release is when that debt comes due:

@@ -56,7 +56,9 @@ entries ever retired — and found that the owner's own assertions entered as la
   and eventually gets skimmed instead of followed — the same failure as a noisy gate. Audits
   should retire or merge at least as much as they confirm, or say explicitly why not.
   Retirement is an edit like any other: append-only *history* is the safety net that makes
-  deletion of *current* text safe.
+  deletion of *current* text safe. **Triage order for retirement (owner): redundancy first,
+  then lack of brevity, then vagueness, then lack of demonstrated benefit, then low
+  benefit/cost.** Essays move to the journal rather than dying (the eviction path).
 
 ### The promotion ladder — intention does not equal result (owner, 2026-09)
 

@@ -439,7 +439,7 @@ ${JSON.stringify(survived, null, 2)}
 ${refuted.length ? `
 Findings a skeptic REFUTED (the first-order claim is false — do NOT report these as defects):
 ${JSON.stringify(refuted.map((f) => ({ title: f.title, lens: f.lens, why_refuted: f.verdict && f.verdict.reasoning })), null, 2)}
-Do not discard these. Feedback offered in good faith is valuable even when wrong: a careful reviewer believing a false thing is usually evidence that the truth is UNDISCOVERABLE. For each, ask "what would make a competent reader believe this?" — the answer is often a real docs / naming / surfacing gap. Surface any such second-order finding (usually minor) as a follow-up, phrased as the discoverability fix, not the refuted claim. If a refutation reveals no gap (the reviewer simply erred), drop it silently — judgement, not a quota.` : ''}
+Mine these briefly: a competent reviewer believing a false thing often means the truth is undiscoverable — surface that as a docs/naming follow-up (minor); if the refutation reveals no gap, drop it silently. Not a quota.` : ''}
 ${gaps ? `\nCompleteness gaps (major release):\n${JSON.stringify(gaps.gaps, null, 2)}` : ''}
 
 Produce a triaged report:

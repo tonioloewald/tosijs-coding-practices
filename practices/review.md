@@ -284,13 +284,14 @@ standard:
    revises or reverts accordingly: self-revision rides *inside* the existing batch rather
    than spawning a review cycle of its own.
 
-## Comprehensive pre-release review (minor & major)
+## The lens criteria in full
 
-Before any **minor or major** version bump, run a structured multi-lens review — not one
-blended pass. Blending dilutes every lens; a reviewer told to "check everything" checks
-nothing deeply. Run **lens 0 once** to establish what the project _is_, then the **nine lenses below as independent passes**, each scoped to the diff
-since the last release (`git diff vLAST..HEAD`) plus the code it touches (for a **major**,
-review whole affected subsystems, not just the diff).
+Tier selection and triggers live in "The tiered review structure" above (the old
+minor/major trigger is retired). This section defines each lens. Run them as **independent
+passes**, never one blended pass — blending dilutes every lens; a reviewer told to "check
+everything" checks nothing deeply. **Lens 0 once** per project, then the selected tier's
+lenses over the diff since the last release plus the code it touches (for a **major**,
+whole affected subsystems).
 
 **Security-subsystem escalation (applies to _minor_ bumps too).** When a release's diff
 touches a security-critical subsystem — a sandbox/VM, capability or tool boundary, RBAC,
@@ -518,16 +519,11 @@ Detail and evidence for the gates above:
   (The consumer-side counterpart is [`model-priors.md`](model-priors.md) #9: an honest caveat is
   worth nothing if a reader who distrusts the tool discards it — which is what happens when a
   component has been annoying lately, and is how a correct diagnosis gets read as noise.)
-- **Fixing an instrument invalidates the results you got with the broken one.** This is the
-  corollary of the rule above and it is the expensive half. When a diagnostic gains a signal it
-  previously lacked — a console that finally reports uncaught exceptions, a check that finally
-  measures contrast, a map that finally shows real wiring — every prior "that looked fine" was
-  reached with the broken version and is now unverified. Nothing new broke; you just stopped being
-  blind to it. So **budget for the backlog the fix uncovers, and re-run the checks that previously
-  passed** rather than treating the green history as evidence. The upside is the same size: an
-  improvement to a shared instrument propagates a wave of findings to every consumer at once — which
-  is lens 9's blast radius pointing the _good_ way, and the strongest argument for investing in
-  tools the whole stack looks through.
+- **Fixing an instrument invalidates prior greens** (cascade gate 6): every earlier "looked
+  fine" was reached with the broken version — budget for the uncovered backlog and re-run
+  previously-passing checks rather than treating green history as evidence. The upside is
+  symmetric: a shared-instrument improvement propagates findings to every consumer at once
+  (lens 9's blast radius pointing the good way).
 - **Done when:** the changed behavior has been **driven end-to-end** (see the next section),
   not just unit-tested — and driven in **more than one mode** if it supports more than one.
 
@@ -742,11 +738,9 @@ Detail:
   relative links resolve **in the packed artifact** rather than in the repo.
   — seen in: tosijs (`Migration.md`), tosijs-ui (1.7 dropped `<tosi-code>`'s pre-1.7 ACE
   props), tjs-lang (shipped an index with 29 of 43 links 404 inside the tarball)
-- **A deprecation alias is the wrong answer when the old name was a knob whose setting became
-  unconditional.** Keeping it working then means it silently does nothing — worse than
-  removing it, because it carries a compatibility promise it cannot keep. Make it an error
-  that names the replacement, and add a guard test that nothing keeps recommending it. See
-  [code-quality.md](code-quality.md#tombstones). — seen in: tjs-lang (nine mode directives)
+- **A deprecation alias for a knob that became unconditional silently does nothing** —
+  worse than removal. Canonical: [code-quality.md](code-quality.md#tombstones) (error naming
+  the replacement + guard test). — seen in: tjs-lang
 - The "point an agent at it and it works" test: `CLAUDE.md`/`AGENTS.md` current, gotchas
   written down, and `bun install` → `bun start` / `bun test` / `bun run build` succeed from a
   **fresh clone** (TLS certs, single lockfile).
@@ -1270,31 +1264,15 @@ followups. — seen in: tosijs-product (0.6.x)
 
 ## What to look for (stack-specific)
 
-- **Observant correctness:** are new state paths actually observed/bound, or did someone
-  reach for a manual re-render? Is `await updates()` used where a test asserts post-mutation?
-- **`content()` vs `render()`:** bindings belong in `content()` (runs once); `render()` is
-  for structural attribute-change updates only. Imperative DOM patching in `render()` or
-  conditional logic in `content()` produces stale/duplicated UI. — seen in: tosijs, tosijs-ui,
-  kith-email, tosijs-3d, tosijs-product
-- **`on<Event>` callback trap:** `elementCreator()`/`elementSet` treats ANY `on*`-prefixed
-  prop as an `addEventListener` target, so a callback prop named `onFoo` silently never
-  fires — no error. Flag it: use `handle<Event>` (component members) or non-`on` names
-  (`drive`, `whenDestroyed`); set a real function prop via the `apply(el){ el.onFoo = fn }`
-  escape hatch. — seen in: tosijs, tosijs-3d, tosijs-product
-- **Boxed vs. raw leaks:** proxies must not nest (proxy-on-proxy). Watch spreads of proxied
-  objects into state; the stack unwraps on set/get but new code can defeat it. `===` on a
-  BoxedScalar and `toDOM` callbacks getting raw values are common silent misbehaviors.
+The observant-model checklist (observant correctness, `content()` vs `render()`,
+`on<Event>` trap, boxed/raw leaks, `value`-never-an-attribute, light-vs-shadow) lives in
+**lens 1's cascade + detail above and canonically in
+[web-components.md](web-components.md)** — retired here as redundant (2026-09 D8). What is
+unique to this list:
+
 - **id-path sanitization:** reject id-path values containing `[`, `]`, `/`, or spaces —
   they break path parsing and corrupt bindings. Sanitize with
   `str.replace(/[\[\]\/\s]/g, '_')`. — seen in: kith-email
-- **id-path opportunities:** list code that rebuilds instead of using surgical updates.
-- **Component conventions:** `static preferredTagName` (survives minification); `value` is a
-  property, never an `initAttribute`; boolean attributes default false.
-- **Shadow vs. light DOM:** path bindings do NOT work inside shadow DOM, so apps default
-  components to LIGHT DOM (`role` in `initAttributes`) — contradicting the library's own
-  shadow-DOM default. Rule of thumb: shadow DOM only when you truly need CSS isolation
-  (e.g. rendering untrusted email HTML); otherwise light DOM. — seen in: kith-email,
-  tosijs-3d, tosijs-product
 - **TJS boundaries:** validation at public edges, not smeared through hot paths; throws
   converted to monadic errors where that's the module's contract.
 - **No accidental reformatting** of `.prettierignore`'d or unrelated files — notably

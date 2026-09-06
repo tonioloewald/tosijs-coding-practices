@@ -288,6 +288,5 @@ The VM is **capability-based (zero IO by default) and fuel-metered** — every a
 
 - Keep all Node/Bun APIs (fs, path, Bun.spawn) server-side; the browser bundle must be pure
   UI talking to the server via fetch + SSE, or `Bun.build`'s browser target breaks.
-- Set `idleTimeout: 255` on `Bun.serve` and flush the remaining SSE buffer when
-  `reader.read()` returns `done: true`, or long agent streams die at the 10s default and drop
-  the final turn.
+- `Bun.serve` idle-timeout + SSE-buffer flush for long agent streams: see
+  [performance.md](performance.md) (canonical, under lukko).
