@@ -491,7 +491,19 @@ and a muted gate is worse than no gate.
           const undeclared = new Map<string, string[]>()
           const dynOnly = new Map<string, string[]>()
           const seen = (spec: string, file: string, dynamic: boolean) => {
-            if (spec.startsWith('.') || spec.startsWith('/') || spec.startsWith('node:') || spec.startsWith('bun')) return
+            // relative, absolute, builtin — and URL specifiers, which are
+            // valid ESM in a browser and are never a package to declare. A
+            // scaffolder that EMITS example code containing
+            // `import … from "https://cdn.jsdelivr.net/npm/…"` was reported as
+            // depending on a package called `https:`.
+            if (
+              spec.startsWith('.') ||
+              spec.startsWith('/') ||
+              spec.startsWith('node:') ||
+              spec.startsWith('bun') ||
+              /^[a-z][a-z0-9+.-]*:/i.test(spec)
+            )
+              return
             const p = pkgOf(spec)
             if (builtin.has(p) || declared.has(p)) return
             const map = dynamic ? dynOnly : undeclared
@@ -505,11 +517,28 @@ and a muted gate is worse than no gate.
             const src = readFileSync(abs, 'utf8')
               .replace(/\/\*[\s\S]*?\*\//g, '')
               .replace(/^[ \t]*\/\/.*$/gm, '')
-            for (const m of src.matchAll(/(?:^|[^\w$.])(?:import|export)\s*(?:[\w${},*\s]+from\s*)?['"]([^'"\n]+)['"]/g))
+            /*
+             * THE PRECEDING CHARACTER MUST NOT BE A QUOTE OR `@`.
+             *
+             * Without that, this matched the word `import` INSIDE A STRING,
+             * took the string's own closing quote as the specifier's opening
+             * quote, and captured to the next one. Real example from a
+             * shipped bundle:
+             *
+             *   if(i==="@import")return`@import url('${r}');`
+             *
+             * reported as an undeclared package named  )return`@import url(
+             * — so every CSS-in-JS library on earth fails this check, which
+             * is a FAIL on correct code in a Tier 0 gate that is supposed to
+             * be mechanical and trustworthy. A regex cannot distinguish code
+             * from string contents; excluding a quote/`@` before the keyword
+             * is the cheap 95% of the difference.
+             */
+            for (const m of src.matchAll(/(?:^|[^\w$.'"`@])(?:import|export)\s*(?:[\w${},*\s]+from\s*)?['"]([^'"\n]+)['"]/g))
               seen(m[1], f, false)
-            for (const m of src.matchAll(/(?:^|[^\w$.])require\s*\(\s*['"]([^'"\n]+)['"]\s*\)/g))
+            for (const m of src.matchAll(/(?:^|[^\w$.'"`@])require\s*\(\s*['"]([^'"\n]+)['"]\s*\)/g))
               seen(m[1], f, false)
-            for (const m of src.matchAll(/(?:^|[^\w$.])import\s*\(\s*['"]([^'"\n]+)['"]/g))
+            for (const m of src.matchAll(/(?:^|[^\w$.'"`@])import\s*\(\s*['"]([^'"\n]+)['"]/g))
               seen(m[1], f, true)
           }
           for (const k of dynOnly.keys()) if (undeclared.has(k)) dynOnly.delete(k)
