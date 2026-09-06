@@ -126,11 +126,14 @@ would swallow an intermediate edit.** Append only.
 
 ## Style
 
-- **Guidance is pithy; evidence lives in linked files** (owner, 2026-09). The rule or the
-  question goes in the doc; the incident that earned it goes in a journal entry, review
-  report, or measurement file, linked. A pointed question at the decision point beats a
-  paragraph of abstract guidance. **Tool-facing docs (SKILL.md, lens prompts) pay their
-  length on every run** — hold them to the tightest bar.
+- **Pithy beats abstract, and brevity is a virtue in itself** (owner, 2026-09). Prefer the
+  pointed question or one-line rule at the decision point over a paragraph of principle —
+  the question transmits where prose gets nodded past (measured: "writ large or fix what
+  failed?" worked; the guidance it condensed didn't). **War stories and evidence live in
+  journal entries, review reports, or measurement files — linked, never inline in
+  frequently-consulted documents.** Tool-facing docs (SKILL.md, lens prompts) pay their
+  length on every run; hold them tightest. Compressing an entry to this form IS retirement
+  (triage rule 2, lack of brevity) — an entry can be retired *into* a link and a question.
 
 - Terse. Bullets over paragraphs. Code fences for commands and snippets.
 - Second person, imperative. "Run `bun test`," not "one can run `bun test`."
