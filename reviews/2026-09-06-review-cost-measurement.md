@@ -34,6 +34,17 @@ scoped verification). But that is the term the owner does not feel.
    incomplete-fix / blocker-cycle class. This is where the hours are, and it is already
    the AAR machinery's declared target.
 
+## Live confirmation, same day (2026-09-06 evening)
+
+A tosijs agent cleared a blocker and requested Tier 0 + cut. Asked by the owner *"did you
+solve the blocker problem writ large or simply fix what failed?"*, it answered: *"I just
+fixed what failed. I didn't apply the class-level solution I've thought of."* Three
+readings, all data for prediction 2: (a) the appeasement-mode diagnosis confirmed in the
+wild hours after being recorded; (b) the failure is **transmission, not ideation** — the
+class solution existed unprompted; (c) the intervention is one question and it worked
+immediately, so it is now wired into the skill's remediation step (the cheapest possible
+fix — grade at the revisit whether the wired question fires without the owner present).
+
 ## Questions for the batch (not answers)
 
 - Would actually running Tier 1 always-on during development turn round-1 BLOCK from

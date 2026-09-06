@@ -29,9 +29,16 @@ independently (`releasing.md`).
 - **Before cutting any tag** — `tier: "pre-minor"`, `depth: "full"`. Once per coherent body of
   work, whatever the bump turns out to be. A patch is not exempt: 0.6.5 was a patch that
   shipped a broken tarball.
-- **After remediating a BLOCK** — re-run scoped to what each blocker named, which defaults to
-  correctness + blast-radius **over the remediation diff only**. Re-reading the whole span is
-  where review waves come from. A blocker whose fix is mechanical needs nothing beyond Tier 0.
+- **After remediating a BLOCK** — before ANY re-run, answer one question out loud: **"did
+  you solve the blocker problem writ large, or just fix what failed?"** Live case
+  (tosijs, 2026-09-06): an agent declared a blocker cleared and was ready to cut; asked
+  this, it answered "I just fixed what failed — I didn't apply the class-level solution
+  I've thought of." The class solution existed and only the question surfaced it. Apply the
+  class fix now, or record the deferral explicitly (what the class solution is, why later,
+  where it's tracked) — releasing.md "Say what you are NOT fixing." Then re-run scoped to
+  what each blocker named, which defaults to correctness + blast-radius **over the
+  remediation diff only**. Re-reading the whole span is where review waves come from. A
+  blocker whose fix is mechanical needs nothing beyond Tier 0.
 - Whenever the user asks to "review before release", "do the release review", "pre-release
   check", etc.
 
