@@ -183,6 +183,22 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   over what (default: correctness + blast-radius over the remediation diff only). A blocker
   whose fix is mechanical (typo, missing entry) needs no re-review beyond Tier 0; say so
   explicitly, so the cheap case stays cheap.
+- **Respond to a blocker in development mode, not appeasement mode** (owner, 2026-09,
+  diagnosing the measured wave record). A blocker is a **bug report entering the normal
+  loop, not an exam question** — "focused on fixing the blocker" instead of writing good
+  code is what produced the incomplete-fix waves, and the record shows the mode's
+  signatures: fixes whose shape mirrors the finding's *wording* (the redaction saga patched
+  four cited addresses across four rounds; the class fix came at round 7), and tests written
+  to demonstrate compliance rather than to falsify (every incomplete fix shipped a test that
+  could not fail). Remediation is ordinary development: **reproduce first** (a failing-first
+  test can fail by construction), **ask the class question at fix time** — "when N findings
+  share one precondition, the finding IS the precondition" is cheapest *before* the fix is
+  written, not at the quarterly — **fix at the propagating layer**, run the standard gates.
+  Checkable smell in the diff: a fix shaped like the finding's sentence is appeasement; a
+  fix that looks like normal work is development. (This is why remediation re-reviews keep
+  finding blockers: they compensate for work done outside the normal loop. Fix the mode and
+  the re-review default can lighten — see the clearance-evidence question queued in
+  `reviews/2026-09-06-review-cost-measurement.md`.)
 
 The section below defines the lens criteria in full; run them per the tiers above. The old
 "all nine on every minor" trigger is retired — reviews trigger on work, not letters.
