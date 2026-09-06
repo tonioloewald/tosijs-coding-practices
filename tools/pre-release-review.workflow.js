@@ -335,6 +335,8 @@ Scope: run \`${diffCmd}\` and \`git diff --stat ${base}...HEAD\` to see everythi
 Review ONLY through the ${lens.title} lens:
 ${lens.checks}
 
+REVIEW THE CODE AS WHAT IT IS — not as a deficient version of the mainstream thing it resembles. tosijs is NOT a deficient React (observant, not reactive: static-by-default DOM, pin-point updates, no re-render, no diff); tjs is NOT a deficient TypeScript. The stack's divergences from mainstream convention are DELIBERATE — they are the product — and a finding whose remedy is "make it more like React / TypeScript / the usual convention" is presumptively an imported prior, not a defect. To report such a finding you must ground it in a CONCRETE FAILURE SCENARIO in this stack or a documented principle of this stack (practices/observant-model.md, practices/model-priors.md, the project's own docs) — "this differs from what <mainstream tool> does" is not a failure scenario. (A deliberate divergence is not self-justifying either: if it causes a MEASURED problem here, report that on the measurement.)
+
 Report concrete, ranked findings. Each finding needs a real failure scenario (or, for non-correctness lenses, the concrete cost/risk) and an actionable recommendation. Prefer a few high-signal findings over an exhaustive dump; if the diff is clean on this lens, return an empty findings array. Severity: blocker (must fix before release) / major / minor / nit. BLOCKER IS A STATUS, NOT A SEVERITY: it means only "the release waits for this" — a typo'd name in docs can be a blocker without being poor work. Report blockers without moral weight; do not frame them as failures of whoever wrote the code. For each blocker, ALSO state its RE-REVIEW SCOPE: which lens(es) must re-examine what after the fix — default "correctness + blast-radius over the remediation diff only"; for mechanical fixes (typo, missing entry) say "Tier 0 only" so the cheap case stays cheap. If you are not confident in a severity label — especially "this minor might really be a blocker" — set severityUncertain: true so it gets adversarially verified regardless of the label.`
 
 const verifyPrompt = (f, lens) =>
@@ -347,7 +349,9 @@ File: ${f.file}${f.line ? ':' + f.line : ''}
 Claimed failure/cost: ${f.failureScenario}
 Claimed severity: ${f.severity}
 
-Return: confirmed (real, reproducible as described), plausible (likely real but you couldn't fully confirm), or refuted (not a real issue, or already handled). Set adjustedSeverity only if the claimed severity is clearly wrong.`
+Return: confirmed (real, reproducible as described), plausible (likely real but you couldn't fully confirm), or refuted (not a real issue, or already handled). Set adjustedSeverity only if the claimed severity is clearly wrong.
+
+REFUTE any finding whose only support is conformance to mainstream prior art (React/TypeScript/convention) rather than a concrete failure in THIS stack — this stack's divergences are deliberate (practices/observant-model.md, practices/model-priors.md), and the review channel must not re-import the patterns the design rejects. A finding grounded in a measured problem stands regardless of whether the code is conventional.`
 
 // ---- phase 1+2: review each lens, verify its findings as they land ----------
 phase('Review')

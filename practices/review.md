@@ -1275,6 +1275,26 @@ followups. — seen in: tosijs-product (0.6.x)
 
 ## Review posture
 
+- **Review the code as what it IS — not as a deficient version of the mainstream thing it
+  resembles** (owner, from a live review). tosijs is not a deficient React; tjs is not a
+  deficient TypeScript. This stack exists to fix problems produced by mainstream
+  antipatterns that went unchallenged — its divergences are the *product*, not deviations
+  awaiting correction, and **the review channel is a re-entry vector for exactly the prior
+  art the stack rejects**: a finding that says "should re-render," "needs a virtual-DOM
+  diff," "should behave like `tsc` here" carries a reviewer's authority while importing the
+  convention the design deliberately refused. The discipline, cascade form:
+  - A finding whose remedy is "make it more like React / TypeScript / the mainstream
+    convention" is **presumptively an imported prior, not a defect**. To survive, it must
+    be grounded in a **concrete failure scenario in this stack** or a **documented principle
+    of this stack** (`observant-model.md`, `tjs-lang.md`, the project's own docs) — never in
+    conformance to external convention. "This differs from what React does" is not a
+    failure scenario.
+  - The burden points the other way too, honestly: a deliberate divergence is not
+    self-justifying. If a divergence causes a *measured* problem here, that finding stands
+    on the measurement — what it may not stand on is the divergence itself.
+  - Verifiers: refute findings whose only support is prior-art conformance. That is the
+    review-side twin of `model-priors.md` (which guards the writing side); this guards the
+    judging side.
 - Report faithfully. If tests fail, say so with output. Don't claim "done and verified"
   without having driven it.
 - Findings should be actionable and ranked by severity. A finding without a concrete
