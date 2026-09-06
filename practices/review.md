@@ -195,7 +195,13 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   share one precondition, the finding IS the precondition" is cheapest *before* the fix is
   written, not at the quarterly — **fix at the propagating layer**, run the standard gates.
   Checkable smell in the diff: a fix shaped like the finding's sentence is appeasement; a
-  fix that looks like normal work is development. (This is why remediation re-reviews keep
+  fix that looks like normal work is development. The response ladder has a third rung
+  above the class: **is the blocker evidence against a design decision?** The instance-fix
+  does the thing in front of you; the class-fix closes the category; the design response
+  asks what commitment made the category possible — and the record's best outcome came from
+  there: the redaction series ended not with the class guard (round 7) but with
+  expose-nothing-by-default (a design change that made four patched leaks *unreachable*).
+  Repeated blockers in one area are a review of the design, not of the fixes. (This is why remediation re-reviews keep
   finding blockers: they compensate for work done outside the normal loop. Fix the mode and
   the re-review default can lighten — see the clearance-evidence question queued in
   `reviews/2026-09-06-review-cost-measurement.md`.)
