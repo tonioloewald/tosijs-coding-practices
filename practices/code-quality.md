@@ -4,7 +4,7 @@
 
 - **Run `bun run format` before committing.** Across the stack this is `eslint --fix`
   then `prettier --write` (some projects scope eslint to `src demo`). One command, in that
-  order. — seen in: tosijs, tosijs-ui, tosijs-product, tjs-lang, editor2
+  order. — seen in: tosijs, tosijs-ui, tosijs-product, tjs-lang, tosijs-editor
 - **Prettier house style:** single quotes, **no semicolons**, 2-space indent, ES5 trailing
   commas, ~80 col. Prettier is deliberately **pinned to v2** in most repos — don't "upgrade"
   it; v3 reflows the whole tree. — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product,
@@ -13,10 +13,10 @@
   `argsIgnorePattern: '^_'`); otherwise lint fails. — seen in: tosijs, tosijs-ui,
   tosijs-product, tjs-lang, tosijs-3d
 - **Match the file, not a global rule.** Some repos have **no committed eslint/prettier
-  config** (react-tosijs is 2-space, *double*-quoted, *with* semicolons; editor2's `format`
+  config** (react-tosijs is 2-space, *double*-quoted, *with* semicolons; tosijs-editor's `format`
   script references eslint/prettier that aren't even devDependencies and may fail on a clean
   install). If there's no config file, copy the surrounding code's style — don't impose the
-  single-quote/no-semi default. — seen in: react-tosijs, editor2
+  single-quote/no-semi default. — seen in: react-tosijs, tosijs-editor
 - Pre-existing lint errors in unrelated files are expected — don't let them block your
   commit, and don't fix-and-reformat files you aren't otherwise touching.
 - Respect `.prettierignore`. Some files are hand-laid-out on purpose (e.g. tosijs
@@ -65,7 +65,7 @@
 - **`tsc` is the type gate, not `bun build`.** `bun build` does **not** type-check or emit
   `.d.ts`. Wire `tsc -p tsconfig.build.json --emitDeclarationOnly` (or `tsc --noEmit`) into
   the build and run it directly while developing; a type error must fail the build. — seen
-  in: haltija, editor2, react-tosijs, tosijs-schema
+  in: haltija, tosijs-editor, react-tosijs, tosijs-schema
 - **`any` is permitted where it earns its place** (the shared ESLint config sets
   `no-explicit-any: 0`) — but it's a smell, not a default. — seen in: tosijs, tosijs-ui,
   tosijs-product, tjs-lang
@@ -84,7 +84,7 @@
   the package. Never hand-edit them or revert their (large) diffs. Bump the version in
   `package.json` only; the prebuild stamps `version.ts`. Run `bun run build` before
   committing so committed generated files match source. — seen in: tosijs, tosijs-ui,
-  tosijs-3d, react-tosijs, editor2, haltija
+  tosijs-3d, react-tosijs, tosijs-editor, haltija
 - **Enforce it with a "docs-drift" check:** rerun the generator in CI (or locally) and fail
   via `git diff --exit-code` on the generated set. Cheap way to guarantee committed
   artifacts stay in sync with their source/schema. — seen in: haltija
@@ -162,7 +162,7 @@ philosophy says static-by-default and the measurement says whether reality agree
 - **Open the main module file with a `/*# ... */` markdown doc-comment block** (usage,
   how-it-works, commands). It feeds generated docs — keep it in sync when the public API
   changes. Only fenced blocks tagged `js`/`html`/`css`/`test` become live examples; use bare
-  ``` for non-runnable snippets. — seen in: editor2, tosijs, tosijs-ui, tosijs-3d
+  ``` for non-runnable snippets. — seen in: tosijs-editor, tosijs, tosijs-ui, tosijs-3d
 - **Don't ship a package name that near-collides with a sibling — and if one slips out,
   rename before the first external consumer, because that window never reopens.**
   `tosijs-schematic` vs `tosijs-schema` read as related-but-distinct to their author and

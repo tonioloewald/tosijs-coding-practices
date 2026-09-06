@@ -30,7 +30,7 @@ ecosystem:
 - Confirm the **actual tag name** from the `elementCreator({ tag })` call before writing markup
   — class name, file name, package name, and tag frequently diverge.
 
-— seen in: tosijs, tosijs-ui, tosijs-product, editor2, lukko
+— seen in: tosijs, tosijs-ui, tosijs-product, tosijs-editor, lukko
 
 ## Shipping a component as a blueprint AND a registered element
 
@@ -223,7 +223,7 @@ determinism gap is the part to design around, not the old blanket rule.
   `undefined` when `content()` wires it. Use arrow properties (not methods) so `this` survives
   being passed as a callback.
 
-— seen in: tosijs-ui, editor2, tosijs (the 1.7.6–1.7.8 parts saga)
+— seen in: tosijs-ui, tosijs-editor, tosijs (the 1.7.6–1.7.8 parts saga)
 
 ## Other conventions & footguns
 

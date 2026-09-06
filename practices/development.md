@@ -24,18 +24,19 @@ How to work in a project day-to-day.
   hand-written script; looking for a webpack/vite config or extra npm scripts wastes time.
   Learn the one script and edit *it*.
   - `bin/site.ts` (thin wrapper over `tosijs-ui/site` `buildSite`/`devServer`, config in a
-    `*-site.config.ts` via `defineSiteConfig`) — tosijs, tosijs-ui, tosijs-3d, tosijs-product.
+    `*-site.config.ts` via `defineSiteConfig`) — tosijs, tosijs-ui, tosijs-3d, tosijs-product,
+    tosijs-editor.
   - A bespoke `dev.ts`/`serve.ts`/`build.ts` (prebuild → `Bun.build` → watch → serve) —
-    react-tosijs, editor2, lukko, loewald-dot-com.
+    react-tosijs, lukko, loewald-dot-com.
   - `bun run make` — tjs-lang (see project note on why it isn't named `build`).
-  — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, react-tosijs, editor2, lukko, tjs-lang
+  — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, react-tosijs, tosijs-editor, lukko, tjs-lang
 
 ## Bun is the toolchain
 
 - **Use Bun for everything: `bun install`, `bun <file>`, `bun test`, `bun run build`.** Never
   reach for node/npm/vite/jest — the tsconfigs assume bundler mode (`moduleResolution: bundler`,
   `allowImportingTsExtensions`, explicit `.js`/`.ts` extensions in imports), and node tooling
-  fights it. — seen in: tosijs-schema, editor2, kith-email, lukko, and the rest
+  fights it. — seen in: tosijs-schema, tosijs-editor, kith-email, lukko, and the rest
 - **Never add a `build` script to `package.json` in a Bun project.** `bun build` is a builtin
   (the bundler), so a `build` script makes `bun build` and `bun run build` do different things —
   a silent footgun. Name the full-build task something else (`make`). — seen in: tjs-lang
@@ -66,9 +67,9 @@ How to work in a project day-to-day.
   (`bun run tls` / `bun tls`, or `tosijs-dev-certs`). Generation is manual and needs sudo
   (`mkcert -install`) — the server won't auto-generate and exits telling you to run it. If the
   server won't start, check certs before anything else. — seen in: tosijs, tosijs-ui,
-  loewald-dot-com, editor2
+  loewald-dot-com, tosijs-editor
 - **Ports are fixed and differ per project** (tosijs 8018, tosijs-ui 8787, tosijs-product 8788,
-  react-tosijs 8016, editor2 8789, loewald 8020). To run two ecosystem dev servers at once,
+  react-tosijs 8016, tosijs-editor 8789, loewald 8020). To run two ecosystem dev servers at once,
   configure a distinct port — tosijs-product deliberately pins 8788 to dodge tosijs-ui's 8787.
   — seen in: tosijs-product, tosijs-ui
 - **Restart the dev server after editing the server script itself** (`serve.ts`/`dev.ts`), even
@@ -275,7 +276,7 @@ A missing `llms.txt` makes every downstream agent re-derive the project from sou
 missing changelog breaks version-naming in issue closes. Neither is optional because a repo
 is private — private repos have agent consumers too. — raised by the repo owner 2026-07-21;
 at that point 8 of 14 linked projects shipped both, and the sets were identical — the gap
-list (tosijs-schema — fixed at 1.5.0, editor2, lukko, loewald-dot-com, kith-email, static-assets, ariosto)
+list (tosijs-schema — fixed at 1.5.0, tosijs-editor, lukko, loewald-dot-com, kith-email, static-assets, ariosto)
 is tracked by issues filed on each.
 
 ## Generated files are committed — build before you commit
@@ -287,7 +288,7 @@ is tracked by issues filed on each.
 - **`src/version.ts` is generated from `package.json`, never source.** The prebuild stamps it
   and `index.ts` re-exports it; bump the version in `package.json` only. Hand edits are
   overwritten. Same idea syncs `tauri.conf.json` in Tauri apps. — seen in: tosijs, tosijs-ui,
-  react-tosijs, editor2, haltija, lukko
+  react-tosijs, tosijs-editor, haltija, lukko
 - **For generated-file merge/rebase conflicts, set the merge=ours driver once per clone:**
   ```bash
   git config merge.ours.driver true   # .gitattributes marks generated files merge=ours
@@ -295,24 +296,24 @@ is tracked by issues filed on each.
   Then rebuild to regenerate canonically. The driver isn't stored in the repo, so without it
   every generated-file conflict stalls the rebase — and hand-resolving is pointless since the
   next build overwrites them. — seen in: tosijs-ui
-- **Is the output committed or gitignored? Check per repo** (contradiction resolved
-  2026-09-06). Most repos commit `dist/`+`docs/` (a release diff includes big regenerated
-  bundles; don't be alarmed). tosijs-editor (né editor2) gitignores both and serves Pages
-  from the `master` root instead — canonical detail in
-  [deployment.md](deployment.md) (the "manual `gh-pages` step" formerly claimed here was
-  wrong). Confirm before assuming. — seen in: tosijs, tosijs-ui vs. tosijs-editor
+- **Is the output committed or gitignored? Check per repo.** Most repos commit
+  `dist/`+`docs/` (a release diff includes big regenerated bundles; don't be alarmed).
+  `docs/` must be committed wherever Pages serves it. tosijs-editor gitignored both and
+  served Pages from the `master` root until it adopted `tosijs-ui/site` (2026-09-06); it now
+  commits `docs/` like everyone else and still gitignores `dist/` (unpublished package).
+  Canonical detail in [deployment.md](deployment.md). — seen in: tosijs, tosijs-ui, tosijs-editor
 
 ## Publishing a library: externalize peers, emit types separately
 
 - **Wire sibling ecosystem deps as `file:` links locally, but declare them as
   `peerDependencies`** (mirror in `devDependencies` for local dev). Peers stop consumers from
   shipping duplicate framework copies; `file:` links let you iterate against unreleased upstream
-  locally. — seen in: tosijs-product, editor2, react-tosijs
+  locally. — seen in: tosijs-product, tosijs-editor, react-tosijs
 - **Build the shipped lib with `Bun.build` marking peers external, and emit `.d.ts` separately**
   via `tsc --declaration --emitDeclarationOnly` (then flatten types out of `dist/src/` if tsc
   nested them). Ship dual format: ESM with peers external + a self-contained IIFE for
   `<script>`/CDN. Full release runbooks live in [releasing.md](./releasing.md). — seen in:
-  react-tosijs, editor2, tosijs-product, tosijs-ui
+  react-tosijs, tosijs-editor, tosijs-product, tosijs-ui
 
 ## Ecosystem gotchas
 
@@ -472,7 +473,7 @@ _(dev-loop quirks that haven't earned a cross-project rule yet)_
   class.
 - **kith-email** — never build tosijs id-path values containing `[`, `]`, `/`, or spaces;
   sanitize with `str.replace(/[\[\]\/\s]/g, '_')` or you corrupt path parsing and bindings.
-- **editor2** — `bun run format` references eslint/prettier that aren't declared as devDeps and
+- **tosijs-editor** — `bun run format` references eslint/prettier that aren't declared as devDeps and
   have no config file; a fresh clone hits "command not found" — invoke via `bunx` or install
   first.
 - **tosijs-schema** — generate user-facing docs from executable code (`bun examples.ts >

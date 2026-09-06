@@ -18,7 +18,7 @@ for the version-stamp + npm-publish flow. — seen in: tosijs, tosijs-ui, tosijs
 
 The default for OSS libraries and doc-sites. The tosijs-ui `buildSite` prerenders one
 SEO `index.html` per doc, emits sitemap/robots/`llms.txt`, and can build an ePub.
-— seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, react-tosijs, editor2
+— seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, react-tosijs, tosijs-editor
 
 - **Serve from `main` branch `/docs`, NOT root.** `buildSite` emits root-absolute asset
   paths and writes `CNAME` + `.nojekyll` into `docs/`; serving from `/` 404s *every*
@@ -27,7 +27,7 @@ SEO `index.html` per doc, emits sitemap/robots/`llms.txt`, and can build an ePub
 - **`docs/` is generated output — never hand-edit it or put source `.md` there.**
   `buildSite` runs `rm -rf docs/` first, so anything you author in `docs/` is silently
   deleted with no error. Put source doc pages in `src/docs/*.md` and per-component docs in
-  inline `/*# ... */` comments. — seen in: tosijs-product, tosijs-3d, tosijs-ui, react-tosijs, editor2
+  inline `/*# ... */` comments. — seen in: tosijs-product, tosijs-3d, tosijs-ui, react-tosijs, tosijs-editor
 - **Verify no `docPaths` entry overlaps `outputDir` (`docs/`) before building.** `buildSite`
   deletes `outputDir` first but does NOT validate overlap — an overlapping source path is
   destroyed and the build "succeeds" producing an empty site. — seen in: tosijs-product
@@ -38,14 +38,19 @@ SEO `index.html` per doc, emits sitemap/robots/`llms.txt`, and can build an ePub
 **Contradiction — do you commit `docs/`?** Most projects **commit** `docs/` (and `dist/`):
 it's the Pages web root served from `main`, so a push auto-redeploys, and `dist/` is the
 published package. Expect large regenerated diffs; commit them, don't revert. — seen in:
-tosijs, tosijs-ui, tosijs-3d, tosijs-product. **But tosijs-editor (né editor2) gitignores
-`docs/` + `dist/` and serves Pages from the `master` ROOT** (demo HTML committed at top
-level) — so a push there DOES redeploy, just from a different tree. The claim previously
-recorded here (a manual `gh-pages` step; pushes don't update the site) was **wrong on both
-counts** — no such branch exists (verified against the repo, 2026-09-06). **Rule of
-thumb:** check `.gitignore` AND the Pages source
-(`gh api repos/<owner>/<repo>/pages -q .source`) before assuming what a push does to the
-site. — seen in: tosijs-editor
+tosijs, tosijs-ui, tosijs-3d, tosijs-product, tosijs-editor. **Rule of thumb:** check
+`.gitignore` AND the Pages source (`gh api repos/<owner>/<repo>/pages -q .source`) before
+assuming what a push does to the site — tosijs-editor served from the `master` ROOT with the
+demo committed at top level until it adopted `tosijs-ui/site` (2026-09-06), so deleting the
+top-level demo silently took the site down. — seen in: tosijs-editor
+
+- **After changing the Pages source path, request a build — the first deploy can be
+  partial.** Switching `tosijs-editor` from root to `/docs` reported `status: built` against
+  the right commit while serving only `index.html` and `llms.txt`; every sibling asset
+  (`iife.js`, `doc-system.css`, the per-doc pages) 404'd, which reads like a broken build
+  rather than a stale deploy. All the files were present on the branch. One explicit
+  `gh api -X POST repos/<owner>/<repo>/pages/builds` fixed it. Verify a few ASSETS after any
+  source change, not just the home page. — seen in: tosijs-editor
 
 ## Firebase
 

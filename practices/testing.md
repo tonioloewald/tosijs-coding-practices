@@ -3,7 +3,7 @@
 Default runner: **`bun test`**. Test files: colocated `*.test.ts` (or `*.test.tjs`) next to
 their source in `src/`. Configure via `bunfig.toml`. This is the baseline across the whole
 ecosystem — every project that has a suite uses it.
-— seen in: tosijs, tosijs-ui, tosijs-product, tosijs-3d, tosijs-schema, kith-email, lukko, editor2, tjs-lang, loewald-dot-com, haltija
+— seen in: tosijs, tosijs-ui, tosijs-product, tosijs-3d, tosijs-schema, kith-email, lukko, tosijs-editor, tjs-lang, loewald-dot-com, haltija
 
 ## Run
 
@@ -99,7 +99,7 @@ bun test src/               # unit tier only (when integration lives elsewhere)
 ## DOM testing with Happy DOM
 
 Web-component and DOM tests run under **Happy DOM**, registered via a `bunfig.toml` `[test]`
-preload (`happydom.ts` / `test-setup.ts`). — seen in: tosijs, tosijs-ui, tosijs-product, editor2
+preload (`happydom.ts` / `test-setup.ts`). — seen in: tosijs, tosijs-ui, tosijs-product, tosijs-editor
 
 Known limitations to design around (each one is a recurring, non-obvious time-sink):
 
@@ -112,8 +112,8 @@ Known limitations to design around (each one is a recurring, non-obvious time-si
   `Window`, patch missing error constructors (`SyntaxError`/`TypeError`/`RangeError`), and
   copy an explicit allow-list of DOM globals (`HTMLElement`, `customElements`,
   `MutationObserver`, …) onto `globalThis`, binding window methods (`getComputedStyle`,
-  `requestAnimationFrame`, `fetch`). editor2's `test-setup.ts` is directly copyable.
-  — seen in: editor2, tosijs
+  `requestAnimationFrame`, `fetch`). tosijs-editor's `test-setup.ts` is directly copyable.
+  — seen in: tosijs-editor, tosijs
 
 ## Async state settling
 
@@ -248,7 +248,11 @@ line via `//# sourceURL`. Assertion discipline for these live examples:
 - **Give each `js` block its own imports** — blocks are separately-scoped async functions, no
   cross-block sharing.
 - **Never mix `html` + `js` blocks that both create the same element** — you get double-render bugs.
-— seen in: tosijs-ui
+- **No `*/` anywhere inside the example** — the block lives in a `/*# … */` comment, so a
+  JSDoc-style `/** … */` in a `test` block closes the doc comment early. The build reports
+  `Multiline comment was not closed properly` against the EXAMPLE, which sends you looking at
+  the code rather than at the comment delimiter. Use `//` inside examples.
+— seen in: tosijs-ui, tosijs-editor
 
 ## TJS inline tests
 
@@ -481,6 +485,13 @@ unrelated reason."
 **So put the bug back and watch it go red.** Revert the fix (or mutate just the guard — `if (false
 && …)` is enough), run the one test, confirm the failure message names the thing you fixed, restore.
 Two minutes, and it converts a plausible test into an established one.
+
+**Mutate a COPY when a watch server is live on that tree.** The mutation is a real edit: a dev
+server rebuilds it and serves the broken build to whoever is looking at the page, so the
+"regression" they report next is yours. Worse, if the falsification run dies before it restores
+(a hung test run is enough), the tree stays broken with no error anywhere and the next person to
+look — human or agent — debugs a bug you reintroduced on purpose. Stop the server, or copy the
+tree and mutate the copy. — seen in: tosijs-editor
 
 Worth the ceremony because the false-pass is invisible and looks exactly like success:
 

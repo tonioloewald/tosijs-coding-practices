@@ -3,7 +3,7 @@
 Every library in this ecosystem releases **locally** — there is no CI publish workflow in
 any repo. That means the local build + your discipline *are* the release gate, and built
 artifacts are committed to git so they must be regenerated, never hand-edited.
-— seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, tjs-lang, tosijs-schema, haltija, editor2
+— seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, tjs-lang, tosijs-schema, haltija, tosijs-editor
 
 For where the built site goes (GitHub Pages / Firebase / Cloudflare), see
 [deployment](./deployment.md). This doc is about **packaging, versioning, tagging, and publishing**.
@@ -231,7 +231,7 @@ helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was th
 - `package.json` `version` is the ONLY place you edit. A prebuild writes `src/version.ts`
   from it and re-exports it from `index.ts`; hand-edits to `version.ts` are overwritten.
   The trap is bumping the constant and forgetting `package.json`, or vice-versa.
-  — seen in: tosijs, react-tosijs, editor2, haltija
+  — seen in: tosijs, react-tosijs, tosijs-editor, haltija
 - Desktop (Tauri) builds auto-sync `package.json` version into `src-tauri/tauri.conf.json`
   on every build for the same reason — one source of truth, no drift. — seen in: lukko, kith-email
 
@@ -392,16 +392,16 @@ Publish a bundler-friendly ESM build **and** a self-contained build, plus types:
 
 - **ESM** (`dist/module.js`) with `tosijs`/`tosijs-ui`/`react` marked **external** — consumers
   using a bundler share one framework copy instead of shipping duplicates. Declare framework
-  deps as `peerDependencies`, not `dependencies`. — seen in: tosijs, tosijs-product, editor2, react-tosijs, tosijs-schema
+  deps as `peerDependencies`, not `dependencies`. — seen in: tosijs, tosijs-product, tosijs-editor, react-tosijs, tosijs-schema
 - **IIFE** (`dist/index.js`) with everything bundled — a plain `<script>` / CDN page gets a
-  zero-build global (`globalThis.tosijs*`). — seen in: tosijs, tosijs-product, editor2
+  zero-build global (`globalThis.tosijs*`). — seen in: tosijs, tosijs-product, tosijs-editor
 - **`.d.ts`** via `tsc --emitDeclarationOnly` (or `emitLibrary:true` in the site config, which
-  runs tsc for you so there's no separate invocation to forget). — seen in: react-tosijs, tosijs-product, editor2, tosijs-3d, haltija
+  runs tsc for you so there's no separate invocation to forget). — seen in: react-tosijs, tosijs-product, tosijs-editor, tosijs-3d, haltija
 - Wire all of this in the `package.json` `exports` map with `import`/`require`/`browser`/`types`
-  conditions so each consumer resolves the right file. — seen in: tosijs-schema, editor2, react-tosijs
+  conditions so each consumer resolves the right file. — seen in: tosijs-schema, tosijs-editor, react-tosijs
 
 > **Flatten the `.d.ts`.** `tsc` nests declarations under `dist/src/`, so `package.json`
-> `"types"` won't resolve until you `mv` the entry types up to `dist/` root. — seen in: tosijs-product, editor2
+> `"types"` won't resolve until you `mv` the entry types up to `dist/` root. — seen in: tosijs-product, tosijs-editor
 
 For a browseable published library, ship **per-file, unminified** JS + sourcemaps with
 `removeComments:false` (a `tsconfig.build.json` override; keep root `tsconfig` on `noEmit`) so
@@ -440,7 +440,7 @@ Two things make it stick:
 
 The whole selling point of these libraries is being small, so make size regressions visible:
 gzip the built entry and print the size as a build/pack step (`gzip -9 -k dist/index.js`, or
-`zlib.gzipSync` in the build script), then delete the temp artifact. — seen in: tosijs-schema, editor2
+`zlib.gzipSync` in the build script), then delete the temp artifact. — seen in: tosijs-schema, tosijs-editor
 
 ## Regenerate generated files, then verify they're in sync
 
@@ -799,7 +799,7 @@ apparatus; the traps below are the incident-derived part.)*
   Bun is canonical — use `bun`, ignore the npm lockfile. — seen in: tosijs, react-tosijs, tosijs-3d, loewald-dot-com
 - **`docs/` may be gitignored, not committed.** Most repos commit `docs/`, but a few gitignore
   both `docs/` and `dist/`, so the Pages publish is an out-of-band `gh-pages` step and committing
-  to `main` does NOT update the live site. Confirm per repo. — seen in: editor2 (contrast: tosijs, tosijs-3d, tosijs-product)
+  to `main` does NOT update the live site. Confirm per repo. — seen in: tosijs-editor (contrast: tosijs, tosijs-3d, tosijs-product)
 - **Backward-compat on API renames.** Keep old names working and emit a single `console.warn`
   per deprecated feature (tracked in a `Set` so it never spams). Renaming without an alias breaks
   consumers silently at their next install. — seen in: tosijs
