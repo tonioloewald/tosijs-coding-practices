@@ -425,9 +425,17 @@ and a muted gate is worse than no gate.
         The promise a .d.ts makes is the whole graph it names, not its own path.
         */
         const declTargets = new Set<string>()
+        /*
+        Unreadable packed declarations are REPORTED, not skipped. `continue` here
+        was a silent skip: the check would examine fewer files and still say PASS,
+        which is the vacuous-guard failure this whole gate exists to catch — in the
+        guard itself. See tosijs-ui#61 (tosijs: "a check you have not seen fail is
+        not a check"; haltija: "a guard must be seen to fail").
+        */
+        const unreadable: string[] = []
         for (const f of files.filter((x) => x.endsWith('.d.ts'))) {
           const abs = join(process.cwd(), f)
-          if (!existsSync(abs)) continue
+          if (!existsSync(abs)) { unreadable.push(f); continue }
           const dir = f.includes('/') ? f.slice(0, f.lastIndexOf('/')) : ''
           for (const m of readFileSync(abs, 'utf8').matchAll(/from\s+['"](\.[^'"]+)['"]/g)) {
             const rel = m[1].replace(/^\.\//, '')
@@ -458,10 +466,17 @@ and a muted gate is worse than no gate.
         // Alternatives are '|'-joined: satisfied if any candidate is in the tarball.
         for (const alts of declTargets)
           if (!alts.split('|').some((c) => files.includes(c))) missing.push(alts.split('|')[0])
+        const examined = targets.size + declTargets.size
         if (missing.length)
           add('packaged exports', 'FAIL',
             `package.json points at files the tarball does not contain — consumers get an unresolved module:\n${missing.join('\n')}`)
-        else add('packaged exports', 'PASS', `${targets.size + declTargets.size} target(s) (${targets.size} declared, ${declTargets.size} re-exported) present in ${files.length} packed files`)
+        else if (unreadable.length)
+          add('packaged exports', 'FAIL',
+            `packed declaration(s) could not be read, so their re-exports went unchecked — this check cannot vouch for the tarball:\n${unreadable.join('\n')}`)
+        // A PASS over an empty set is not a pass. Say so rather than bank it.
+        else if (examined === 0)
+          add('packaged exports', 'SKIP', 'nothing to check — no exports targets and no packed declarations')
+        else add('packaged exports', 'PASS', `${examined} target(s) (${targets.size} declared, ${declTargets.size} re-exported) present in ${files.length} packed files`)
 
         /*
         --- every bare import in SHIPPED code must be declared -----------------
