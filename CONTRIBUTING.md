@@ -126,6 +126,12 @@ would swallow an intermediate edit.** Append only.
 
 ## Style
 
+- **Guidance is pithy; evidence lives in linked files** (owner, 2026-09). The rule or the
+  question goes in the doc; the incident that earned it goes in a journal entry, review
+  report, or measurement file, linked. A pointed question at the decision point beats a
+  paragraph of abstract guidance. **Tool-facing docs (SKILL.md, lens prompts) pay their
+  length on every run** — hold them to the tightest bar.
+
 - Terse. Bullets over paragraphs. Code fences for commands and snippets.
 - Second person, imperative. "Run `bun test`," not "one can run `bun test`."
 - Link with **relative paths** so the docs work checked-out anywhere.

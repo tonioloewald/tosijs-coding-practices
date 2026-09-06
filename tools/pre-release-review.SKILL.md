@@ -29,16 +29,13 @@ independently (`releasing.md`).
 - **Before cutting any tag** — `tier: "pre-minor"`, `depth: "full"`. Once per coherent body of
   work, whatever the bump turns out to be. A patch is not exempt: 0.6.5 was a patch that
   shipped a broken tarball.
-- **After remediating a BLOCK** — before ANY re-run, answer one question out loud: **"did
-  you solve the blocker problem writ large, or just fix what failed?"** Live case
-  (tosijs, 2026-09-06): an agent declared a blocker cleared and was ready to cut; asked
-  this, it answered "I just fixed what failed — I didn't apply the class-level solution
-  I've thought of." The class solution existed and only the question surfaced it. Apply the
-  class fix now, or record the deferral explicitly (what the class solution is, why later,
-  where it's tracked) — releasing.md "Say what you are NOT fixing." Then re-run scoped to
-  what each blocker named, which defaults to correctness + blast-radius **over the
-  remediation diff only**. Re-reading the whole span is where review waves come from. A
-  blocker whose fix is mechanical needs nothing beyond Tier 0.
+- **After remediating a BLOCK** — first answer out loud: **"did you solve the blocker
+  problem writ large, or just fix what failed?"** Apply the class fix, or record the
+  deferral explicitly (releasing.md "Say what you are NOT fixing"). Then re-run scoped to
+  what each blocker named — default: correctness + blast-radius **over the remediation
+  diff only** (re-reading the whole span is where review waves come from); a mechanical
+  fix needs nothing beyond Tier 0. (Why the question:
+  `reviews/2026-09-06-review-cost-measurement.md`.)
 - Whenever the user asks to "review before release", "do the release review", "pre-release
   check", etc.
 
@@ -54,11 +51,10 @@ install** before treating it as a code defect — a stale `node_modules` has fak
 
 1. **Confirm you're in the target git repo** and the working tree is committed (the review
    diffs against a release tag; uncommitted work should be committed or stashed first so the
-   diff is meaningful). **Then freshen the inputs** (the returning-from-a-gap checkpoint,
-   development.md): pull the shared practices checkout — a stale copy reviews with last
-   week's rules and last week's release-doctor — and run `gh issue list --state open` on
-   this repo: an open issue is review input (don't re-derive a finding a consumer already
-   filed; do connect findings to issues they duplicate or resolve).
+   diff is meaningful). **Then freshen the inputs**: pull the practices checkout (a stale
+   copy reviews with last week's rules and last week's release-doctor) and
+   `gh issue list --state open` (open issues are review input — connect, don't re-derive).
+   Why: development.md "returning-from-a-gap".
 
 2. **Determine the base ref** (what to diff against — the last release):
    ```bash
