@@ -131,6 +131,19 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
     cycles → the two why-questions ("Lenses are cascades" below); recurring "went well" → a
     candidate practice. This is where process analysis lives — the per-release loop only
     records facts, deliberately.
+
+    **The pass opens by auditing its own previous batch against consumer evidence** (owner).
+    The feedback channel already exists — no new ceremony: each repo's lens-8 dispositions
+    of practices changes (*adopted / already compliant / deliberately diverging*) plus any
+    AAR line naming a process change ARE the consuming repos' verdict on the last batch.
+    Read them first. A change consumers routed around, diverged from, or reported as
+    friction has failed "does it work" **regardless of its intention** (the promotion
+    ladder applies to process changes too) — revise or revert it in this batch. For a large
+    or contentious batch, an RFC-style ask on this repo (the #10 pattern: "what does your
+    repo actually do, what would have saved you something") is the heavyweight version.
+    **The regress is bounded by construction**: feedback on batch N is considered inside
+    batch N+1, there is no separate meta-review of the feedback step, and a complaint about
+    the process review itself is just another AAR line, mined like any other.
   - **Ecosystem + practices dispositions**, with a deadline and an owner — not a release to
     block (0 blockers in 28 runs; their findings re-printed verbatim across consecutive
     reviews when release-gated).
@@ -226,6 +239,10 @@ standard:
    monotonically — this corpus measured 20:1 add:retire before the quota existed); and each
    change must be **checkable against the next few AARs** — if its benefit never shows up
    there, revert it. An improvement that only adds obligations is the divergent term.
+   Each batch also **opens by judging the previous batch against consumer feedback** (the
+   lens-8 dispositions and AAR lines from the other repos — see the Tier 3 AAR bullet) and
+   revises or reverts accordingly: self-revision rides *inside* the existing batch rather
+   than spawning a review cycle of its own.
 
 ## Comprehensive pre-release review (minor & major)
 
