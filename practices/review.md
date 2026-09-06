@@ -160,6 +160,9 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   iteration's judgment (rumination, over-caution, under-reporting). The metric that says
   anything about quality is finding→fix latency and escape rate, not the count of things a
   careful process caught before anyone was harmed. Catching them *is the process working*.
+  This extends to remediation commit messages and reports: "all three were mine" is blame
+  texture, not information — state what changed and why
+  (`development.md` "Reports carry facts, not blame or credit").
 - **Decide what to do about a blocker by the RISK OF ITS MITIGATION, not by its severity —
   and not by how many rounds you are into the release.** These are different questions and
   conflating them wastes releases in both directions. A documentation error that blocks is

@@ -370,6 +370,28 @@ single quotes, no semicolons, 2-space indent, ES5 trailing commas.
   repos have `.prettierignore` entries for hand-curated files (e.g. tosijs `xin-types.ts`).
 - Reference code as `file_path:line` in notes and reviews — it's clickable.
 
+## Reports carry facts, not blame or credit
+
+Owner norm for all communication — reports, commit messages, reviews, AARs, conversation.
+The work is one collaborative system (the owner plus agents following the owner's
+instructions), so assigning fault or merit inside it is beside the point; **the only thing
+that matters is what changed and why.** A report has four parts:
+
+1. **What happened.**
+2. **Why it matters — or doesn't.**
+3. **What should be done about it.**
+4. If that's unclear: **what needs to be decided, and briefly, what's at stake.**
+
+Skip the texture: no mea culpa ("that's on me", "all three were mine" — the same
+self-flagellation the BLOCKER-is-a-status rule targets, in commit-message form) and no
+credit assignment in the other direction either ("the owner's idea" as flattery). Both add
+words without information and the blame kind distorts the next iteration.
+
+**Keep provenance; drop ownership-of-fault.** `— seen in: project` and evidence grading
+("owner decree", "incident-derived") are epistemic traceability — they exist so entries can
+be trusted and retired, and they stay. "Whose fault" and "whose brilliance" serve nothing
+and go.
+
 ## Committing: path-limit it, then verify what you actually committed
 
 - **`git add <file> && git commit` does NOT commit only that file.** `git commit` commits the
