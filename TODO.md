@@ -1,5 +1,16 @@
 # TODO — tosijs-coding-practices
 
+## Due ~2026-09-20: outcome review of the week-35 process batch
+
+Grade the 2026-09-05/06 changes good/bad/meh against the predictions in
+[`journal/2026-09-06-intention-vs-result.md`](journal/2026-09-06-intention-vs-result.md)
+(AARs exist · round count · Tier 1 actually run · scoreboard zero hand-edits ·
+release-doctor checks · cascade sharpness · prior-art rule · communication texture), plus
+the accretion-audit follow-ups: enforce the retirement quota on the batch (15.4:1 measured
+since the quota — it is not working), and measure whether meta-layer churn
+(README/review/releasing commits per week) fell after the AAR loop. Baselines in
+[`journal/2026-09-06-accretion-audit.md`](journal/2026-09-06-accretion-audit.md).
+
 ## Make the repo INVARIANT — history is what makes the carve-out safe
 
 [`practices/cross-project.md`](practices/cross-project.md) now lets an agent in **any** project
