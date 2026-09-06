@@ -129,9 +129,10 @@ pending `demo/` + `dev.ts` deletions that were sitting in that repo's index. Not
 
 **Why the corpus holds it.** Correct, and hard-won, in ordinary JS.
 
-**What it does here.** tosijs 2.0 boxed scalars are **proxies over primitive wrappers**, so
-`===` is *identity*, not value comparison — **by design**. `==` / `Eq` unwrap via `valueOf`
-and do what you want. This is the one place the usual advice inverts.
+**What it does here.** tosijs boxed scalars (shipped since the 1.x line) are **proxies over
+primitive wrappers**, so `===` is *identity*, not value comparison — **by design**. `==` /
+`Eq` unwrap via `valueOf` and do what you want. This is the one place the usual advice
+inverts.
 
 **The tell.** You reached for `===` on a boxed scalar and got `false` for two equal values.
 

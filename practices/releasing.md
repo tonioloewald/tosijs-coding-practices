@@ -768,46 +768,16 @@ and PR bodies follow the harness's co-author/attribution footer conventions.
 
 ## Bypassing the publish loop: where local tarballs live
 
-Sometimes a release is tagged but cannot be published — no npm rights to hand, the owner is
-remote, a registry outage, or a downstream project needs to try a fix *now*. The stopgap is
-`npm pack` and a `file:` dependency. That is fine. What is not fine is leaving the artifact
-somewhere only its author can find.
-
-**Put it in a shared sibling directory of the projects that consume it**, not in a session
-scratchpad, not in the producing repo (`*.tgz` is gitignored in every repo here, so it is
-invisible to git *and* to anyone who clones), and not loose in `/tmp`:
-
-    ~/projects/
-      tosijs-3d/            <- produces
-      manta-recon/          <- consumes
-      local-packages/       <- BOTH agree to look here
-        tosijs-3d-0.7.0-beta.5.tgz
-        PROVENANCE.md
-
-The whole value of a stopgap tarball is that a *different* agent, in a *different* repo,
-picks it up without being told. A path that only the producer knows converts a five-second
-lookup into an archaeology exercise — and worse, into a **silent duplicate**: the consumer
-packs its own from the tagged tree, and now two artifacts claim one version with nothing
-proving they match.
-
-### Rules
-
-- **One agreed location, named in both projects' `CLAUDE.md`.** Producer writes there;
-  consumer reads there. Neither guesses.
-- **Never a session scratchpad.** It is ephemeral, session-scoped, and unreachable by the
-  one agent that needs it. If you packed to a scratchpad, copy it out before you finish.
-- **Ship a `PROVENANCE.md` beside it** — tag, commit, whether the tree was clean, timestamp,
-  and a `sha256`. A `file:` dep has no registry, no integrity hash and no audit trail, so
-  the provenance note *is* the supply chain. State what it contains and what supersedes it.
-- **Record the sha256, and check it.** If the consumer has to pack its own, comparing hashes
-  is what distinguishes "byte-identical to the official artifact" from "a plausible lookalike
-  built from a different tree." Do not assert equivalence you have not measured.
-- **Version-suffix every file, and never overwrite one in place.** A `file:` dependency is
-  cached by path; rebuilding `foo-1.2.3.tgz` with different bytes gives some consumers the
-  old one and no way to tell.
-- **Delete superseded tarballs** when the consumer moves on, and drop the whole directory the
-  moment the version reaches npm — `bun add pkg@<version>`. A stopgap that outlives its
-  reason becomes a fork nobody declared.
+When a tagged release can't be published yet, the stopgap is `npm pack` + a `file:` dep.
+**Put the tarball in the agreed shared sibling directory (`~/local-packages/`, named in
+both projects' `CLAUDE.md`) with a `PROVENANCE.md` beside it** (tag, commit, clean-tree?,
+timestamp, sha256 — the provenance note *is* the supply chain for a dep with no registry),
+version-suffix every file (never overwrite in place — `file:` deps cache by path), and
+delete the directory the moment the version reaches npm. Never a session scratchpad: the
+consumer is a *different* agent in a *different* repo, and a path only the producer knows
+produces silent duplicate artifacts claiming one version.
+*(Collapsed from six rules in the 2026-09 retirement — one observation's worth of
+apparatus; the traps below are the incident-derived part.)*
 
 ### Traps
 

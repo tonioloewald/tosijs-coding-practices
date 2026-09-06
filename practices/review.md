@@ -37,22 +37,13 @@ header so a reader can see what was actually looked at.
   cloud review of the branch or a PR — it is user-triggered and billed.
 - **`/security-review`** for changes with a security surface (auth, capability VMs, network
   sync, untrusted input, deployment config).
-- **CI is partial, and you must know exactly which lanes it covers.** This file used to say
-  there was _"no CI — no `.github/` workflows anywhere in the ecosystem"_. That is false
-  (tosijs-ui has `ci.yml`; tosijs has one too — a `unit` lane plus a Playwright `e2e` lane, `main` only; haltija has **four** workflows — unit-tests, test-qa, e2e, docs-drift;
-  tjs-lang added `ci.yml` in 0.13.0; see `00-stack.md`), and the falsehood
-  was load-bearing: a reader who believes there is no CI never asks **"which lanes does CI
-  actually run?"** — which is the exact question that catches a rotted lane. tosijs-ui's CI runs
-  the unit + e2e lanes and **not** the haltija doc-test lane, and that lane sat red for a month.
-  It is also false that `bun run build` runs tests — in tosijs-ui it does not (see
-  `releasing.md`). **Enumerate the lanes, check which are gated, and run the ungated ones by
-  hand.** An ungated lane always rots.
-
-  Two gates are not one gate twice. tjs-lang runs `test:fast` in Actions (no LLM, no
-  benchmarks, no audit) and the FULL suite in `.githooks/pre-push`, but only on tag pushes —
-  a deliberate split, and until 0.13.0 **nothing anywhere enumerated both**, which is the
-  same gap in a newer disguise. If a project has more than one gate, say what each covers in
-  the same place, or a reader will assume the stricter one runs everywhere.
+- **CI is partial — enumerate the lanes, check which are gated, run the ungated ones by
+  hand.** Per-repo CI facts live in `00-stack.md`; an ungated lane always rots (tosijs-ui's
+  CI runs unit + e2e but **not** the haltija doc-test lane, which sat red for a month; and
+  `bun run build` does not run tests there — releasing.md). **Two gates are not one gate
+  twice**: tjs-lang runs `test:fast` in Actions and the FULL suite only in a pre-push hook
+  on tag pushes — if a project has more than one gate, say what each covers in one place,
+  or readers assume the stricter one runs everywhere.
   — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, kith-email, react-tosijs
 
 ## The tiered review structure (adopted 2026-09, from the practices audit)
@@ -807,25 +798,13 @@ gh issue list -R tonioloewald/<this-repo> --state open
   for this?_ **A test loosened, or complexity added, to route around a bug we filed against
   ourselves is the signature failure of this half** — 7a will flag the _shape_ of it and not
   connect it to the open issue unless you deliberately do.
-- **Glance at the consumer footprint on a breaking or tightening change.** When the release
-  breaks something (a validation tightening, a removed/renamed API), the "who breaks / how far
-  does this propagate" reasoning must be grounded in the *actual* downstream base, not assumed.
-  Look at npm downloads and GitHub dependents so the blast-radius claim is quantitative:
-
-  ```bash
-  curl -s https://api.npmjs.org/downloads/point/last-month/<pkg>   # download trend
-  gh api "/repos/tonioloewald/<repo>" --jq '.stargazers_count'      # + the repo's "Used by" page
-  ```
-
-  A policy of breaking-toward-correctness in minors often rests on "no significant external
-  consumers" (see [`releasing.md`](releasing.md) "Versioning philosophy"). This is where that
-  assumption gets *validated* rather than restated — a footprint that has quietly grown flips the
-  calculus, and you want to notice before a break bites someone, not after. **The numbers also
-  calibrate severity in the other direction**: a breakage or publish-integrity finding on a
-  package with a measured-zero consumer base is bookkeeping (minor/notable), not a blocker —
-  grade against the base you measured, not the one you imagined (releasing.md "Responsibility
-  scales with the MEASURED user base"). — seen in:
-  tosijs-schema (breaking-in-a-minor twice; the assumption held, but nothing was checking it).
+- **Measure the consumer footprint on a breaking or tightening change** (cascade gate 4):
+  `curl -s https://api.npmjs.org/downloads/point/last-month/<pkg>` + GitHub dependents +
+  owner knowledge of private consumers. The numbers calibrate severity **both ways** — a
+  quietly-grown footprint makes a casual break a real finding; a measured-zero base makes a
+  breakage finding bookkeeping, not a blocker (releasing.md "Responsibility scales with the
+  MEASURED user base"). — seen in: tosijs-schema (breaking-in-a-minor twice; the assumption
+  held, but nothing was checking it).
 - **Done when:** every open incoming issue has a stated disposition, every workaround found
   in 7a has been checked against the issue list, and a breaking release has looked at who
   actually consumes the package.
