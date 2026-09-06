@@ -160,6 +160,21 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   iteration's judgment (rumination, over-caution, under-reporting). The metric that says
   anything about quality is finding→fix latency and escape rate, not the count of things a
   careful process caught before anyone was harmed. Catching them *is the process working*.
+- **Decide what to do about a blocker by the RISK OF ITS MITIGATION, not by its severity —
+  and not by how many rounds you are into the release.** These are different questions and
+  conflating them wastes releases in both directions. A documentation error that blocks is
+  just a documentation error: fix it, re-run Tier 0, ship. A blocker whose fix rewrites a
+  dispatch three call sites depend on is the one that should make you ask whether the release
+  should be split, deferred, or reshaped — and it should make you ask that on the *first*
+  round, not the third.
+
+  The failure mode this corrects, observed over tosijs 1.10.1's three rounds: an agent treated
+  "another blocker appeared" as the signal to reconsider the release shape. It happened to be
+  right there — all three rounds needed structural fixes — but the reasoning generalised from
+  the wrong variable, so the same instinct would have proposed splitting a release over a
+  changelog typo. **Round count measures how hard the code is; mitigation risk measures what
+  you should do about it.** — rule set by the owner
+
 - **A BLOCK verdict must name its re-review scope.** "Fix and re-run" is how review waves
   happen. Each blocker states what must be re-examined after remediation — which lens(es),
   over what (default: correctness + blast-radius over the remediation diff only). A blocker
