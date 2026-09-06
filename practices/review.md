@@ -606,10 +606,12 @@ plausible-but-wrong results rather than errors:
 2. **Did the public surface change?** (fact: export/`.d.ts` diff) For each new surface:
    **named in at least one consumer-facing doc?** (fact) **Reachable from the error or warning
    a user hits when they have the problem it solves?** (fact: read that error path)
-3. **CHANGELOG entry for this version?** (Tier 0 answers this — trust its output)
-4. **Is any fix security-relevant?** Yes → does the entry **name the affected shipped
+3. **Did a documented GUARANTEE change?** (fact) Yes → **grep the OLD wording** across the
+   canonical reference, `CLAUDE.md`/`AGENTS.md` and the emitted `.d.ts`.
+4. **CHANGELOG entry for this version?** (Tier 0 answers this — trust its output)
+5. **Is any fix security-relevant?** Yes → does the entry **name the affected shipped
    versions**? (fact)
-5. **Anything deprecated?** Yes → warns once and names its replacement? (fact)
+6. **Anything deprecated?** Yes → warns once and names its replacement? (fact)
 
 Detail:
 
@@ -621,6 +623,12 @@ Detail:
 - `CHANGELOG.md` has an entry for this version; README / `CLAUDE.md` / `AGENTS.md` reflect the
   change; if a **durable cross-project practice** changed, update the shared KB (and grep the
   cross-cutting docs for parallel mentions — see `../CONTRIBUTING.md`).
+- **Code without a doc sweep is the mirror of `release-check`'s markdown-only diff**, and
+  nothing gates it. Grep the **old** wording, not the new: you already know the new sentence,
+  so searching for it finds your own edit, while the stale promise is phrased the way it was
+  before you touched it — reconstruct that phrase deliberately. **JSDoc is a doc surface**: it
+  survives into the emitted `.d.ts` and is what an adopter reads on editor hover. — seen in:
+  tosijs-ui 1.14.0, three instances in one release (F3, F4, F11), each spanning three files.
 - **Security-relevant fixes name the affected shipped versions** (releasing.md step 2) — "was
   fail-open" without "in ≤ X.Y.Z" leaves consumers unable to tell if they're exposed. — seen
   in: tosijs-schema (v1.5.0 review passed this checklist while missing exactly that).

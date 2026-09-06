@@ -225,6 +225,23 @@ So the budget isn't a hard ceiling on the total. What it actually governs:
 
 ## Measuring
 
+- **A published timing without the machine attached is not reproducible — but a BUDGET must
+  not carry one** (owner, 2026-09). Two different kinds of number get written the same way:
+  - A **measurement** ("startup 23s → 3.6s", "brotli q5 19ms vs q11 1169ms") is a claim about
+    what the software costs, and it is hardware-relative whether or not you say so. Name the
+    machine, or a reader cannot tell a reproduction from a regression. Where you can, publish
+    the **ratio** as the finding — 60× survives the hardware changing; "19ms" is what makes it
+    sound free, and on a third of the speed that is a different conversation.
+  - A **budget** ("~5s dev loop", "≤20 lines of build output") comes from human attention, so
+    it is hardware-*invariant* by construction. Attaching a machine to it implies a fast
+    enough box earns the right to be slower, which is the opposite of the point.
+
+  The trap runs the other way from the obvious one: a fast machine does not tempt you into lax
+  budgets, it lets you **hit a good budget without fixing the cost** — the instrument goes
+  green and the waste stays. Same failure as a guard that reports `ok` for 13GB of orphans.
+  — seen in: tosijs-ui (every timing in its CHANGELOG was unattributed; the one entry that
+  named its hardware did so only because the hardware was the story).
+
 - **A microbenchmark measures the JIT unless you prove otherwise. Three specific ways it
   lies, all paid for in tjs-lang 0.13.x within three days of each other:**
   1. **A folded-away baseline.** A pure function called with a constant argument can be
