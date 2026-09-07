@@ -37,4 +37,18 @@ Three consequences:
    general form, and it is the transmission lesson (prompts don't transmit what questions
    and structure do) taken to its limit.
 
+**The owner's analogy:** teaching a small child to "just pick up the ball and bring it to
+me" — what you experience as one fundamental skill turns out to be twenty motor and
+conceptual skills you take for granted and never think about. The ground floor is
+learner-relative: competence is precisely what makes the decomposition invisible, and you
+discover the real granularity only when a learner fails at a grain you didn't know
+existed.
+
+With one crucial difference from the child, which is why model failures disorient: the
+skill layers that co-develop in humans **don't co-occur in models**. The model has
+superb fine motor control (fluent prose) while missing what you'd swear is a more basic
+layer (knowing what a character doesn't know) — so the capability profile is *jagged*, and
+"it writes beautifully, why can't it do X?" is the wrong question. The layers were never a
+stack; they only felt like one because in humans they arrive together.
+
 Operational form for agents: `model-priors.md` "The missing prior."
