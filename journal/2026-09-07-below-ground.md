@@ -68,4 +68,22 @@ This gives the missing-prior diagnosis an ex-ante test: before assuming a skill 
 corpus, ask **"was this learned co-presently, by osmosis?"** If yes, expect silent
 back-fill and go straight to mechanism.
 
+**Candidate third case, with a twist (owner): soccer's offside rule.** Referee craft —
+positional and perceptual tricks for applying an insane knife-edge rule — is co-present,
+apprenticeship-learned, and largely unwritten (the corpus is the Laws plus punditry, not
+the skill). The automated World Cup offside systems automated **the written rule
+directly**, and the results were widely felt to be horrible — which suggests the second
+face of path-dependence: *the written rule was never the whole institution*. The lived
+rule was text plus unwritten interpretive craft (tolerances, clear-daylight instincts,
+flag-delay convention) that made it livable. Two distinct failure modes, one cause:
+
+- A **model** trained where the craft is missing *back-fills* it with corpus-average
+  mediocrity (ariosto's transcripts).
+- An **automation** built from the written layer *deletes* the unwritten layer outright
+  (millimetric toenail offsides — technically correct, institutionally wrong).
+
+The corollary for our own promotion ladder: **when promoting a practice to automation,
+check whether the practice-as-lived carries judgment the practice-as-written omits** —
+automating the doc captures the doc, and whatever made the doc livable vanishes silently.
+
 Operational form for agents: `model-priors.md` "The missing prior."
