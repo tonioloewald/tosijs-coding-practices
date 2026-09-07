@@ -1081,6 +1081,24 @@ condition, **the finding is the condition**, not the N instances.
 > zero-area elements — so an entire tier of the agent map was invisible to every test in
 > the suite, in a way no real browser reproduces. If a guard depends on geometry, layout,
 > or timing, make the environment supply it rather than trusting the green tick.
+>
+> **The general rule is procedural, not environmental: MUTATION-VERIFY EVERY PIN — run it
+> against the code it is meant to fail on, and record that you watched it fail.**
+> — seen in: tosijs 1.11.0, in the release that *claimed* this discipline
+>
+> The environment is only one of the things that can suppress an assertion. A fixture can
+> be cleared by a *different clause of the same predicate*: adopting a shared
+> `isInteractive` changed seven verdicts, and two of the seven pins passed identically
+> against the OLD predicate, because each fixture's evidence sat in a field that the
+> unrelated half of the change also neutralised. No environment involved, no green tick to
+> distrust — the tests simply asserted something both versions already agreed on.
+>
+> The CHANGELOG claimed all the changes were "pinned by tests written to fail against the
+> previous predicate, and watched doing so." The author *had* run the mutation and *had*
+> watched N tests fail — and then reported the count as if it covered the whole set,
+> without checking WHICH ones failed. **Watching the suite fail is not watching THIS test
+> fail.** Verify per-pin, name the ones that did not discriminate, and fix them before the
+> claim ships.
 
 **Comment-vs-code.** Prose doesn't execute. A validator commented _"matches declarations at
 statement level (not inside strings/comments)"_ did no such thing — the claim was in the
