@@ -310,6 +310,20 @@ reason to carry it.
 **The tell.** You justified a design decision by an idiom you did not find in this codebase.
 Grep for it before treating it as a requirement.
 
+## The missing prior: corpus-absent domains fail silently
+
+This file lists trained priors that are *wrong* here. The inverse case is worse: a domain
+whose craft is **absent from training corpora** (no successful public artifacts — e.g.
+deep interactive-narrative design). There, instruction-level prompting doesn't error — it
+back-fills with **corpus-average output**, which in an unsolved domain means competent
+mediocrity that looks like laziness and is actually absence. The tells: output is fluent
+but generic; iterating the prompt doesn't move it; the failure repeats across models.
+The response is not a better prompt — **decompose the expert's tacit knowledge into
+mechanism** (structure, capabilities, checks: "you can't prompt not-knowing; build
+not-knowing"), and treat each model failure as locating a piece of tacit ground to make
+explicit. Evidence and the full argument:
+[`journal/2026-09-07-below-ground.md`](../journal/2026-09-07-below-ground.md).
+
 ## Reviews carry these priors too — separate the finding from its framing
 
 The above were both caught inside one release: #13 from an agent's own reasoning, #12 from a
