@@ -51,4 +51,21 @@ layer (knowing what a character doesn't know) — so the capability profile is *
 "it writes beautifully, why can't it do X?" is the wrong question. The layers were never a
 stack; they only felt like one because in humans they arrive together.
 
+**Corpora are path-dependent, and the dependence runs backwards from intuition.** The
+lived path that produces a StackOverflow-competent person is full of formative experience —
+the mental process of creating a D&D character, playing at a table — that the written
+conversation *assumes* ("you know all the things") and never contains, because at the time
+it was absorbed by osmosis and wasn't thought worth writing down. A corpus records what a
+culture *bothered to write*, and cultures write down what osmosis **couldn't** deliver:
+StackOverflow exists precisely because programming's community of practice went remote and
+asynchronous, so text had to replace the shoulder-look. Co-present practices — tabletop
+play above all — never needed text, so they never produced it. The inversion: **a model is
+weakest not in a culture's rarest knowledge but in its most universally shared** — the
+water the fish never wrote about. (Actual-play recordings don't close the gap: they are
+transcripts of the *performance*, not decompositions of the *process* — the output again.)
+
+This gives the missing-prior diagnosis an ex-ante test: before assuming a skill is in the
+corpus, ask **"was this learned co-presently, by osmosis?"** If yes, expect silent
+back-fill and go straight to mechanism.
+
 Operational form for agents: `model-priors.md` "The missing prior."
