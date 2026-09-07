@@ -13,10 +13,14 @@
   `argsIgnorePattern: '^_'`); otherwise lint fails. — seen in: tosijs, tosijs-ui,
   tosijs-product, tjs-lang, tosijs-3d
 - **Match the file, not a global rule.** Some repos have **no committed eslint/prettier
-  config** (react-tosijs is 2-space, *double*-quoted, *with* semicolons; tosijs-editor's `format`
-  script references eslint/prettier that aren't even devDependencies and may fail on a clean
-  install). If there's no config file, copy the surrounding code's style — don't impose the
-  single-quote/no-semi default. — seen in: react-tosijs, tosijs-editor
+  config** (react-tosijs is 2-space, *double*-quoted, *with* semicolons). If there's no config
+  file, copy the surrounding code's style — don't impose the single-quote/no-semi default.
+  A `format` script is not evidence a formatter is installed: tosijs-editor's referenced
+  eslint and prettier when neither was a devDependency, so it failed on a clean install
+  (fixed 2026-09-07 — Prettier v2 + house style, and no eslint: `lint` is
+  `tsc --noEmit --noUnusedLocals --noUnusedParameters`, which covers what eslint would catch
+  in a small TS library without the plugin surface). Check the devDependencies before
+  trusting the script. — seen in: react-tosijs, tosijs-editor
 - Pre-existing lint errors in unrelated files are expected — don't let them block your
   commit, and don't fix-and-reformat files you aren't otherwise touching.
 - Respect `.prettierignore`. Some files are hand-laid-out on purpose (e.g. tosijs
@@ -29,6 +33,12 @@
   breaking your prose — it's Prettier *reporting* that the renderer already ate it. Don't
   `.prettierignore` the file to silence it. — seen in: tjs-lang (CHANGELOG.md, TODO.md —
   it recurs)
+- **In a doc-comment project, `embeddedLanguageFormatting: 'off'` is not optional.** A
+  `tosijs-ui/site` project's pages ARE markdown and `/*# … */` comments whose fenced blocks
+  are executable live examples; letting Prettier reformat them rewrites running code and
+  RTL sample markup. (Prettier does not touch comment contents, so the `/*# … */` blocks are
+  safe either way — it is the `.md` files that need the override.) — seen in: tosijs-editor
+
 - **Turn off Prettier's *embedded* formatting for markdown, not Prettier itself.** Prettier
   reformats fenced code **inside** `.md`, which mangles hand-laid-out examples: two separate
   ` ```js ` lines `'5' == 5` and `[1] == 1` become the single nonsense expression

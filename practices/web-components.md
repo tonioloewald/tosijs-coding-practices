@@ -168,6 +168,26 @@ There is **no clean workaround**, and don't go hunting for one: the slot is a re
   `static styleSpec` is a deprecated alias — pick light vs shadow explicitly.
 - **`static lightStyleSpec`** — global styles appended to `document.head`; `:host` is rewritten
   to the tag name.
+- **Style SLOTTED controls from `lightStyleSpec`, not `::slotted()`.** Slotted content is light
+  DOM, and `::slotted()` rules lose the cascade to the host PAGE's own rules for the same
+  element — so a component that ships toolbar `<button>`s styles them, and the page's plain
+  `button { … }` wins anyway. It shows up as chrome that looks right in isolation and wrong
+  everywhere it is embedded: tosijs-editor's toolbar rendered as white chips on its own tinted
+  bar because the doc site paints buttons near-white. `lightStyleSpec` is a tag-scoped document
+  stylesheet, so it competes on equal terms. Keep `::slotted()` for layout the page has no
+  opinion about. — seen in: tosijs-editor
+- **`<slot>` is ALWAYS `:empty`.** `:empty` tests for child nodes, and a slot's assigned nodes
+  are not its children — so `[part="toolbar"]:empty { display: none }`, meant to collapse an
+  empty bar, hides it exactly when it is populated. Reflect the state instead: read
+  `slot.assignedNodes({ flatten: true }).length` on `slotchange` and toggle an attribute on the
+  host. Costs a browser to find; every unit test passes. — seen in: tosijs-editor
+- **A component must not re-theme the page to style its own popups.** Menu/select dropdowns
+  mount in a body-level `<tosi-float>`, so they inherit nothing from your element and the
+  theme variables that size them (`--menu-item-height`, `--menu-item-padding`) are global.
+  Setting them at `:root` from a component restyles every menu on the page — the wrong sign of
+  blast radius. Tag your own popup and scope to that; `tosi-menu` has no first-class hook yet
+  (tosijs-ui#148), but a `MenuElement` item — a function returning an element — runs inside the
+  popup and can add a class. — seen in: tosijs-editor
 
 ## Callback naming — the `on<Event>` trap
 
