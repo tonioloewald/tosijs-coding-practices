@@ -34,6 +34,33 @@ For where the built site goes (GitHub Pages / Firebase / Cloudflare), see
 > drafted in [publishing-via-oidc.md](./publishing-via-oidc.md). **Not yet implemented**;
 > `tosijs-ui` is the intended pilot.
 
+## Generate the release-total size delta — don't remember it
+
+**Per-commit deltas are what get written; release totals are what get read.** Each commit
+that moves a bundle records its own increment in the budget file's comment ("+318 gz
+here"), which is correct and useless to the person reading the CHANGELOG, who wants
+"what did this release cost?"
+
+Worse, the per-commit figures go stale *within the release*: a header written when a
+bundle measured 44_246 is 126 B wrong by the time three more commits land. tosijs has now
+hand-fixed that drift in two consecutive releases — and the second fix, written to correct
+the first, introduced its own stale number. **Two rounds of hand-fixing the same class is
+the signal to automate it.**
+
+Have the size gate print a delta against the previous tag's committed `dist/`, next to the
+absolute figures it already prints. Both artifacts are on disk (`dist/` is committed) and
+both are measured by the same compressor, so it is a few lines and no new machinery:
+
+```
+gzip budgets: module.js 44_381/46_000 (+453 since v1.10.1)
+```
+
+Then the CHANGELOG quotes a generated number instead of a remembered one. And where a
+budget's comment states a measurement, assert the stated figure against the actual
+`budget` in the build — a comment that can drift silently from the value beneath it is a
+comment nobody can trust to read.
+
+
 ## Before cutting any tag: run the tiered review
 
 **The review triggers on the work, not the version letter** (review.md "The tiered review

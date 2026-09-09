@@ -1100,6 +1100,36 @@ condition, **the finding is the condition**, not the N instances.
 > fail.** Verify per-pin, name the ones that did not discriminate, and fix them before the
 > claim ships.
 
+**A guard threaded as a PARAMETER is not a guard until every harvest calls it.**
+— seen in: tosijs 1.8.3 → 1.11.0, seven times, for one invariant
+
+> `describeElement(el, withheld?: ContentGuard)` received the guard and asked it in
+> exactly two of its harvests. The attribute harvest below — `href`, `placeholder`,
+> `title`-as-name, a checkbox's `checked` — ran unguarded, so a reset token in an `href`
+> was published in cleartext **beside a `text` on the same record that had been correctly
+> withheld.** A response that contradicts itself is the tell.
+>
+> The `ContentGuard` had been introduced *specifically* as the consolidation that ended
+> per-site restatement of this rule. It still reached two of the sites in the function it
+> was passed to. **Consolidating a rule into a parameter moves the duplication from the
+> logic to the CALL SITES, where it is invisible** — nothing type-checks "did you ask?"
+>
+> Two durable moves:
+> - **Enumerate the addresses in the guard's own docstring**, and treat adding a harvest
+>   without adding an address as the defect. A guard that cannot say where it applies is
+>   a convention, not a mechanism.
+> - **Assert on the secret SUBSTRING in the whole serialized response, never on a named
+>   field.** `expect(JSON.stringify(describe())).not.toContain(token)` is inherited
+>   automatically by whatever harvest someone adds next; `expect(rec.href).toBeUndefined()`
+>   protects exactly one field forever. The suite here had 17 `data-tosi-secret` tests and
+>   two token-in-`href` fixtures, and could not have caught this — both anchors were
+>   **unwired**, so they passed for a reason unrelated to secrecy.
+>
+> And check the other direction in the same commit: the fix must ask the **secrecy** arm,
+> not a combined secrecy-and-scope guard, or it strips ordinary data (here: the
+> destination of every out-of-scope link). Over-redaction is this class's second failure
+> mode and it has shipped too — write the over-redaction control test alongside.
+
 **Comment-vs-code.** Prose doesn't execute. A validator commented _"matches declarations at
 statement level (not inside strings/comments)"_ did no such thing — the claim was in the
 comment, not the code, and a keyword inside a template literal made a legal file
