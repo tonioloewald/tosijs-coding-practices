@@ -226,6 +226,31 @@ Integration and browser tests do **not** auto-start their dependency:
 
 ## Live browser testing with Haltija
 
+- **Two measurement traps will make you "fix" code that was never broken.** Both cost a
+  session in tosijs-editor:
+  - **A version-stamped asset URL serves a stale bundle.** `tosijs-ui/site` emits
+    `hydrate.js?v=<package version>`, which does not change between rebuilds — so the browser
+    keeps executing the previous build while `curl` shows the new one served (tosijs-ui#151).
+    Before measuring after a rebuild:
+    `await fetch('/hydrate.js?v=…', { cache: 'reload' })`, then navigate. Busting the PAGE
+    url does nothing; the script url inside the HTML is unchanged.
+  - **`getComputedStyle` in the same tick as a class toggle returns stale values.** Toggling
+    a theme class and reading immediately gave colours that had not recomputed — and,
+    confusingly, custom properties DID update while the dependent `color` did not, which
+    reads exactly like a broken cascade. Await two `requestAnimationFrame`s between the
+    change and the read.
+  - Symptom of either: an edit that "has no effect" no matter how you write it. Confirm the
+    SERVED bytes contain your change before concluding anything about the code.
+  — seen in: tosijs-editor
+
+- **A private Electron instance is the quick way in when no tab is available.**
+  `haltija --ci --name <x> --port <n>` launches one (bare `--ci` defers to a running server
+  and launches nothing). Clean it up afterwards: `pkill -f "haltija --ci --name <x>"` kills
+  only the launcher, so also `pkill -f "node_modules/haltija/apps/desktop"` — and never
+  `hj shutdown` when the server is shared, or you kill another project's session.
+  — seen in: tosijs-editor
+
+
 For agent-driven, real-browser inspection of a running dev page, use the **`hj` CLI against a
 private named Haltija server**, not the Claude-in-Chrome extension.
 
