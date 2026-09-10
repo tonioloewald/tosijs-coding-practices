@@ -224,8 +224,10 @@ helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was th
 9. **Update your row in the shared scoreboard** — the "Project scoreboard" table in the
    practices repo's `README.md`. **The fact cells are machine-written**: run
    `bun tools/scoreboard.ts` (in that repo) to refresh Version and "As of" from the registry
-   and GitHub; write the one-line activity note yourself — that column is prose, and the tool
-   never touches it. This is the practices repo's no-signoff carve-out, so commit directly —
+   and GitHub; write the Activity cell yourself — **2–5 short highlights, newest first,
+   REPLACING the old cell, not appending** (a dashboard, not a ledger; the story lives in
+   your CHANGELOG, and git history keeps every superseded cell). The tool never touches
+   that column. This is the practices repo's no-signoff carve-out, so commit directly —
    but with **`git pull --no-rebase`** (that repo inverts the rebase rule; see its
    `CONTRIBUTING.md`). Do it even for a beta/patch: a stale scoreboard is worse than none,
    and the row is how other agents (and the human) see the ecosystem at a glance.
