@@ -5,6 +5,28 @@ their source in `src/`. Configure via `bunfig.toml`. This is the baseline across
 ecosystem — every project that has a suite uses it.
 — seen in: tosijs, tosijs-ui, tosijs-product, tosijs-3d, tosijs-schema, kith-email, lukko, tosijs-editor, tjs-lang, loewald-dot-com, haltija
 
+## Append-only global state makes probes contaminate each other
+
+A module-level, append-only set — a secret-path registry, a seen-cache, a
+registration map — is shared by every test in the process. Two probes that use
+**the same key** are not independent: the first one's write is still there when
+the second runs, and the second silently measures the first.
+
+This produced a false result that survived a whole review round. Five probes of
+a secrecy fix all used the state path `z.v`; probe 1 legitimately leaked, probe
+2 marked `z.v` secret, and probes 3–5 then reported "covered" because they were
+reading probe 2's mark. Three of those conclusions were wrong, and they were
+used to decide what to fix.
+
+**Give every probe its own key** — `p1`, `p2`, … generated per call — and the
+contamination disappears. If a suite cannot do that, it must reset the global
+between tests; if the global is deliberately append-only (as an audit trail
+often is), per-key isolation is the only option.
+
+The tell is an ordering dependency: shuffle the probes, and contaminated
+results move with the order. Worth trying whenever a batch of results looks
+suspiciously uniform.
+
 ## Run
 
 ```bash
