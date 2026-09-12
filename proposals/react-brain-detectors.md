@@ -1,0 +1,128 @@
+# Proposal: React-brain detectors, with executable replacements
+
+**Status:** proposal, rung 1. Target **1.12**, not 1.11.0 — see *Scheduling*.
+**Origin:** owner, 2026-09-12. All behaviour below MEASURED, not assumed.
+
+## What tosijs does today when someone brings React habits
+
+Probed against HEAD. Three of these are worse than "no warning."
+
+| written | what happens now |
+| --- | --- |
+| `div({key: 'row-1'})` | `<div key="row-1">` — junk attribute, silent |
+| `div({dangerouslySetInnerHTML: {...}})` | `dangerously-set-inner-h-t-m-l="[object Object]"` |
+| `div({className: ['a','b']})` | **`class="a,b"`** — one bogus class name |
+| `div({style: 'color: red'})` | works, but **clobbers** any later style prop or style binding |
+| `render() { return … }` | return value silently discarded |
+| `componentDidMount() {…}` | defined, never called, no signal |
+
+`className` is not merely a React idiom — it is a **silent correctness bug**.
+`class` accepts arrays and boolean maps; `className` is a real DOM property, so
+it takes the assignment branch and array-joins with a comma.
+
+## The detectors, and where each costs nothing
+
+**At registration — once per class, zero runtime cost.** The slot already
+exists: the `on<Event>` collision warning (`src/component.ts:2055`) warns once
+per class, honours `settings.quiet`, and states what actually happens.
+
+- React lifecycle names on the prototype: `componentDidMount`,
+  `componentWillUnmount`, `componentDidUpdate`, `shouldComponentUpdate`,
+  `getDerivedStateFromProps`, `componentWillReceiveProps`,
+  `getSnapshotBeforeUpdate`, `UNSAFE_*`
+- `setState` / `forceUpdate` defined
+
+**At the `render()` call site — one comparison** (`src/component.ts:2694`).
+A non-`undefined` return is the canonical React-brain error and is invisible
+today.
+
+**In `elementSet` — free if placed correctly.** `key` and
+`dangerouslySetInnerHTML` already fall through to the unrecognised-prop branch.
+`style`-as-string is the existing `else` of a `typeof value === 'object'` test.
+Only `className` needs a new test, and only when the value is not a string.
+
+**No hot-path cost anywhere.** `elementSet` runs on every prop of every
+element; none of these adds work to a recognised prop.
+
+## The part that matters: messages that cannot go stale
+
+A warning is a **claim about a replacement**, and this ecosystem has shipped
+three kinds of wrong claim:
+
+- 1.9.0 deprecation messages *"told users to write props keys that do not
+  exist"*, and following one literally **shipped a permanently disabled
+  button** (`bin/bundles.ts`).
+- `src/bindings.ts:34` and `Building-Apps.md:104` taught a deprecation that
+  1.9.1 **removed** — ten days stale, and `bindings.ts` is inside a `/*# */`
+  block, so it was live on the doc site.
+- `src/xin.ts` told users `tosiValue`/`tosiPath` were deprecated when they are
+  the canonical free functions.
+
+**Verified: no test in this repo executes any warning's suggested replacement.**
+`practices/code-quality.md:257` already states the rule — *"Deprecation is a
+claim about a REPLACEMENT, so test the replacement — with the caller's actual
+value"* — and nothing implements it.
+
+### The design that makes staleness structurally detectable
+
+**Do not put the fix in a string. Put it in a table the test can execute, and
+generate the message from it.**
+
+```ts
+{
+  id: 'react-key',
+  detect: (key) => key === 'key',
+  because: "React uses `key` to reconcile a list. tosijs has no reconciler …",
+  // EXECUTABLE. Not prose about the fix — the fix.
+  fix: () => div({ bindList: { value: app.rows, idPath: 'id' } }, template),
+  // what must be true after `fix` runs, so the claim is checkable
+  expect: (el) => el.querySelectorAll('[data-list-instance]').length > 0,
+}
+```
+
+One source for the message and the test. Three gates, all cheap:
+
+1. **Every `fix` runs, and its `expect` holds.** This is the gate that would
+   have caught the permanently-disabled button on the day it was written.
+2. **Every detector has a positive fixture that triggers it** — otherwise the
+   detector rots silently, which is the vacuous-fixture class this repo has hit
+   repeatedly (unwired anchors, a `forged != null` arm that never executed).
+3. **No prose in `src/` or `docPaths` claims a deprecation the runtime does not
+   emit.** A three-line grep over ``` `symbol` is deprecated ``` cross-checked
+   against the `warnDeprecated` call sites. This catches the `bindings.ts:34`
+   class deterministically, for free, with no model and no corpus to rot.
+
+### What this deliberately does NOT try to do
+
+Gate 3 catches *contradiction*, not *incompleteness* — a doc that simply never
+mentions a change stays invisible, and no cheap mechanism fixes that. **Some
+staleness will ship.** The gates are chosen because each has a measured
+failure behind it and costs a few lines; a scheme that tried to prove docs
+complete would cost more than the defects.
+
+## Message standard, and why it is not taste
+
+Every message shows the fix **as code**, not as prose. That is the measured
+result, not a preference: `tjs-lang/experiments/agent-legibility/` reports
+prose remedy 0/5 and the identical remedy shown as three lines of code 5/5;
+across variants, prose 50% vs worked example **80%**, against 0% for shipped
+diagnostics.
+
+This also makes the detector set the **first real customer of the legibility
+instrument** (`measured-legibility.md`): a natural A/B corpus, written to a
+standard that can be measured rather than argued.
+
+## Scheduling
+
+**1.12, not 1.11.0.** 1.11.0 is a security release that has been through eight
+review rounds and is not tagged; a new warning surface is scope creep on the
+release where scope creep has cost most. The one candidate for pulling forward
+is the `className`-with-an-array bug, because it is a silent wrong answer
+rather than a missing warning — and even that is arguably its own patch.
+
+## Retirement
+
+If a detector never fires in real use across two releases, it is describing a
+mistake nobody makes — retire it rather than keep it for tidiness. If gate 1
+never goes red, either the messages are right or the gate is vacuous; prove
+which by breaking one deliberately before trusting it.
