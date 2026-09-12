@@ -78,8 +78,8 @@ Ideas written up for critique before adoption, in `proposals/`. They are rung 1
 
 | Proposal | What it asks for |
 | --- | --- |
-| [leanness-loop](proposals/leanness-loop.md) | a **search** (no diff) over a feature-complete library for smaller/faster/simpler, where every finding must carry a measurement |
-| [grokkability-loop](proposals/grokkability-loop.md) | adapt tjs-lang's pinned-model grokkability harness to ask whether a reader with no context can use an API correctly |
+| [leanness-loop](proposals/leanness-loop.md) | leanness as the **driver** rather than a counteraction to additive change — with the measured evidence that review is an accretion engine nothing consumes |
+| [measured-legibility](proposals/measured-legibility.md) | one method, three instruments: do our diagnostics cause a **repair**, do they help you **locate** a bug, and does a **name carry its meaning** (cold vs warm prediction)? |
 
 Both come from the same observation: every lens we own reviews a *diff*, which
 is the right shape for a growing library and the wrong one for a finished
