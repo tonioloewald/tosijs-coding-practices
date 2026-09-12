@@ -452,9 +452,15 @@ The cheapest supply-chain fix is the dependency you didn't add.
   / 11 high, all via `firebase`'s subtree; tjs-lang's `functions/` alerts, same source).
   Same logic against middleware: a runtime-native endpoint (`Bun.serve`) is zero marginal
   supply chain where express brings its own nest — elimination **by construction**, like
-  the CodeMirror re-export. The trade accepted with eyes open: owned bugs replace inherited
-  ones ("owning your own bugs beats the savings"), and ops (backups, migrations) moves
-  in-house — name both in the decision record when making this move.
+  the CodeMirror re-export. **And generality is itself a multiplier**: a functions platform
+  supporting N languages carries N runtime trees *plus* N deployment toolchains — and
+  deploy-tooling advisories are the worse kind, since that code runs with credentials in
+  hand. One tight universal endpoint running a **safe-by-design single language with zero
+  deployment** (sandboxed tjs; no containers, no deploy toolchain) collapses N×2 piles to
+  one membrane you own, test, and have already battle-hardened — the audit posture shifts
+  from *scan the pile* to *verify the boundary*. The trade accepted with eyes open: owned
+  bugs replace inherited ones ("owning your own bugs beats the savings"), and ops (backups,
+  migrations) moves in-house — name both in the decision record when making this move.
 - **Gate a new dependency on a measured number**, not a vibe. For a browser library
   that is the printed gzip delta. "It's only one package" is not a measurement.
 - **Own it or require it — decided by who is on the other end, not by mechanism.**
