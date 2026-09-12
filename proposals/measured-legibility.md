@@ -14,8 +14,9 @@ its evidence backwards. Seeking critique.
 
 ## The thing being proposed
 
-Not "test whether the API is confusing." A **method**, with three instruments
-that share it:
+Not "test whether the API is confusing." A **method**, with four instruments
+that share it — and instrument 0 is the one that can invalidate a feature
+rather than polish it:
 
 > Vary exactly one artifact we control. Measure what an agent *does*. Score
 > against ground truth we already hold.
@@ -88,6 +89,60 @@ brand-new language from a minimal prompt is a strong result, not a weak one.**
 The baseline for a language a model has never seen is approximately zero. And
 the design decisions were driven by the *relative* figures — 80% vs 20% across
 paradigms — which are far more robust to sample size than any absolute rate.
+
+## Instrument 0 — does the surface work for its intended user? (UNMEASURED, and it is the thesis)
+
+> "This was literally load bearing during early development. The whole point
+> was agents that could improve themselves or write their own tools." — owner
+
+**This is what the AJS lane actually was, and why it ran continuously.** Not a
+usability test bolted on afterwards — the *existence proof for the product
+thesis*. If a small model cannot write AJS, agents cannot write their own
+tools, and the language has no reason to exist. So the lane **gated the
+design**: A4 and A7 are not comprehension findings, they are answers to *does
+this work for its intended user*, and the language was split in two when the
+answer came back no.
+
+**tosijs has the identical premise and has never tested it.** The agent
+surface — the whole ONE USER INTERFACE claim — asserts that an agent can drive
+an app through `describe`/`read`/`write`/`call`. Measured on HEAD:
+
+- **No model touches the agent surface in any lane.** The only match for
+  LLM-shaped terms across every test file is the string `llms.txt`.
+- `agent.test.ts` has 361 assertions. About what the surface **refuses**
+  (secret / expose / refusal): **~353**. About what an agent **achieves**
+  (`.write`, `.call`): **~45**. A ratio of **7.8 : 1**.
+- **`.call()` — invoking an action, the entire point of an agent interface —
+  appears in 11 assertions.**
+
+1.11.0 took **eight review rounds, four of them BLOCK, every one about
+disclosure.** The surface has been exhaustively proven not to leak and never
+once proven to work.
+
+**The order is backwards, and it has a cost.** Round 6 found that a custom
+element carrying an explicit `data-tosi-secret` is *weaker than the heuristic* —
+the author declares a secret and is ignored. A real defect, found by a
+secrecy lens. But nobody asked the prior question: **given `describe()` output,
+can an agent tell what this app does and drive it?** If the answer is no, the
+redaction work has been protecting a surface that does not deliver its premise.
+
+### The instrument
+
+The AJS shape, ported directly: give a model a tosijs app it has never seen and
+`describe()` output, plus a goal — *add "milk" to the cart*, *filter the table
+to overdue rows*, *change the theme* — and score whether it achieves the goal
+through the surface. Ground truth is the app state. No rubric.
+
+Then vary ONE thing, as A4 did: `describe()` with and without `styles: true`;
+contracts declared vs absent; `initAttributes` vs `contract.attributes`;
+exposure postures. **The relative figures are the finding** — A4 rode on 80 vs
+20 across paradigms, not on any absolute rate, and relative comparisons are far
+more robust to sample size.
+
+**Run it before more secrecy work, not after.** It is the only instrument here
+that can invalidate the feature rather than improve it, which is exactly why it
+should go first — and exactly the property that made the AJS lane load-bearing
+instead of advisory.
 
 ## Instrument 1 — do our diagnostics cause a repair? (RUN; result unapplied)
 
