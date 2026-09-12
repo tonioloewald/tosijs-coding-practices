@@ -494,6 +494,7 @@ and a muted gate is worse than no gate.
         */
         try {
           const { builtinModules } = await import('node:module')
+          const transpiler = new Bun.Transpiler({ loader: 'js' })
           const builtin = new Set(builtinModules)
           const declared = new Set([
             ...Object.keys(pkg.dependencies ?? {}),
@@ -529,32 +530,59 @@ and a muted gate is worse than no gate.
           for (const f of files.filter((x) => /\.(js|mjs|cjs)$/.test(x))) {
             const abs = join(process.cwd(), f)
             if (!existsSync(abs)) continue
-            const src = readFileSync(abs, 'utf8')
-              .replace(/\/\*[\s\S]*?\*\//g, '')
-              .replace(/^[ \t]*\/\/.*$/gm, '')
             /*
-             * THE PRECEDING CHARACTER MUST NOT BE A QUOTE OR `@`.
-             *
-             * Without that, this matched the word `import` INSIDE A STRING,
-             * took the string's own closing quote as the specifier's opening
-             * quote, and captured to the next one. Real example from a
-             * shipped bundle:
-             *
-             *   if(i==="@import")return`@import url('${r}');`
-             *
-             * reported as an undeclared package named  )return`@import url(
-             * — so every CSS-in-JS library on earth fails this check, which
-             * is a FAIL on correct code in a Tier 0 gate that is supposed to
-             * be mechanical and trustworthy. A regex cannot distinguish code
-             * from string contents; excluding a quote/`@` before the keyword
-             * is the cheap 95% of the difference.
-             */
-            for (const m of src.matchAll(/(?:^|[^\w$.'"`@])(?:import|export)\s*(?:[\w${},*\s]+from\s*)?['"]([^'"\n]+)['"]/g))
-              seen(m[1], f, false)
-            for (const m of src.matchAll(/(?:^|[^\w$.'"`@])require\s*\(\s*['"]([^'"\n]+)['"]\s*\)/g))
-              seen(m[1], f, false)
-            for (const m of src.matchAll(/(?:^|[^\w$.'"`@])import\s*\(\s*['"]([^'"\n]+)['"]/g))
-              seen(m[1], f, true)
+            PARSE, don't regex. The previous implementation matched the keyword
+            `import` inside string literals, and the two recorded false positives
+            are two faces of the same impossibility its own comment admitted —
+            "a regex cannot distinguish code from string contents":
+
+              1. `if(i==="@import")return`@import url('${r}');`` in a CSS-in-JS
+                 bundle, reported as a package called `)return`@import url(`.
+                 Patched by requiring the preceding char not be a quote or `@`.
+              2. A multi-line TEMPLATE LITERAL carrying example code —
+
+                     var help = `
+                       import { validate } from 'tosijs-schema' // ^1.8.0
+                     `
+
+                 where the character before `import` is a newline, so the patch
+                 above passes it straight through. Reported against
+                 tosijs-product, whose IIFE cannot contain a live import at all.
+
+            `Bun.Transpiler.scanImports` is the actual parser, so string contents
+            are invisible to it by construction and it returns the static /
+            dynamic / require distinction this check already wanted. Falls back to
+            the old regexes only if a shipped file will not parse as JS, so a
+            weird artifact degrades to the previous behaviour instead of going
+            unchecked.
+
+            NOTE for anyone mutation-testing this: you cannot do it end-to-end
+            through the script, because the `build` check above regenerates
+            `dist/` and wipes the mutation before this check reads it — which
+            makes both artifact-scanning checks LOOK vacuous. Exercise the
+            classify logic directly instead.
+            */
+            const src = readFileSync(abs, 'utf8')
+            let scanned = false
+            try {
+              for (const imp of transpiler.scanImports(src)) {
+                seen(imp.path, f, imp.kind === 'dynamic-import')
+              }
+              scanned = true
+            } catch {
+              /* unparseable — fall through to the regex approximation below */
+            }
+            if (!scanned) {
+              const stripped = src
+                .replace(/\/\*[\s\S]*?\*\//g, '')
+                .replace(/^[ \t]*\/\/.*$/gm, '')
+              for (const m of stripped.matchAll(/(?:^|[^\w$.'"`@])(?:import|export)\s*(?:[\w${},*\s]+from\s*)?['"]([^'"\n]+)['"]/g))
+                seen(m[1], f, false)
+              for (const m of stripped.matchAll(/(?:^|[^\w$.'"`@])require\s*\(\s*['"]([^'"\n]+)['"]\s*\)/g))
+                seen(m[1], f, false)
+              for (const m of stripped.matchAll(/(?:^|[^\w$.'"`@])import\s*\(\s*['"]([^'"\n]+)['"]/g))
+                seen(m[1], f, true)
+            }
           }
           for (const k of dynOnly.keys()) if (undeclared.has(k)) dynOnly.delete(k)
           const fmt = (m: Map<string, string[]>) =>
