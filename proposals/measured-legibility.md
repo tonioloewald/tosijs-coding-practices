@@ -1,7 +1,9 @@
 # Proposal: measured legibility
 
-**Status:** proposal. **Rung 3 IN `tjs-lang` for instrument 1's method and
-result** — the effect sizes are significant at the n that was run
+**Status:** proposal. **Rung 3 in `tjs-lang` — the method did not merely
+measure, it DESIGNED a language** (two assumptions refuted, the language split
+into a small-model surface and a large-model one). Rung 3 for instrument 1's
+method and result — the effect sizes are significant at the n that was run
 (p = 0.0007 for the comparison that matters) — **and rung 1 going on 2 for the
 tosijs action it implies**, because nothing is measured here yet. Instrument 3 is **not new**: `practices/documentation-surface.md`
 §3 already holds it, with a run. Corrected after a steward review found the
@@ -31,6 +33,47 @@ instruments below do not need it.
 
 It is not guesswork and it is not a dream: instrument 1 was run in July. Its
 result has never been applied to tosijs.
+
+## The precedent is not an experiment. It is a language that was DESIGNED this way.
+
+I twice cited the weakest artifact in this corpus as its headline, and a review
+agent did the same. The strongest evidence is not a repair rate — it is
+`tjs-lang/ASSUMPTIONS.md`, a register of design hypotheses carrying **verdicts
+from these probes**:
+
+- **A4, REFUTED — *"it was never the syntax: state-threading beats mutation
+  4:1."*** Recursive/threaded 80%, mutation 20%, **regardless of surface**;
+  s-expressions and braces tied once the paradigm was held constant. Syntax
+  choice, the thing language arguments are usually about, does not drive model
+  comprehension. The paradigm does.
+- **A7, REFUTED — small models revert to TypeScript even when told otherwise**,
+  and emit hybrids the language quietly accepts. Consequence: **AJS is the
+  small-model surface and TJS targets larger models.** The language was split
+  in two because of what small models measurably did.
+- **A6, qualified** — writable by a small model at ~67% *with a good cheat
+  sheet*, and sensitive to the guidance; the dominant failure is reaching for
+  `for` loops.
+
+**That is the claim worth making.** Not "we measured our error messages" but
+**a language's architecture was decided by watching small models fail**, with
+assumptions refuted rather than confirmed. The methodology is not speculative
+here; it already produced a design.
+
+And the corpus polices its own priors. The A4 write-up records the near-miss in
+its own voice: the first reading was *"s-expressions win 80% vs 20% — Lisp
+really is better for agents,"* which *"would have been wrong, and wrong in a
+way that flattered a hypothesis we already"* held. That discipline — re-reading
+a result against the prior you would like it to confirm — is the answer to
+"models are not users." It is also the thing most likely to be dropped when
+this is ported.
+
+**One gap, and it is the one this proposal already names.** The lane ran
+continuously through AJS's development — owner's account, two-in-three across
+hundreds of runs — and **none of those runs was persisted**. The experiments
+directory records N=5, N=9, N=10; the lane's history is gone. The methodology
+worked repeatedly and the evidence of it working survives only as testimony.
+*Persist the baseline* is not a statistical nicety; it is the difference
+between a result and a memory.
 
 ## Instrument 1 — do our diagnostics cause a repair? (RUN; result unapplied)
 
