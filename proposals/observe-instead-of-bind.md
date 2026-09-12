@@ -34,51 +34,45 @@ direction.
 Also forfeited: surgical list updates via `idPath`, the async-batched touch,
 and the accumulate-don't-clobber `bind` behaviour that 1.10.1 shipped a fix for.
 
-## The pernicious case is a DELTA, not a state
+## The detector is one question, and it compares nothing
 
-> "It's probably more pernicious when new observers get added without new
-> wiring. So the app has mostly decent code but the agent has forgotten context
-> and goes back to hand writing DOM updates." — owner
+> "It's not even more. It's like you just added a bunch of observers. Are you
+> sure?" — owner
 
-This is the correct framing and it **refutes the detector I was about to
-propose.** Measured on tosijs-ui, a large mature consumer:
+Three drafts of this compared things — observers to bindings, this release to
+the last. All wrong, and the third correction is the one that makes it work:
 
-| | count |
-| --- | --- |
-| `bind*` props / `bind(` | 20 |
-| `observe(` | **27** |
-| `touch(` | 4 |
+> **This change added N observers. Are you sure?**
 
-**More observers than bindings in code that is fine.** An absolute-ratio
-detector fires on a healthy codebase. Refuted before shipping — which is the
-cheapest possible time to find out.
+No ratio. No baseline. No threshold. It asserts nothing, so it cannot be
+wrong — it prompts the author to confirm an intent they already have, at the
+only moment they have it.
 
-The delta survives, weakly. tosijs's own history:
+**Why that beats every comparison I drafted:**
 
-```
-v1.10.1...HEAD     +observe 1   +bind 8     healthy
-v1.9.2...v1.10.1   +observe 6   +bind 4     observers outpacing
-```
+- **The ratio is refuted.** tosijs-ui, a large mature consumer, has **27
+  `observe` against 20 `bind`** — more observers than bindings in code that is
+  fine. Any absolute-ratio detector fires on it. Tested before shipping, which
+  is the cheapest time to find out.
+- **The delta-against-bindings needs a corpus nobody has.** tosijs's own
+  history orders plausibly (`+1 observe/+8 bind` healthy, `+6/+4` less so) but
+  its `src/` *implements* `bind` and uses `observe` for internal machinery —
+  the wrong corpus, and no application corpus is validated.
+- **A question needs neither.** "You added four observers" is a fact about the
+  diff. Whether that is right is the author's call, and they are the only one
+  who can make it.
 
-Plausible ordering, but **tosijs's own `src/` is the wrong corpus** — it
-*implements* `bind` and uses `observe` for internal machinery. Needs testing
-against an application (tosijs-3d, manta-recon, the demos) before it is
-trusted.
+The reason travels with the question, because the reason is the part nobody
+knows:
 
-## `touch()` as a weak signal, and why rarity is the point
+> `observe` leaves **no trace in the agent map** — an element becomes wired by
+> being bound and by nothing else. If these observers write to the DOM, `bind`
+> would register them; as written, an agent cannot see what they drive.
 
-> "Another thing to look for is lots of calls to touch, but again it's not
-> definitive." — owner
-
-Not definitive, and legitimate in several places (`forEach`/`map` yield raw
-items, so mutations need a touch; hot-reload; forced updates during drag). But
-**4 occurrences across all of tosijs-ui** — so it is *rare in good code*, and a
-spike is informative even though a single call is not.
-
-**A weak signal that almost never fires is worth more than a strong one that
-fires constantly.** False-positive volume is what kills a detector; rarity caps
-it. Treat `touch` density the same way — a delta, and a question, never a
-verdict.
+**And it is aimed at the real case.** Not an app built wrong from the start,
+but *mostly decent code where an agent lost context and reverted to
+hand-writing DOM updates* — a burst of new observers in an otherwise bound
+codebase. A burst is visible without any comparison at all.
 
 ## Where this belongs — and it is NOT a runtime warning
 
@@ -96,7 +90,15 @@ the last.**
 
 ## Retirement
 
-If the delta signal does not separate a known-good app from a known-hand-rolled
-one on first test, it goes. The absolute ratio is already retired: tested,
-fired on good code, dead. One of two signals killed before adoption is the
-process working, not a setback.
+If the question is answered "yes, I meant it" every time for two releases, it
+is noise and goes. Note what has already been retired without ever shipping:
+an **absolute ratio** (tested, fires on good code, dead) and a
+**delta-against-bindings** (needs a corpus nobody has). Two of three mechanisms
+killed before adoption, by measurement and by the owner sharpening the
+question — which is the process working, not a setback.
+
+**The general lesson is worth more than the detector.** Each draft compared
+something, and each comparison needed a baseline, a threshold, and a corpus to
+validate it. The version that survives asserts nothing and asks the author
+something only they can answer. **When a signal is weak, make it a question —
+questions cost nothing to dismiss, findings cost a rebuttal.**
