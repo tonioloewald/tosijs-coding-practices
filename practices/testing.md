@@ -294,6 +294,16 @@ defects in a README's most-read example within a minute (tosijs-ui#142); tosijs-
 live-example tests caught two bugs a green 135-test happy-dom suite structurally could not
 see; and tests passing has never once substituted for eyeballing the doc site.
 
+**And never build parallel test machinery beside it.** The corollary, from a same-day
+incident: tosijs, not paying attention to the shared test system, built its own broken
+parallel machinery — a structural twin in the *instrument* layer, which is the worst place
+for one, because a broken parallel test system doesn't just cost double maintenance, it
+returns wrong answers about everything it claims to cover while the working system sits
+unused. Before building any test/browser/reporting machinery in a `tosijs-ui` project:
+**check whether the site system already does it; if it almost does, that's a missing seam —
+file upstream (7a), don't fork.** A parallel harness is only ever justified by a recorded
+decision naming why the shared one can't serve. — seen in: tosijs (2026-09-13)
+
 Projects built on `tosijs-ui/site` can run tests as inline ` ```test ` blocks inside `/*# … */`
 doc comments; they execute in a real browser and POST results to `/report`, annotated by source
 line via `//# sourceURL`. Assertion discipline for these live examples:
