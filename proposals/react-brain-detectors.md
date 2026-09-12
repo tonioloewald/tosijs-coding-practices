@@ -128,6 +128,39 @@ Only `className` needs a new test, and only when the value is not a string.
 **No hot-path cost anywhere.** `elementSet` runs on every prop of every
 element; none of these adds work to a recognised prop.
 
+## RETURN findings; do not warn. An agent cannot see the console.
+
+> "The real problem with the whole idea at runtime is that agents tend not to
+> see console spam in the browser, at least not yet." — owner
+
+This lands on every detector in this document, because every one was specified
+as a `console.warn`. **The failure modes here are made by agents, and the
+correction was being delivered to a channel agents do not observe** and humans
+may never open.
+
+**The precedent is already in the repo and was walked past.**
+`auditAccessibility` contains **zero** `console.warn` calls — it returns an
+`AuditReport` of `findings` and `skipped`, and lets the caller decide. That is
+the shape that reaches an agent.
+
+So the detectors return findings. The same detection then reaches three
+audiences through channels each can actually use:
+
+| audience | channel |
+| --- | --- |
+| an agent at runtime | findings folded into `describe()` — the thing it already reads |
+| an agent writing code | a test asserts on the returned findings — the lane it does see |
+| a human | print them, opt-in |
+
+**It also dissolves three problems that were artefacts of the wrong channel:**
+warn-once bookkeeping, `settings.quiet` handling, and console-spam limits.
+A returned array has no spam problem; the caller decides.
+
+The one detector that stays a warning is the **`queueRender` handshake**, and
+only because a direct `render()` call is a *code* mistake surfaced while the
+author is running the app — but it should also appear as a finding, for the
+same reason as the rest.
+
 ## The part that matters: messages that cannot go stale
 
 A warning is a **claim about a replacement**, and this ecosystem has shipped
