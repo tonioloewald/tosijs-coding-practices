@@ -52,7 +52,8 @@ from these probes**:
   in two because of what small models measurably did.
 - **A6, qualified** — writable by a small model at ~67% *with a good cheat
   sheet*, and sensitive to the guidance; the dominant failure is reaching for
-  `for` loops.
+  `for` loops. (The lane's own one-shot rate is unrecoverable — see the gap
+  below.)
 
 **That is the claim worth making.** Not "we measured our error messages" but
 **a language's architecture was decided by watching small models fail**, with
@@ -67,13 +68,26 @@ a result against the prior you would like it to confirm — is the answer to
 "models are not users." It is also the thing most likely to be dropped when
 this is ported.
 
-**One gap, and it is the one this proposal already names.** The lane ran
-continuously through AJS's development — owner's account, two-in-three across
-hundreds of runs — and **none of those runs was persisted**. The experiments
-directory records N=5, N=9, N=10; the lane's history is gone. The methodology
-worked repeatedly and the evidence of it working survives only as testimony.
-*Persist the baseline* is not a statistical nicety; it is the difference
-between a result and a memory.
+**One gap — and it just demonstrated itself.** The lane ran continuously
+through AJS's development, one-shot, across hundreds of runs. Asked what the
+pass rate was, the owner's recollection moved from two-in-three to *"might be 1
+out of 3 actually"* within a minute — **not because the memory is poor, but
+because none of those runs was persisted.** The only recorded figure is
+`ASSUMPTIONS.md`'s A6, *"achievable (67% with a good cheat sheet)"*, which is
+itself qualified by the guidance; the experiments directory records N=5, N=9,
+N=10 and nothing about the lane.
+
+So a methodology that **refuted two design assumptions and split a language in
+two** cannot now report the rate it ran at. That is the argument for persisting
+baselines in its strongest form: *persist the baseline* is not a statistical
+nicety, it is the difference between a result and a memory — and the memory
+degrades first on exactly the number you would want to cite.
+
+Worth stating plainly for the port: **a one-shot pass rate of 1-in-3 on a
+brand-new language from a minimal prompt is a strong result, not a weak one.**
+The baseline for a language a model has never seen is approximately zero. And
+the design decisions were driven by the *relative* figures — 80% vs 20% across
+paradigms — which are far more robust to sample size than any absolute rate.
 
 ## Instrument 1 — do our diagnostics cause a repair? (RUN; result unapplied)
 
