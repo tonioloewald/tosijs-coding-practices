@@ -3,6 +3,17 @@
 **Status:** proposal, rung 1 (judgement). Not adopted. Seeking critique.
 **Proposed by:** owner, 2026-09-12. Harness already exists in `tjs-lang`.
 
+## Where this sits in the arc
+
+> "Rapid growth usually leads to bloat and mismatched APIs; then move towards
+> simplification and economy." — owner
+
+Grokkability is how you **detect** mismatch from outside. From inside, four
+spellings of one idea look like flexibility; to a reader with no context they
+look like four things to learn, and the reader's failure is the measurement.
+This loop and the leanness loop are the same programme: one finds incoherence
+by measuring bytes and reading code, the other by watching someone fail.
+
 ## The problem nobody inside the project can see
 
 API confusion is invisible from within. Everyone who touches tosijs has

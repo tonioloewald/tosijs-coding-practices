@@ -3,6 +3,28 @@
 **Status:** proposal, rung 1 (judgement). Not adopted. Seeking critique.
 **Proposed by:** owner, 2026-09-12. Drafted from the tosijs 1.11.0 release.
 
+## The arc these loops serve
+
+> "The goal is to go from rapid growth, which usually leads to bloat and
+> mismatched APIs, and then move towards simplification and economy." — owner
+
+Growth and economy need **opposite** processes, and we only built the first
+one. A growing library is served by gates on diffs: risk arrives with the
+change. A finished one is served by searches over the whole surface: the risk
+is already in, distributed, and nothing will ever re-open it on its own.
+
+Bloat is the visible half and the easy half — it has a unit. **Mismatched
+APIs** are the expensive half: several spellings of one idea, each added at a
+different time, each defensible on the day, collectively incoherent. Nobody
+ever decided to have four ways to read a value; it is what growth does. No gate
+can catch it, because every individual addition was fine.
+
+Naming it as its own bucket, because it is neither *size* nor *confusion*:
+
+1b. **Coherence** — one concept, several spellings. The finding is the SET, not
+    any member of it. Its cost is paid by every reader forever, and its fix is
+    usually a deprecation cycle rather than a deletion.
+
 ## The premise that makes this worth doing
 
 > "tosijs and tosijs-ui are both at the point where they have very few more
@@ -21,6 +43,9 @@ faster, or simpler.
 ## Three buckets, and the third is not a separate list
 
 1. **Zero-cost leanness** — smaller or faster with no consumer-visible change.
+1b. **Coherence** — several spellings of one concept collapsed to one canonical
+   form, the others kept as warning aliases. Rarely zero-cost; rarely a break
+   either. This is the bucket the arc above is really about.
 2. **Zero-cost clarity** — a simpler or more obvious API with no break: a
    better default, a clearer error, a narrower type that still accepts every
    spelling people actually write.
