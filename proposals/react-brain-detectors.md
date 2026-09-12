@@ -26,6 +26,7 @@ it takes the assignment branch and array-joins with a comma.
 exists: the `on<Event>` collision warning (`src/component.ts:2055`) warns once
 per class, honours `settings.quiet`, and states what actually happens.
 
+- a direct `this.render()` call (see the two tiers below)
 - React lifecycle names on the prototype: `componentDidMount`,
   `componentWillUnmount`, `componentDidUpdate`, `shouldComponentUpdate`,
   `getDerivedStateFromProps`, `componentWillReceiveProps`,
@@ -35,6 +36,38 @@ per class, honours `settings.quiet`, and states what actually happens.
 **At the `render()` call site — one comparison** (`src/component.ts:2694`).
 A non-`undefined` return is the canonical React-brain error and is invisible
 today.
+
+### Calling `render()` directly is React-brain in TWO tiers, and one message should carry both
+
+> "Calling render directly is kind of two tiered react brain. 1. use
+> queueRender but 2. maybe don't do it at all?" — owner
+
+Verified: `queueRender(triggerChangeEvent = false)` schedules via
+`requestAnimationFrame`, and the **only** internal `this.render()` is inside
+that rAF callback, immediately after `_renderQueued = false`. So a direct call
+bypasses both the batching and the bookkeeping — N calls do N renders, mid-frame.
+
+- **Tier 1, mechanical and unambiguous.** `this.render()` should be
+  `this.queueRender()`. Detect with one boolean: set a flag in the rAF caller,
+  and if `render()` runs without it, it was called directly.
+- **Tier 2, conceptual and the real disease.** *Why are you calling render at
+  all?* tosijs is observant: the DOM is persistent and bindings update it
+  surgically. Reaching for render to "update the UI" is `UI = f(state)`
+  imported wholesale, and the answer is almost always a binding.
+  `CLAUDE.md:509` already says it — *"`render()` runs on attribute changes —
+  use only for structural changes, not manual DOM updates."*
+
+**One detector, one message, both tiers** — cheaper than two detectors, and it
+reaches the reader where they already are. Do NOT build a separate tier-2
+detector: distinguishing "structural change" from "manual DOM update" at
+runtime is not worth what it would cost.
+
+**And the message must name the legitimate exception.** A synchronous
+`render()` during a drag — paired with raw `xin` reads/writes, because `touch()`
+is async-batched — is correct and deliberate. A warning that tells someone
+doing that they are wrong is the 1.9.0 failure again, in a new costume. Warn
+once per class, honour `settings.quiet`, and say plainly when a direct call is
+right.
 
 **In `elementSet` — free if placed correctly.** `key` and
 `dangerouslySetInnerHTML` already fall through to the unrecognised-prop branch.
