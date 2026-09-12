@@ -444,6 +444,17 @@ The cheapest supply-chain fix is the dependency you didn't add.
 
 - **Prefer zero runtime dependencies in a library.** Every one becomes your
   consumers' problem — their audit output, their overrides, their install size.
+- **Weigh a dependency by its transitive closure × fix latency, not its name count**
+  (owner, 2026-09). One battle-hardened single-purpose artifact (Postgres) concentrates the
+  world's scrutiny on one codebase where big problems are rare and fixed fast; a bundled
+  SDK (Firebase) is a mare's nest of transitive nodes, each with its own maintainer cadence
+  — your advisories arrive through packages you never chose (the lukko exhibit: 2 critical
+  / 11 high, all via `firebase`'s subtree; tjs-lang's `functions/` alerts, same source).
+  Same logic against middleware: a runtime-native endpoint (`Bun.serve`) is zero marginal
+  supply chain where express brings its own nest — elimination **by construction**, like
+  the CodeMirror re-export. The trade accepted with eyes open: owned bugs replace inherited
+  ones ("owning your own bugs beats the savings"), and ops (backups, migrations) moves
+  in-house — name both in the decision record when making this move.
 - **Gate a new dependency on a measured number**, not a vibe. For a browser library
   that is the printed gzip delta. "It's only one package" is not a measurement.
 - **Own it or require it — decided by who is on the other end, not by mechanism.**
