@@ -45,6 +45,15 @@ const TIERS = {
   'always-on': ['correctness', 'blast-radius'],
   'pre-minor': ['correctness', 'efficiency', 'security', 'blast-radius'],
   quarterly: ['ecosystem', 'practices'],
+  // THE CONSUMER-FACING TIER. `dx`, `docs`, `coverage` and `dryness` are in
+  // the pool and in no tier, so they run only if someone asks for them by
+  // name — and over tosijs 1.11.0 they went seven rounds without running
+  // once, on a release that changed the emitted type surface, the published
+  // docs and the tarball layout. Those are exactly the dimensions the other
+  // tiers do not look at: pre-minor asks "is it correct and safe", this asks
+  // "is it pleasant, honest and covered". Pair with a WHOLE-RELEASE baseRef,
+  // not a remediation diff — the questions are release-level.
+  dx: ['dx', 'docs', 'coverage', 'dryness'],
 }
 const VERIFY_SEVERITIES = depth === 'fast' ? ['blocker'] : ['blocker', 'major']
 // Key on the severity you'd ACT on, not just the label the finder typed: a reviewer who is

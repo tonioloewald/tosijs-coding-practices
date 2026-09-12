@@ -1,6 +1,6 @@
 ---
 name: pre-release-review
-description: Run the tiered pre-release review over a substantive diff — Tier 0 is the mechanical `release-doctor` script, then independent adversarially-verified lens passes (always-on: correctness + blast radius; pre-minor adds efficiency + security; quarterly: ecosystem, practices and the structural audit) ending in a GO / GO-with-followups / BLOCK recommendation. Trigger on the WORK, not the version letter: run it for any substantive change, and before cutting any tag. Use when preparing a release, cutting a version, after remediating a BLOCK, or when the user asks for a release review / pre-release check. Part of the shared tosijs-coding-practices process (practices/review.md).
+description: Run the tiered pre-release review over a substantive diff — Tier 0 is the mechanical `release-doctor` script, then independent adversarially-verified lens passes (always-on: correctness + blast radius; pre-minor adds efficiency + security; dx covers dx/docs/coverage/dryness; quarterly: ecosystem, practices and the structural audit) ending in a GO / GO-with-followups / BLOCK recommendation. Trigger on the WORK, not the version letter: run it for any substantive change, and before cutting any tag. Use when preparing a release, cutting a version, after remediating a BLOCK, or when the user asks for a release review / pre-release check. Part of the shared tosijs-coding-practices process (practices/review.md).
 ---
 
 # Pre-release review
@@ -97,6 +97,15 @@ install** before treating it as a code defect — a stale `node_modules` has fak
    - `tier: "pre-minor"` (default) + `depth: "full"` — adds efficiency + security; the
      once-per-coherent-body-of-work gate. Re-reviews after remediation scope to the
      remediation diff only, per each blocker's stated re-review scope.
+   - `tier: "dx"` — **dx + docs + coverage + dryness**, the consumer-facing set.
+     These four sat in the pool and in NO tier, so they ran only if asked for by
+     name: over tosijs 1.11.0 they went seven rounds without running once, on a
+     release that changed the emitted type surface, the published docs and the
+     tarball layout. The first run found a BLOCKER the seven security-focused
+     rounds had all walked past — the CHANGELOG's security entry cited a version
+     that was never released and never named the affected range, so a consumer
+     could not tell whether their version had leaked. Pair with a WHOLE-RELEASE
+     `baseRef`, not a remediation diff; these are release-level questions.
    - `tier: "quarterly"` — ecosystem + practices dispositions; a standing job with a
      deadline, never a release gate. The structural audit (redundant code paths, examples
      audit, style conformance, render-creep) runs at this cadence too, as does the **AAR

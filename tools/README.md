@@ -52,6 +52,18 @@ check, `repoDir` support) while the repo carried `severityUncertain` the install
 lacked. **When you edit either copy, diff the other and merge both directions** — and a
 practices-repo audit should include that diff.
 
+> **This convention has now failed TWICE, which is the evidence that it should
+> stop being a convention.** 2026-09-12: a `dx` tier was added to the installed
+> copy during a tosijs release and did not reach the repo — found by a critique
+> agent, not by anyone diffing. The first failure (four improvements stranded in
+> the install) produced this paragraph; the paragraph did not prevent the second.
+> Per `CONTRIBUTING.md`'s promotion ladder, a rule that has been observed to fail
+> twice is not a rule to restate — it wants a mechanism: make the installed path
+> a symlink to this file, or generate it on install, so there is one copy and
+> `diff` is structurally unnecessary. **Open question for the owner** (it changes
+> how the skill installs, so it is not an agent's call).
+
+
 ### Use
 
 ```
