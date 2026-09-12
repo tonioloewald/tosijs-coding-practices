@@ -70,6 +70,21 @@ toward structure and automation; ideas that don't get retired, however good the 
 Precedence when guidance conflicts: **the local project's `CLAUDE.md`/`AGENTS.md` wins**
 over this repo (it knows its own exceptions); this repo wins over generic model priors.
 
+## Proposals under review
+
+Ideas written up for critique before adoption, in `proposals/`. They are rung 1
+(judgement) until evidence moves them — see the promotion ladder in
+[`CONTRIBUTING.md`](CONTRIBUTING.md). Each carries its own retirement condition.
+
+| Proposal | What it asks for |
+| --- | --- |
+| [leanness-loop](proposals/leanness-loop.md) | a **search** (no diff) over a feature-complete library for smaller/faster/simpler, where every finding must carry a measurement |
+| [grokkability-loop](proposals/grokkability-loop.md) | adapt tjs-lang's pinned-model grokkability harness to ask whether a reader with no context can use an API correctly |
+
+Both come from the same observation: every lens we own reviews a *diff*, which
+is the right shape for a growing library and the wrong one for a finished
+one.
+
 ## Stay in your repo
 
 An agent working in project A **does not go make changes in project B** — no "quick fixes,"
