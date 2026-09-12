@@ -286,6 +286,14 @@ private named Haltija server**, not the Claude-in-Chrome extension.
 
 ## Doc / live-example tests
 
+**If you're on `tosijs-ui` and you aren't checking the live examples and using in-browser
+test fences for real tests, "you're a fool to yourself and a burden to others"** (owner). The
+machinery is already paid for and it is the honest tier of the instrument hierarchy: a real
+browser, real geometry, the same page a reader sees. Measured: switching fences on found two
+defects in a README's most-read example within a minute (tosijs-ui#142); tosijs-editor's
+live-example tests caught two bugs a green 135-test happy-dom suite structurally could not
+see; and tests passing has never once substituted for eyeballing the doc site.
+
 Projects built on `tosijs-ui/site` can run tests as inline ` ```test ` blocks inside `/*# … */`
 doc comments; they execute in a real browser and POST results to `/report`, annotated by source
 line via `//# sourceURL`. Assertion discipline for these live examples:
