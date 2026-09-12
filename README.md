@@ -79,6 +79,7 @@ Ideas written up for critique before adoption, in `proposals/`. They are rung 1
 | Proposal | What it asks for |
 | --- | --- |
 | [leanness-loop](proposals/leanness-loop.md) | leanness as the **driver** rather than a counteraction to additive change — with the measured evidence that review is an accretion engine nothing consumes |
+| [observe-instead-of-bind](proposals/observe-instead-of-bind.md) | reaching past `bind` leaves an element **invisible to the agent map** — with one detector already refuted by testing it against real code |
 | [react-brain-detectors](proposals/react-brain-detectors.md) | warn on React habits that tosijs silently mishandles (`key`, `className: []`, a returned `render()`), with **executable** replacements so the messages cannot go stale |
 | [measured-legibility](proposals/measured-legibility.md) | one method, three instruments: do our diagnostics cause a **repair**, do they help you **locate** a bug, and does a **name carry its meaning** (cold vs warm prediction)? |
 
