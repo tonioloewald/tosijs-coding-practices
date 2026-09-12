@@ -48,8 +48,7 @@ that rAF callback, immediately after `_renderQueued = false`. So a direct call
 bypasses both the batching and the bookkeeping — N calls do N renders, mid-frame.
 
 - **Tier 1, mechanical and unambiguous.** `this.render()` should be
-  `this.queueRender()`. Detect with one boolean: set a flag in the rAF caller,
-  and if `render()` runs without it, it was called directly.
+  `this.queueRender()`. Detected by a **secret handshake** — see below.
 - **Tier 2, conceptual and the real disease.** *Why are you calling render at
   all?* tosijs is observant: the DOM is persistent and bindings update it
   surgically. Reaching for render to "update the UI" is `UI = f(state)`
@@ -61,6 +60,58 @@ bypasses both the batching and the bookkeeping — N calls do N renders, mid-fra
 reaches the reader where they already are. Do NOT build a separate tier-2
 detector: distinguishing "structural change" from "manual DOM update" at
 runtime is not worth what it would cost.
+
+### The handshake (owner's idea, and it is the right primitive)
+
+> "The trick would be for queueRender to have a secret handshake."
+
+A module-private token `queueRender` holds and `render` checks. **Per-instance,
+not a module boolean** — a `WeakSet`:
+
+```ts
+const SANCTIONED = new WeakSet<Component>()
+
+// inside queueRender's rAF callback, where the only internal render() lives:
+SANCTIONED.add(this)
+try { this.render() } finally { SANCTIONED.delete(this) }
+
+// the check:
+if (!SANCTIONED.has(this)) warnDirectRender(this)
+```
+
+Three properties that a simpler design does not have:
+
+1. **`super.render()` from an override does not false-positive.** The instance
+   is in the set for the whole call, so the commonest correct pattern —
+   which `CLAUDE.md:610` explicitly tells people to write — stays silent. An
+   argument-passed token would break exactly here, because an override's
+   `super.render()` forwards nothing.
+2. **A nested direct call IS caught.** If a parent's sanctioned render calls
+   `child.render()` directly, a module-level boolean would be true and miss it;
+   a per-instance set catches it, because the child is not in the set.
+3. **Cost is nothing.** One add/delete per *queued* render (already
+   rAF-throttled) and one `has` per render.
+
+**Install the check by wrapping `render` on the concrete prototype at
+registration**, not by putting it in the base `render()`. Otherwise a subclass
+that overrides `render()` without calling `super.render()` skips the check
+entirely — and that subclass is likelier than average to be the confused one.
+The precedent is in this file: `DRAIN_WRAPPED` (`src/component.ts:1682`) wraps
+`connectedCallback` on the concrete prototype for the same reason.
+
+### The handshake needs a PUBLIC door, or it is a wolf-cry
+
+A synchronous render during a drag — paired with raw `xin` reads/writes,
+because `touch()` is async-batched — is correct and deliberate. If the only way
+to do it is the thing that warns, the warning is wrong for a legitimate use,
+which is the 1.9.0 failure in a new costume.
+
+So the handshake ships with a sanctioned synchronous entry point — `renderNow()`
+or `queueRender({ sync: true })` — which adds to the set and calls `render()`
+immediately. Then the warning can say something true and complete: *"call
+`queueRender()`; if you meant to render synchronously this frame, call
+`renderNow()`."* A detector whose message has no correct destination should not
+ship.
 
 **And the message must name the legitimate exception.** A synchronous
 `render()` during a drag — paired with raw `xin` reads/writes, because `touch()`
