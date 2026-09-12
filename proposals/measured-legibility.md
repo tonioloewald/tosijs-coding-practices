@@ -385,11 +385,45 @@ used — `read('rows')` returned secrets in cleartext. **No confused reader, no
 failed task, a security outcome.** Machine-visible only. It belongs to the
 coherence registry in `leanness-loop.md`, not here.
 
+## The harness is the RESIDUE, not the starting point — so do not start with it
+
+> "The grokkability harness was the generalization of this approach. It was
+> adopted precisely because the idea had been tested along the way there." —
+> owner
+
+This is the ladder followed correctly, over months, and it runs in the opposite
+direction from how this document first described it:
+
+1. **Ad-hoc probes during AJS development**, load-bearing, gating design
+   decisions in real time (rung 1 → immediately producing results).
+2. **They worked** — two assumptions refuted, the language split into a
+   small-model surface and a large-model one (rung 3: an observed result).
+3. **Only then** generalised into a named, pinned, opt-in lane (rung 2 as
+   *structure*, earned by the rung-3 result that preceded it).
+
+The harness is not a speculative tool hoping to prove itself. **It is the
+crystallised form of a method that had already changed a language.** A review
+that grades it as an unproven instrument is grading the residue and missing the
+programme — which is what happened here, twice, including by me.
+
+**The direct consequence for tosijs: do not build a harness first.** Start with
+throwaway probes on the load-bearing question — instrument 0 — let them drive
+or kill decisions, and generalise only what earns it. Building the harness
+first inverts the ladder: it is *structure before result*, which
+`CONTRIBUTING.md` grades as the weaker claim ("is it set up to work" sits below
+"does it work"). A tosijs grokkability lane built before a single probe has
+told us anything would be a rung-2 artifact with no rung-3 behind it — the
+exact shape of the entries this corpus keeps having to retire.
+
 ## Sequencing
 
-1. **Apply instrument 1's existing result** — audit the 92 diagnostics for a
-   worked correction. Pure message text, no behaviour change, measured 0% → 80%
-   elsewhere. This needs no new harness and no model.
+0. **Probe the thesis first, ad hoc.** Instrument 0, by hand, on one app: can a
+   model that has never seen it achieve a goal through `describe()`? No
+   harness, no lane, no CI. If the answer is no, that outranks everything else
+   in this document.
+1. **Apply instrument 1's existing result** — audit the ~92–107 diagnostics for
+   a worked correction. Pure message text, no behaviour change, measured
+   0% → 80% elsewhere. Needs no harness and no model.
 2. **Instrument 3 cold/warm over the ~112 option fields.** Cheapest new build,
    largest surface, ranked by wrongness × silence.
 3. **Instrument 2** last — it needs a repo harness and a scoring rule for
