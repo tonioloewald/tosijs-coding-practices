@@ -461,6 +461,11 @@ The cheapest supply-chain fix is the dependency you didn't add.
   from *scan the pile* to *verify the boundary*. The trade accepted with eyes open: owned
   bugs replace inherited ones ("owning your own bugs beats the savings"), and ops (backups,
   migrations) moves in-house — name both in the decision record when making this move.
+  **The floor this aims at (owner): dependencies like `fetch` and POST — "if we're broken,
+  the web is broken."** Web standards are the one dependency class with unbuyable scrutiny,
+  vendor-funded fix latency, and no install step to attack. Use it as the test: every
+  dependency above that floor should have to explain what it delivers that the floor
+  doesn't.
 - **Gate a new dependency on a measured number**, not a vibe. For a browser library
   that is the printed gzip delta. "It's only one package" is not a measurement.
 - **Own it or require it — decided by who is on the other end, not by mechanism.**
