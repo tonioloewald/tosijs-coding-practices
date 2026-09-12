@@ -81,6 +81,19 @@ proved works.
 **Retire if:** the rates never move, or every failure it reports turns out to
 be model variance rather than an explicable API defect.
 
+## Which packages this is for
+
+- **tosijs-schema is arguably the best first target, ahead of tosijs.** It has
+  the ecosystem's only non-owner issue ([#10](https://github.com/tonioloewald/tosijs-schema/issues/10),
+  `anssip`, 2026-09) — an actual outside reader, which is the population this
+  loop simulates. Schema APIs also fail *silently and permissively*: the
+  package's own history is a run of constraints that were accepted and not
+  enforced. "Did the model write a schema that validates what it thinks it
+  validates?" is a sharp, checkable task, and wrong answers are invisible
+  without exactly this kind of probe.
+- **tosijs-ui** — components are the surface a newcomer meets first.
+- **tosijs** — the agent surface, per the ranking above.
+
 ## Open questions for reviewers
 
 - Is a small local model a good proxy for a confused human, or a different

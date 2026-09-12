@@ -85,6 +85,23 @@ Rung 1 today (a judgement that this is worth doing). To promote:
 measurement bar, or any finding it produced is later implicated in a defect.
 Both outcomes are more informative than keeping it out of politeness.
 
+## Which packages this is for
+
+Not tosijs-specific. The trigger is **"feature-complete," not "important"** —
+a package still growing should keep being reviewed on its diffs.
+
+- **tosijs** — the case this was drafted from.
+- **tosijs-ui** — same state per the owner; larger surface, more components,
+  so the size half likely pays more.
+- **tosijs-schema** — feature-complete, and the one where bucket 2 (clarity
+  without a break) may matter most: its defect history is dominated by
+  **fail-open** behaviour (1.5.x validators, `oneOf`/`exclusiveMinimum`
+  silently ignored until 1.8.0, `maxProperties` a "ghost constraint" until
+  1.9.0). A schema that quietly accepts what it should reject is a clarity
+  defect with teeth, and `unenforcedKeywords()` already exists as the
+  honest-enumeration answer — evidence this package responds well to this kind
+  of pass.
+
 ## Open questions for reviewers
 
 - Is "no diff" actually workable, or does an unbounded search fabricate? What
