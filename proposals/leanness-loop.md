@@ -1,136 +1,143 @@
-# Proposal: the leanness loop
+# Proposal: leanness as the driver
 
-**Status:** proposal, rung 1 (judgement). Not adopted. Seeking critique.
-**Proposed by:** owner, 2026-09-12. Drafted from the tosijs 1.11.0 release.
+**Status:** proposal, rung 1. **Second draft** — the first was rejected in
+substance by three critique agents and by the owner. What survived is the
+purpose; the mechanism is replaced. Seeking critique.
 
-## The arc these loops serve
+## The purpose, stated correctly this time
 
 > "The goal is to go from rapid growth, which usually leads to bloat and
 > mismatched APIs, and then move towards simplification and economy." — owner
+>
+> "It only makes things leaner AFTER stuff is added. The goal here is to switch
+> to leanness as the DRIVER, not as a counteraction to additive changes."
 
-Growth and economy need **opposite** processes, and we only built the first
-one. A growing library is served by gates on diffs: risk arrives with the
-change. A finished one is served by searches over the whole surface: the risk
-is already in, distributed, and nothing will ever re-open it on its own.
+The first draft claimed no whole-codebase process existed. **That was false** —
+`practices/review.md` defines Tier 3, whole-codebase scope, and `scope` in the
+workflow already overrides the diff command. A critic was right to reject it.
 
-Bloat is the visible half and the easy half — it has a unit. **Mismatched
-APIs** are the expensive half: several spellings of one idea, each added at a
-different time, each defensible on the day, collectively incoherent. Nobody
-ever decided to have four ways to read a value; it is what growth does. No gate
-can catch it, because every individual addition was fine.
+But the correction does not rescue the objection, because every existing lens
+is **reactive**: `dryness` asks *did this change duplicate something*, `dx` asks
+*did this change make the surface bigger*, `efficiency` asks *did this change
+cost bytes*. Each is triggered by an addition and scoped to it. **None has
+removal as its purpose.** A process that makes things leaner only in proportion
+to what was just added cannot drive a library toward economy; it can only
+decelerate growth.
 
-Naming it as its own bucket, because it is neither *size* nor *confusion*:
+## The evidence: review is an accretion engine, and nothing consumes its output
 
-1b. **Coherence** — one concept, several spellings. The finding is the SET, not
-    any member of it. Its cost is paid by every reader forever, and its fix is
-    usually a deprecation cycle rather than a deletion.
+The owner's observed pattern — *"you run the reviews, DX says little or
+nothing, then security and so on whine about nits, which leads to aggregation
+of fix code which never gets looked at through the DX/dryness/leanness lens
+until a whole bunch more stuff has happened"* — is directly measurable in
+tosijs 1.11.0, and the measurement is unambiguous.
 
-## The premise that makes this worth doing
+Eight review rounds. Rounds 1–7 were `pre-minor` (correctness, security,
+blast-radius, efficiency). Each produced blockers; each blocker produced
+remediation code written under tag pressure. **`dryness` and `dx` did not run
+in any of them** — they were in the lens pool and in no tier, so they were
+unreachable without asking for them by name.
 
-> "tosijs and tosijs-ui are both at the point where they have very few more
-> features needed, so it's a question of relentless polishing." — owner
+What accreted in `src/agent.ts` while nobody was looking:
 
-Every review lens we have reviews **a diff**. That is the right shape while a
-library is growing: the risk arrives with the change, so the gate sits on the
-change. A feature-complete library inverts it. The remaining risk is not in
-what arrives — it is in what accumulated and nobody revisited, and no process
-we own ever looks at that.
+| accretion | rounds to appear | found by |
+| --- | --- | --- |
+| the `fromDOM` harvest, written out **three times** | 4 (one copy per blocker) | `dryness`, round 8 |
+| the upward walk, **four arms** (parent, label, form, shadow host) | 4 | never reviewed as a whole |
+| `propagates`, a denylist with allowlist arms bolted on the front | 2 | — |
 
-This proposes a **search**, not a gate: no diff, no base ref, no release
-attached. It reads the library as it stands and asks what could be smaller,
-faster, or simpler.
+The three copies had already begun to disagree in their comments about what
+`fromDOM` was for. That is tosijs-floorplan#4's own defect — the duplication
+whose fix this release is named for — **reappearing inside the function that
+fixed it**, because the process that would catch it was not reachable.
 
-## Three buckets, and the third is not a separate list
+When `dryness` finally ran, in round 8, it found it immediately.
 
-1. **Zero-cost leanness** — smaller or faster with no consumer-visible change.
-1b. **Coherence** — several spellings of one concept collapsed to one canonical
-   form, the others kept as warning aliases. Rarely zero-cost; rarely a break
-   either. This is the bucket the arc above is really about.
-2. **Zero-cost clarity** — a simpler or more obvious API with no break: a
-   better default, a clearer error, a narrower type that still accepts every
-   spelling people actually write.
-3. **Worth-it breaks** — with an explicit benefit/cost, *fed into the existing
-   `TODO.md` "2.0 — THE PURGE INVENTORY"* rather than a new list. That
-   inventory exists because a previous purge happened without one; a second
-   parallel list would reproduce the problem it was created to solve.
+**So the intervention is not primarily a quarterly search.** It is that
+**remediation must be seen by the leanness lenses while it is still
+remediation** — not after N releases, when it has become architecture.
 
-## The load-bearing rule: every finding carries a measurement
+## What was wrong with the first draft's mechanism
 
-Without this the loop is a refactoring-suggestion generator, and on mature code
-that is a **churn engine**.
+Two critics dismantled it empirically. Both findings stand and are recorded
+here so the next draft does not re-propose them.
 
-We have direct evidence of the failure mode. tosijs 1.11.0 took **eight review
-rounds**, and in three consecutive rounds the remediation introduced a defect
-the previous round had not had — a straight trade on a label wrapper, a
-permanent over-redaction from a containment guard, a leak reopened by a
-narrowing. That happened with an *external defect forcing each change*. A loop
-that goes looking for improvements has the same failure mode with nothing
-forcing it.
+**The measurement rule ("no number, no finding") is unsound.** Measured, not
+argued:
 
-So: a finding is not "this could be smaller." It is **"−N bytes gz / −N µs,
-here is the diff, here is the test that still passes."** No number, no finding.
+- **gzip over-values de-duplication 23×.** Duplicating a 400-char block 55 kB
+  away costs +185 gz and **+8 brotli** — gzip's 32 kB window cannot see the
+  repeat, brotli's can. De-dup is the most common thing a leanness pass finds,
+  and the metric systematically inflates it. At realistic finding sizes the
+  gz↔br correlation is **negative** (r = −0.664); the apparent agreement comes
+  entirely from one incompressible blob no real finding resembles.
+- **~39% of the policed bytes never reach a consumer.** A state-only consumer
+  bundles 25 137 gz of `module.js`'s 44 549. "−300 gz in `agent.ts`" and
+  "−300 gz in `xin.ts`" score identically under the rule and differ by
+  infinity in value.
+- **The largest available win is invisible to it.** The same five-line app is
+  25 137 gz via `tosijs`, 16 180 via `tosijs/state` — **8 957 B, 55%, decided
+  by the import specifier** — and produces zero delta on any published bundle.
+- **It rejects the class that pays best.** Every growth event in
+  `bin/bundles.ts` is a clarity or correctness fix that *cost* bytes: `bind`
+  accumulating instead of silently dropping a binding; deprecation messages
+  that stopped naming props keys which do not exist. Under the rule these are
+  negative findings.
+- **Its safety clause is the signal 1.11.0 falsified.** "Here is the test that
+  still passes" — a fully green suite was present in *every round that shipped
+  a blocker* (1015/0, 1028/0, 1033/0).
 
-**Prerequisite, and it is missing:** tosijs has per-bundle gzip budgets and a
-build-emitted delta table (both added 2026-09), so the *size* half is
-measurable today. There is **no benchmark harness** — so every "more efficient"
-claim is currently unfalsifiable. Building one is a precondition for half this
-loop, not a nice-to-have.
+**Replacement, from the same critic:** a finding carries **a falsifiable
+prediction and a named beneficiary** — the unit the beneficiary actually pays
+(brotli, in a consumer bundle that imports X; and if you cannot name a consumer
+whose bundle moves, the byte figure is *zero*, and say so) — plus **a
+refutation condition** ("this is wrong if ⟨observable⟩"), which admits the
+clarity bucket without weakening it, plus **a pre-registered test watched
+failing first**.
 
-## Reuse the machinery, do not build parallel machinery
+**"Record, don't act" guarantees nothing happens.** Also measured:
+`tosijs/TODO.md` went 47 → 2 183 lines since 2026-07-17, add:delete **3.8:1**,
+largest single net reduction **7 lines**, 57% of lines ≥2 weeks untouched. Its
+"2.0 refactoring candidates" block is dated **2026-04-16** — five months,
+twelve releases — and it *already carries byte measurements*, i.e. it already
+cleared the bar the first draft proposed. Worse, it has **decayed into
+misinformation**: three of the eight symbols it lists lost their warning
+wrappers in 1.9.1, so the recorded finding is now false, with a citation
+attached. **An unactioned inventory is not neutral.**
 
-This should be a **lens in the existing pre-release-review workflow**, not new
-infrastructure. That workflow already has the lens pool, adversarial
-verification, triage, report filing and follow-up routing. Two things are
-genuinely missing:
+## What to build instead
 
-- a **no-diff mode** (today `baseRef` is required and the prompt is built
-  around `git diff`), and
-- a **required measurement field** on findings from this lens.
+1. **Run `dryness` + `dx` on remediation, not after it.** The cheapest and
+   best-evidenced change here. The `dx` tier now exists; make the re-review
+   after a BLOCK include it rather than defaulting to correctness +
+   blast-radius over the remediation diff.
+2. **A canonical-spelling registry** (`API.md`), one row per **concept**, not
+   per symbol, with the other spellings, each one's status, and the reason each
+   is kept. Enforced by extending `src/type-surface.test.ts`, which already
+   compiles probes against the built `.d.ts` and fails the build: every listed
+   spelling still resolves; every row marked `warns` actually warns and every
+   row marked `kept` does not; no doc claims a deprecation the registry lacks.
+   Measured need: **18 non-deprecated spellings** for "bind text to a path",
+   10 for reading a value, 7 for creating a proxy, 5 for declaring attributes —
+   and `withAttributes`, the canonical form since 1.10.0, is **3 uses against
+   156** across every consumer repo the maintainer owns.
+3. **One DX-lens question, enforced at the point of addition:** does this diff
+   introduce a spelling for a concept that already has a row? If so the row is
+   updated in the same commit — a `reason kept`, or an existing spelling moved
+   to a retirement tier. Paid by the person with the most context, not by a
+   quarterly search by someone with the least.
 
-Cadence: the `quarterly` tier, which already means "compounding, never
-release-gating."
+## The class none of this catches, recorded honestly
 
-## Bias to record, not to act
+`tosijs#32`: `rows[0].pw`, `rows.0.pw` and `rows[id=r1].pw` name one value and
+had no string relation, so redaction missed every spelling but the one the
+binding used, and `read('rows')` returned secrets in cleartext. **A pure
+spelling-multiplicity defect with a security outcome** — no byte delta, no
+confused reader, invisible to both loops as originally proposed. Whatever is
+adopted should be able to say why it would or would not have found this.
 
-Output is a **ranked inventory**, not a branch. A human picks what to do. Given
-the churn evidence above, a loop that opens PRs on a mature library is a worse
-idea than one that maintains a list somebody chooses from.
+## Retirement
 
-## Promotion and retirement
-
-Rung 1 today (a judgement that this is worth doing). To promote:
-
-- **→ structure:** a lens with a mandatory measurement field and a fixed
-  bucket taxonomy.
-- **→ automation:** the size half is already automatable — the build emits
-  per-bundle deltas, so "what grew and why" could be generated rather than
-  reviewed. Start there; it is the rung the corpus says to aim for.
-
-**Retire if:** three consecutive runs produce no finding that survives the
-measurement bar, or any finding it produced is later implicated in a defect.
-Both outcomes are more informative than keeping it out of politeness.
-
-## Which packages this is for
-
-Not tosijs-specific. The trigger is **"feature-complete," not "important"** —
-a package still growing should keep being reviewed on its diffs.
-
-- **tosijs** — the case this was drafted from.
-- **tosijs-ui** — same state per the owner; larger surface, more components,
-  so the size half likely pays more.
-- **tosijs-schema** — feature-complete, and the one where bucket 2 (clarity
-  without a break) may matter most: its defect history is dominated by
-  **fail-open** behaviour (1.5.x validators, `oneOf`/`exclusiveMinimum`
-  silently ignored until 1.8.0, `maxProperties` a "ghost constraint" until
-  1.9.0). A schema that quietly accepts what it should reject is a clarity
-  defect with teeth, and `unenforcedKeywords()` already exists as the
-  honest-enumeration answer — evidence this package responds well to this kind
-  of pass.
-
-## Open questions for reviewers
-
-- Is "no diff" actually workable, or does an unbounded search fabricate? What
-  bounds it — one subsystem per run? A file budget?
-- Does the measurement requirement kill bucket 2? "Simpler API" has no unit.
-- Is the churn risk real enough to justify record-only, or is that
-  over-caution that makes the loop worthless?
+If (1) is adopted and the next release's remediation still accretes unexamined,
+the cadence fix failed and should be reverted rather than supplemented. If the
+registry's gates never go red in two quarters, it is decoration.
