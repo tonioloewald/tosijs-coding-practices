@@ -1,7 +1,11 @@
 # Proposal: measured legibility
 
-**Status:** proposal. **Rung 3 for instrument 1** (measured in
-`tjs-lang/experiments/agent-legibility/`), rung 1 for instruments 2 and 3.
+**Status:** proposal. **Rung 3 IN `tjs-lang` for instrument 1's method and
+result; rung 1 going on 2 for the tosijs action it implies** — nothing is
+measured here. Instrument 3 is **not new**: `practices/documentation-surface.md`
+§3 already holds it, with a run. Corrected after a steward review found the
+first version laundering a corpus's aggregate rigour onto its weakest
+experiment.
 Third draft — supersedes `grokkability-loop.md`, which was too narrow and cited
 its evidence backwards. Seeking critique.
 
@@ -78,7 +82,14 @@ which is exactly where message quality should dominate — and exactly where
 Score: does it name the right `file:line`, and how many files did it open
 first? Both are ground truth. No judgement guard.
 
-## Instrument 3 — does a name carry its meaning? (NEW; the largest surface)
+## Instrument 3 — does a name carry its meaning? (NOT new: merge into `documentation-surface.md` §3)
+
+**`practices/documentation-surface.md:91-118` already contains this instrument
+and already has a run** — in haltija, *"three of four predicted naming bugs
+were disproven… and the one confirmed case was unanimous and worse than
+predicted"* — plus an operational rule this draft lacked: **keep it out of CI**.
+Genuinely new below: the **warm arm** and the **wrongness × silence** ranking.
+Those fold into that entry. Do not create a parallel one.
 
 > "You could do that across the entire API surface as well. What do you think
 > this would do? What would you guess this parameter means?"
@@ -130,8 +141,12 @@ data-destroying bug.
 
 ## What the corpus already settled — do not re-derive
 
-From `FINDINGS.md` (717 lines, 2026-07-31 → 2026-08-31, multiple rounds, two
-models, replications, corrected confounds):
+From `FINDINGS.md` (717 lines, 2026-07-31 → 2026-08-31). **Read the provenance
+per result, not per corpus:** the two-model replication belongs to the `switch`
+probe, not to instrument 1, which is **n=10, one 1.5B model, single-shot** and
+carries its own limitation — *"this is single-shot, and real coding iterates…
+the iterated version is the more honest experiment."* The method is what
+transfers; the number is bounded.
 
 1. **Models repair from examples, not rules.** Third independent experiment
    pointing the same way. *"Every place we currently spend prose — guides,
@@ -149,12 +164,19 @@ models, replications, corrected confounds):
 
 Non-negotiable, because the existing harness violates several:
 
-- **Instrument the repair layer before trusting any rate.** `fixCommonMistakes`
-  rewrites `: string` → `: ''` — a model writing a TypeScript annotation where
-  AJS wants an example value is the most legibility-relevant signal available,
-  and it is repaired and scored PASS. Live on 4/4 tasks, with no counter for
-  whether a repair fired. **Report raw and repaired rates; the gap is a
-  finding.**
+- **Instrument the repair layer before trusting any rate — ALREADY DONE
+  UPSTREAM, and better than this requirement asked.** When first read, the
+  harness silently applied `fixCommonMistakes` before scoring. `tjs-lang`
+  `8f804d2` (2026-09-12 17:07, *during* the conversation that produced this
+  document) deleted it: *"these used to be applied silently before measuring,
+  which made the reported number a post-repair rate wearing a raw rate's
+  label."* Two of three repairs were **dead** — the language grew bare
+  type-name support, so the harness was repairing something already fixed and
+  *"the improvement never showed up in the number it was supposed to
+  improve."* The third is narrower than its name: `` [^`$]* `` excludes `$`,
+  so an interpolated template — the case that matters — was always counted a
+  miss. The rate is now RAW, with each repair reporting what it would have
+  recovered. **Adopt that shape; do not re-derive it.**
 - **n = 5 is a demo.** At a 0.6 bar, a degraded 35% passes 23.5% of runs; a
   0.90 → 0.60 regression is missed 68.3% of the time; four tasks at a healthy
   p=0.8 produce a false alarm 21.2% of runs. For movement detection: **n ≥ 25

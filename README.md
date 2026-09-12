@@ -82,9 +82,10 @@ Ideas written up for critique before adoption, in `proposals/`. They are rung 1
 | [react-brain-detectors](proposals/react-brain-detectors.md) | warn on React habits that tosijs silently mishandles (`key`, `className: []`, a returned `render()`), with **executable** replacements so the messages cannot go stale |
 | [measured-legibility](proposals/measured-legibility.md) | one method, three instruments: do our diagnostics cause a **repair**, do they help you **locate** a bug, and does a **name carry its meaning** (cold vs warm prediction)? |
 
-Both come from the same observation: every lens we own reviews a *diff*, which
-is the right shape for a growing library and the wrong one for a finished
-one.
+They share an observation: every lens we own reviews a *diff*, which is the
+right shape for a growing library and the wrong one for a finished one. **They
+are drafts, not practice** — a proposal not adopted or rejected by the review
+batch after the one it was filed for is deleted; the journal keeps it.
 
 ## Stay in your repo
 

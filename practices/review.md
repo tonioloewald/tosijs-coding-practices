@@ -101,6 +101,17 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   separate agents (27% duplicate rate; DX never originated a blocker). **Re-reviews cover
   the remediation diff only** — four runs found blockers introduced by the previous wave's
   own fixes; re-reading the whole span is where review waves came from.
+- **The `dx` tier — dx + docs + coverage + dryness, run on a WHOLE RELEASE, not a
+  remediation diff.** These four sat in the lens pool and in no tier, so they ran
+  only if asked for by name. Over tosijs 1.11.0 they went **seven rounds without
+  running once**, while seven `pre-minor` rounds produced remediation code that
+  accreted unexamined — one predicate ended up written out three times inside the
+  function whose duplication the release was named for. Its first run found a
+  blocker all seven security-focused rounds had walked past: the CHANGELOG cited a
+  version that never shipped and never named the affected range, so a consumer
+  could not tell whether their version had leaked. **Run it after a BLOCK
+  remediation, not once at the end.**
+
 - **Tier 3 — the structural audit, quarterly (or per-major), whole-codebase scope.** The
   things diff-scoped review is structurally blind to:
   - **Redundant code paths / structural twins** (the emit-convert and double-`initAttributes`

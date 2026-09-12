@@ -65,12 +65,26 @@ here so the next draft does not re-propose them.
 **The measurement rule ("no number, no finding") is unsound.** Measured, not
 argued:
 
-- **gzip over-values de-duplication 23×.** Duplicating a 400-char block 55 kB
-  away costs +185 gz and **+8 brotli** — gzip's 32 kB window cannot see the
-  repeat, brotli's can. De-dup is the most common thing a leanness pass finds,
-  and the metric systematically inflates it. At realistic finding sizes the
-  gz↔br correlation is **negative** (r = −0.664); the apparent agreement comes
-  entirely from one incompressible blob no real finding resembles.
+- **gzip mis-scales per edit type — but less than the critique claimed, and in
+  both directions.** Reproduced and committed as
+  `tosijs/tools/compression-proxy.ts` (the original figures were never
+  persisted, which is itself the finding — they do not re-derive):
+
+  | edit | Δgz | Δbr | br/gz |
+  | --- | --- | --- | --- |
+  | duplicate a 400-char block ~58 kB away | +167 | +60 | **0.36** |
+  | duplicate it ~100 chars away | +10 | +6 | 0.60 |
+  | a NEW 100-char error string | +62 | +96 | **1.55** |
+  | delete 400 chars | −154 | −171 | 1.11 |
+
+  gzip's 32 kB window cannot see a distant repeat, so remote de-duplication —
+  a leanness pass's commonest find — is over-valued **~2.8×**, not the 23×
+  asserted. And the reverse error is real: a new error string costs a consumer
+  **more** than gzip says (1.55), where the critique claimed it was over-taxed.
+  Pearson r is **+0.895** excluding an incompressible blob, not −0.664. **The
+  metric is directionally sound and per-edit-type mis-scaled** — which weakens
+  "no number, no finding" for a subtler reason than the critique gave: the
+  number is real, and it is not the number the consumer pays.
 - **~39% of the policed bytes never reach a consumer.** A state-only consumer
   bundles 25 137 gz of `module.js`'s 44 549. "−300 gz in `agent.ts`" and
   "−300 gz in `xin.ts`" score identically under the rule and differ by
