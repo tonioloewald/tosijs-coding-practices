@@ -74,6 +74,49 @@ but *mostly decent code where an agent lost context and reverted to
 hand-writing DOM updates* — a burst of new observers in an otherwise bound
 codebase. A burst is visible without any comparison at all.
 
+## Why naming cannot fix this, though it is the right instinct
+
+> "If we were doing dangerouslyUpdateInnerHTML style thing it would be
+> something like observeAndManageUpdatesManuallyYouFool…" — owner
+
+Naming-as-deterrent is the best mechanism available when it applies: the name
+warns at the call site, every time, for free, with no gate and no false
+positives. **The corpus measured exactly when it applies**
+(`exactly-probe.ts`, N=5):
+
+| arm | result |
+| --- | --- |
+| `Exactly` — a novel, self-describing word, no comment | **4/5, zero wrong** (the miss was a no-answer) |
+| `switch` — contradicts a prior every model holds | **0/5, five confident errors** |
+
+> **"Guidance is needed where we contradict an existing habit, not where we add
+> a well-named novelty."**
+
+`dangerouslySetInnerHTML` is the *novelty* case: nobody arrives with a prior
+about what it means, so the name fills an empty slot and does all the work.
+
+**`observe` is the other case.** Every reactive library has one, everyone
+arrives with a prior, and **the prior is correct** — `observe` genuinely is the
+right tool for non-DOM reactions. A deterrent name would be fighting a habit,
+which is measurably where a name alone fails.
+
+**And React's trick has a structural precondition tosijs does not meet.**
+`dangerouslySetInnerHTML` works because it is the *only* spelling of the
+dangerous thing; there is no innocuous alternative to hide in. Here `observe`
+is simultaneously the innocuous spelling and the dangerous one, decided by what
+the callback does. **You cannot deter a name that is right half the time.**
+
+Which leaves one real design option, and it is an API change rather than a
+detector: **make the dangerous path unable to hide inside the innocuous one.**
+`observe` for non-DOM reactions; a separate, self-indicting entry point for
+"I am updating the DOM myself." Only that version gets the naming mechanism to
+do the work — and it is a 2.0-shaped change, not a warning.
+
+**The trap, also measured:** *"naming the language WITHOUT stating the rule is
+worse than saying nothing."* A deterrent name that does not say **why** — that
+`observe` leaves no trace in the agent map — scores below silence. Whatever the
+name, the reason travels with it.
+
 ## Where this belongs — and it is NOT a runtime warning
 
 The first draft of this was a `describe()` runtime note. Wrong home: the
