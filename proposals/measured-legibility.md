@@ -1,8 +1,9 @@
 # Proposal: measured legibility
 
 **Status:** proposal. **Rung 3 IN `tjs-lang` for instrument 1's method and
-result; rung 1 going on 2 for the tosijs action it implies** — nothing is
-measured here. Instrument 3 is **not new**: `practices/documentation-surface.md`
+result** — the effect sizes are significant at the n that was run
+(p = 0.0007 for the comparison that matters) — **and rung 1 going on 2 for the
+tosijs action it implies**, because nothing is measured here yet. Instrument 3 is **not new**: `practices/documentation-surface.md`
 §3 already holds it, with a run. Corrected after a steward review found the
 first version laundering a corpus's aggregate rigour onto its weakest
 experiment.
@@ -142,11 +143,40 @@ data-destroying bug.
 ## What the corpus already settled — do not re-derive
 
 From `FINDINGS.md` (717 lines, 2026-07-31 → 2026-08-31). **Read the provenance
-per result, not per corpus:** the two-model replication belongs to the `switch`
-probe, not to instrument 1, which is **n=10, one 1.5B model, single-shot** and
-carries its own limitation — *"this is single-shot, and real coding iterates…
-the iterated version is the more honest experiment."* The method is what
-transfers; the number is bounded.
+per result, not per corpus** — the two-model replication belongs to the
+`switch` probe, not to instrument 1, which is n=10 on one 1.5B model,
+single-shot.
+
+**But that is the worst case BY DESIGN, and the effect sizes are separable at
+that n.** Fisher exact, two-tailed:
+
+| comparison | p |
+| --- | --- |
+| prose remedy 0/5 vs worked example 5/5 | **0.0079** |
+| shipped 0/10 vs worked example 8/10 | **0.0007** |
+| shipped 0/10 vs prose fix 5/10 | **0.0325** |
+| prose fix 5/10 vs worked example 8/10 | 0.3498 |
+
+Two review agents rejected this on "n=5 cannot distinguish 80% from 50%."
+True — and it is the wrong objection, because the headline is **80 vs 0**. The
+only non-separable pair is the *adjacent* one, which needs n≥38; that bound
+applies to ranking `withFix` against `withExample`, not to the finding that
+shipped diagnostics do nothing.
+
+Two design objections are also backwards. **A small model with one attempt is a
+FLOOR** — bigger models and retries can only raise the number, so both the 0%
+and the 80% are informative; objecting that the stress test applied stress is
+not a critique. And **iteration MASKS message quality**: with five retries a bad
+diagnostic costs time rather than success, so single-shot is the *more*
+sensitive instrument. Add iteration to measure a different thing (how many
+attempts a bad message costs), not to fix this one.
+
+**The comparison class both critiques used was an imagined perfect study. The
+real alternative is taste** — which has a measured record here: the 1.9.0
+`bind*` deprecation was a well-argued naming judgement that cost two releases
+and shipped a data-destroying bug. This is `CONTRIBUTING.md`'s
+"category reputation is middle-rung evidence" running in reverse: a bounded
+real measurement graded against an imagined one, and losing.
 
 1. **Models repair from examples, not rules.** Third independent experiment
    pointing the same way. *"Every place we currently spend prose — guides,
