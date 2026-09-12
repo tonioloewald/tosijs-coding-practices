@@ -190,6 +190,49 @@ real measurement graded against an imagined one, and losing.
    looked like a result"*, *"the apparatus trap, again, in a new costume"*,
    two runs lost to it.
 
+## This is iterated discovery, not one-shot inference — which is what fixes the n argument
+
+> "Tognazzini said you almost never need more than 3 usability tests, because
+> after three you have more obvious failure than you know what to do with. Fix
+> it and repeat. Whining about n=10 forgets that WE ARE ITERATING
+> CONSTANTLY." — owner
+
+Both review agents graded this as a **study**: one run, must establish an
+effect size, therefore n≥38. It is an **instrument in a loop that runs every
+release**. Those ask different questions and need different n.
+
+**Q1 — what the loop actually asks: does this message fail at all?**
+
+| true failure rate | P(seen ≥1 in n=5) | across 3 runs of 5 |
+| --- | --- | --- |
+| 50% | 96.9% | 100% |
+| 30% | 83.2% | 99.5% |
+| 20% | 67.2% | **96.5%** |
+| 10% | 41.0% | 79.4% |
+
+**Q2 — what the critiques demanded: is variant A better than variant B?**
+n≥38 — but *only* for ranking two options that already work (50% vs 80%).
+Broken-vs-good (0% vs 80%) is separable at the n already run: p = 0.0007.
+
+**The same 15 samples buys one ranking as a single study, or three fix cycles
+as three iterations** — with ≥96% detection of anything failing 20% of the time
+or worse. For a library that ships continuously, the second is obviously the
+better purchase.
+
+**And the two critiques already agree, without noticing.** The
+record-vs-act critique measured `tosijs/TODO.md` at add:delete 3.8:1 with a
+five-month-old entry that decayed into misinformation — *the constraint is the
+drain, not the discovery.* Tognazzini says you will find more obvious failure
+than you can act on. Both point the same way: **optimise for cheap detection
+plus immediate fixing, not for statistical rigour on findings you will not get
+to.** Spending budget to rank two good messages while a 0% message sits
+unfixed is backwards.
+
+**So the requirement is not "raise n." It is "close the loop."** n=5 per
+variant, fix what reads 0, re-run. Escalate to n≥38 only when the remaining
+question is genuinely which of two working messages is better — which is a
+question you have earned the right to ask.
+
 ## Requirements, from the falsifiability critique
 
 Non-negotiable, because the existing harness violates several:
@@ -207,10 +250,13 @@ Non-negotiable, because the existing harness violates several:
   so an interpolated template — the case that matters — was always counted a
   miss. The rate is now RAW, with each repair reporting what it would have
   recovered. **Adopt that shape; do not re-derive it.**
-- **n = 5 is a demo.** At a 0.6 bar, a degraded 35% passes 23.5% of runs; a
-  0.90 → 0.60 regression is missed 68.3% of the time; four tasks at a healthy
-  p=0.8 produce a false alarm 21.2% of runs. For movement detection: **n ≥ 25
-  per variant**, and report intervals, not lattice points.
+- **n and the PASS/WARN bar are different questions — keep them apart.** n=5
+  is right for discovery (see above). But a *threshold* at n=5 is genuinely
+  unstable: at a 0.6 bar a degraded 35% passes 23.5% of runs, and four tasks
+  at a healthy p=0.8 throw a false alarm 21.2% of runs. **Fix that by
+  reporting the rate and the interval rather than a PASS/WARN verdict** — the
+  lattice point is the problem, not the sample size. A number that moves is
+  actionable; a bar that flickers trains people to ignore it.
 - **Check the code's SHAPE, not only the output value.** A value-checking
   harness asked "is the control disabled?" scores `disabled: 'path'` a PASS —
   the library's flagship confusion, graded correct.
