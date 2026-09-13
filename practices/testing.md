@@ -574,6 +574,34 @@ Corollary: **assert that the mutation applied.** A `replace(x, '', 1)` that sile
 wrong occurrence produces a "test still passes" result that reads as a vacuous test when in fact
 nothing was mutated. If the harness can't prove it changed the code, the run proved nothing.
 
+**This rule was written down and then broken three times in one session** (tosijs 1.11.0, rounds
+10–12), so here is the mechanical version, because the prose version demonstrably does not stick:
+
+> **A `perl -0pi -e 's/…/…/'` that matches nothing exits 0 and prints nothing.** Its result is
+> indistinguishable from a passing mutation. And the pattern you copied out of the file *will*
+> stop matching, because **the formatter rewraps it**: a two-term `if (a && b) {` becomes four
+> lines the moment a third term or a longer comment pushes it past the print width. Every failed
+> mutation in that session was a multi-line condition being matched with a single-line regex.
+
+So: **grep for the mutated text and fail loudly if it is absent**, before running anything.
+
+```sh
+python3 - <<'EOF'
+p='src/agent.ts'; L=open(p).read().split('\n')
+i=[n for n,l in enumerate(L) if "el.getAttribute('href')" in l][0]
+assert "record.tag === 'a'" in L[i-1], 'anchor moved — re-read the file'   # <- the guard
+L[i] = L[i].replace("el.getAttribute('href') != null", "record.href != null")
+open(p,'w').write('\n'.join(L))
+EOF
+grep -q "record.href != null" src/agent.ts || { echo "MUTATION DID NOT APPLY"; exit 1; }
+```
+
+The cost of skipping it is not a wasted run — it is a **confident false conclusion in the
+dangerous direction**. Those three no-op mutations produced, in order: "this new pin is vacuous",
+"the wiring fix is redundant with the other mechanism", and "these two fixes are belt-and-braces".
+All three were wrong, all three would have justified *deleting* a load-bearing guard, and all three
+looked exactly like a careful negative result. — seen in: tosijs
+
 ### And if the FIX breaks no tests, the suite has a hole
 
 One step earlier than the above. When you change behaviour and the whole suite stays green, that is
