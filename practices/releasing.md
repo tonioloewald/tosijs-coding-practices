@@ -60,6 +60,40 @@ budget's comment states a measurement, assert the stated figure against the actu
 `budget` in the build — a comment that can drift silently from the value beneath it is a
 comment nobody can trust to read.
 
+### Emitted by the build is NOT written by the build
+
+*(tosijs `v1.10.1..8d9a752`, 1.11.0 round 10 — the fourth consecutive review to find the
+same table stale.)*
+
+The advice above was taken, correctly, and **it did not work**. tosijs built the delta
+emitter, printed `paste into the CHANGELOG`, and then shipped a release-totals table wrong
+in **all seven rows** — because a human pastes, and across five builds nobody re-pasted.
+The failure is not carelessness: the emitter runs at *build* time and the paste is needed
+at *tag* time, and every commit in between silently invalidates it.
+
+What made it worse than a wrong digit: the table said `+0` for the three bundles that do
+not carry the agent surface, and the sentence beneath it promised **"a consumer who never
+imports it pays nothing for this release."** They paid ~63 gz bytes. A stale number
+becomes a false guarantee the moment prose reasons from it.
+
+So the rule is sharper than "generate the numbers":
+
+> **A number a human transcribes is a number that drifts, however good the thing that
+> computed it.** Either the build *writes the file*, or a gate *compares the file to a
+> live measurement*. Printing it for a human to copy is neither, and it looks exactly like
+> a solved problem — the emitter's own preamble said "the numbers now come from the thing
+> that measures them" directly above seven wrong ones.
+
+Two corollaries, both paid for:
+
+- **Pick the artifact so the fact cannot go stale.** tosijs moved the figures that keep
+  drifting (absolute size, headroom) out of hand-written comments entirely, leaving only
+  *decisions* — "45_000 → 46_000, because X" — which do not rot. The build prints a budget
+  ledger for anything you actually need the current number of.
+- **A gate that only checks presence will pass over all of this.** The repo had a test
+  asserting each budget comment "mentions the number it sits above"; it was green
+  throughout, because the wrong figures were elsewhere in the same comment.
+
 
 ## Before cutting any tag: run the tiered review
 

@@ -58,9 +58,20 @@ install** before treating it as a code defect — a stale `node_modules` has fak
 
 2. **Determine the base ref** (what to diff against — the last release):
    ```bash
-   git describe --tags --abbrev=0 2>/dev/null || echo main
+   git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || echo main
    ```
    Use that tag as `baseRef`. If the user named a base, use theirs.
+
+   **`--match 'v*'` is load-bearing, and its absence is silent.** A bare
+   `describe` returns the most recent tag of ANY kind, so a `checkpoint/*` tag
+   (`practices/releasing.md` recommends cutting them before risky migrations)
+   makes this resolve to the checkpoint and the review then diffs the wrong
+   span. Measured in tosijs at 1.11.0: unguarded returned
+   `checkpoint/1.11.0-pre-floorplan-0.5.0` — 3 commits — against a real release
+   span of 54, so the review would have skipped the entire `describe()` security
+   fix, the packaging change and the floorplan migration, and reported GO.
+   Nothing fails; the report simply describes a change nobody is shipping.
+   `bin/site.ts`'s own gz-delta emitter already guards this way.
 
 3. **Determine the bump level** — `patch`, `minor`, or `major`. Infer from the intended
    version if known, otherwise ask the user. `major` adds a completeness-critic pass and
