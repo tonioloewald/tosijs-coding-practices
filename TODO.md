@@ -57,6 +57,34 @@ safe. The invariant *is* the permission.
 
 — raised while writing back the `<tosi-slot>` parent-trap lesson from tosijs-3d
 
+## The task surface — where tasks live and die (design record, 2026-09-14)
+
+Supersedes/absorbs the navigation-hub plan below: the scoreboard becomes a **live surface**
+— a board in a task system — rather than a generated markdown table. Decisions (owner):
+
+- **Authority: tasks live and die in the new system.** GitHub is an I/O **adapter** — the
+  place external issues get raised and updated for external visibility — never a peer
+  store. Internal stores (`TODO.md`, `UPSTREAM.md`, deferred-findings lists) migrate wholly
+  and are **deleted**, collapsing five sources of truth to one + one gateway.
+- **Model: tags** — bare keys or `key:value` (`owner:id`, `status:freezer`,
+  `project:tosijs`); **boards are saved filters** (one-substrate: every view and agent
+  query is a reader of tags that already exist). Comments + attachments on tasks.
+- **Store: append-only events** under the hood, current state as a view — audit trail,
+  agent-friendly diffs, and cycle-time instrumentation for free. **Stable short IDs**
+  citable in commits (the `#38`-in-a-commit convention must survive migration).
+- **Backend: universal endpoint** — the first third-party consumer of tosijs-services
+  (adopters-before-abstraction satisfied by construction). Bonus: reachable from cloud
+  agent sandboxes where GitHub's write API is not.
+- **Build order: agent API → boring-fast 2D board → whimsical 3D/VR task-world** (unified
+  2d/3d panels showcase). The showcase is a *view* of the same store and must never gate
+  the utility.
+- **Scope flags, named**: attachments = the platform's first blob-storage story (sequence
+  deliberately); the store becomes load-bearing for ALL work — needs a degradation story
+  (periodic snapshot agents can read when the service is down).
+- **Practices migration** (after the system proves itself in one repo): releasing.md's
+  issue-settling, cross-project.md's channel, review routing (TODO.md/UPSTREAM.md rows) all
+  re-point. The From:-provenance convention dissolves into a native source tag.
+
 ## The navigation hub — scoreboard as front end (approved direction)
 
 The site plan, in the order it should happen (this is downstream of manta/ariosto — it must
