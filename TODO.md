@@ -69,6 +69,11 @@ Supersedes/absorbs the navigation-hub plan below: the scoreboard becomes a **liv
 - **Model: tags** — bare keys or `key:value` (`owner:id`, `status:freezer`,
   `project:tosijs`); **boards are saved filters** (one-substrate: every view and agent
   query is a reader of tags that already exist). Comments + attachments on tasks.
+- **Upstream tasks: one task, two relationships** (owner, 2026-09-14). An upstream ask is
+  **owned by the repo responsible** for it and **subscribed to by the repo that raised it**
+  — which retires the UPSTREAM.md mirror-with-URL apparatus entirely, and converts lens
+  7b's "cross-check every workaround against the issue list" from a per-review chore into
+  an event: the origin repo is notified on state change instead of polling.
 - **Store: append-only events** under the hood, current state as a view — audit trail,
   agent-friendly diffs, and cycle-time instrumentation for free. **Stable short IDs**
   citable in commits (the `#38`-in-a-commit convention must survive migration).
