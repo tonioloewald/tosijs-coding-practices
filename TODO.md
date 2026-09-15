@@ -97,7 +97,12 @@ Supersedes/absorbs the navigation-hub plan below: the scoreboard becomes a **liv
   visibly anonymous in the event log, never blended in.
 - **Scope flags, named**: attachments = the platform's first blob-storage story (sequence
   deliberately); the store becomes load-bearing for ALL work — needs a degradation story
-  (periodic snapshot agents can read when the service is down).
+  (periodic snapshot agents can read when the service is down); and the design surfaced a
+  **tosijs-services gap — no install system** for privileged endpoint/capability
+  provisioning (filed:
+  [tosijs-platform#5](https://github.com/tonioloewald/tosijs-platform/issues/5) — install
+  as a write not a deployment, manifests as capability requests, new-capability upgrades
+  re-trigger the human GO).
 - **Practices migration** (after the system proves itself in one repo): releasing.md's
   issue-settling, cross-project.md's channel, review routing (TODO.md/UPSTREAM.md rows) all
   re-point. The From:-provenance convention dissolves into a native source tag.
