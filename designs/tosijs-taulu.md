@@ -102,5 +102,11 @@ cross-project.md channel, review routing, From:-convention retirement).
 
 - [tosijs-platform#5](https://github.com/tonioloewald/tosijs-platform/issues/5) — the
   install system (configurator, manifests, claim ceremony).
-- CLI/agent auth, logical-collection adapter, blob capability, degradation snapshot —
-  filed 2026-09-15 (see issue links in the repo).
+- [#6](https://github.com/tonioloewald/tosijs-platform/issues/6) — CLI/agent auth: scoped
+  capability tokens + device-flow bootstrap (gates M1).
+- [#7](https://github.com/tonioloewald/tosijs-platform/issues/7) — logical collections:
+  schema'd, substrate-agnostic adapter.
+- [#8](https://github.com/tonioloewald/tosijs-platform/issues/8) — blob/attachment
+  capability (gates attachments, not M1).
+- [#9](https://github.com/tonioloewald/tosijs-platform/issues/9) — read-only degradation
+  snapshot (the safety condition for M3's source-of-truth collapse).

@@ -163,10 +163,25 @@ philosophy says static-by-default and the measurement says whether reality agree
 
 ## Naming & idioms
 
-- Match the file you're in. House convention for component callbacks is `handle<Event>`
-  (not `on<Event>`, which the element factory intercepts as an `addEventListener` target — the
-  class field stays null and the callback silently never fires). See
-  [web-components.md](web-components.md). — seen in: tosijs, tosijs-3d, tosijs-product
+**The house prefix conventions, stated explicitly** (owner, 2026-09-15 — tacit conventions
+are exactly what an agent back-fills with mainstream defaults, per model-priors.md "The
+missing prior"; write them down or inherit React's):
+
+| Pattern | Means | Notes |
+| --- | --- | --- |
+| `isFoo` / `hasFoo` | boolean property | typically computed or read-only — don't write to one without checking |
+| `handleFoo` | handles an event of type `foo` | the house callback convention |
+| `on<Event>` | **forbidden as a callback prop** | the element factory intercepts any `on*` prop as an `addEventListener` target; the field stays null, the callback silently never fires |
+| `initFoo` (`initAttributes`, `initVars`) | initialization-time declaration | consumed once at setup, not a live property |
+| `bind<Thing>` | binding factory | wires state↔DOM; not an imperative setter |
+| `static preferredTagName` | the component's tag | survives minification; never derive tags from class names |
+
+Extend this table **the moment you catch yourself (or an agent) assuming a convention** —
+an unwritten convention reads as "no convention" to every fresh context, and the blank gets
+filled with the mainstream prior.
+
+- Match the file you're in. See [web-components.md](web-components.md) for the component
+  conventions in depth. — seen in: tosijs, tosijs-3d, tosijs-product
 - `static preferredTagName` over derived tag names (survives minification). See
   [web-components.md](web-components.md).
 - **Open the main module file with a `/*# ... */` markdown doc-comment block** (usage,
