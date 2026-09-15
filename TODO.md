@@ -57,10 +57,13 @@ safe. The invariant *is* the permission.
 
 — raised while writing back the `<tosi-slot>` parent-trap lesson from tosijs-3d
 
-## The task surface — where tasks live and die (design record, 2026-09-14)
+## tosijs-virta — the task surface (design parked in the sibling repo)
 
-Supersedes/absorbs the navigation-hub plan below: the scoreboard becomes a **live surface**
-— a board in a task system — rather than a generated markdown table. Decisions (owner):
+Name settled: **virta** (`tosijs-virta`, `<tosi-virta>`). Canonical design:
+`~/tosijs-virta/DESIGN.md` (pointer: [designs/tosijs-virta.md](designs/tosijs-virta.md));
+platform prerequisites filed as tosijs-platform#5–9. Supersedes/absorbs the navigation-hub
+plan below: the scoreboard becomes a live surface — a board — rather than a generated
+markdown table. Decision summary (canonical detail in DESIGN.md):
 
 - **Authority: tasks live and die in the new system.** GitHub is an I/O **adapter** — the
   place external issues get raised and updated for external visibility — never a peer
