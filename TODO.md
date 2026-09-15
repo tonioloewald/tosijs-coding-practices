@@ -83,6 +83,18 @@ Supersedes/absorbs the navigation-hub plan below: the scoreboard becomes a **liv
 - **Build order: agent API → boring-fast 2D board → whimsical 3D/VR task-world** (unified
   2d/3d panels showcase). The showcase is a *view* of the same store and must never gate
   the utility.
+- **Delivery: a blueprint/component instance** pointed at a host URL carrying the endpoint,
+  authenticated against it (the timezone-picker delivery shape, plus credentials).
+- **Auth: scoped capability tokens, because auth identity IS provenance** (2026-09-15).
+  Tokens minted per agent-context (machine × repo) with narrow verbs (read all; write
+  owned/subscribed; no delete/admin) — the token is the `owner:`/`From:` identity, making
+  attribution a property of the credential instead of a body-text convention. Bootstrap:
+  device-style flow, human approves once per context in the board UI, token lands in
+  `~/local-secrets/` (the haltija `X-Haltija-Token` pattern). Cloud sandboxes get tokens
+  via routine config — which also fixes "cloud agents can't write to GitHub." Direct
+  datastore access is structurally denied (the loewald-dot-com posture: deny-all rules,
+  the endpoint is the only door); admin credentials are break-glass and a bypass write is
+  visibly anonymous in the event log, never blended in.
 - **Scope flags, named**: attachments = the platform's first blob-storage story (sequence
   deliberately); the store becomes load-bearing for ALL work — needs a degradation story
   (periodic snapshot agents can read when the service is down).
