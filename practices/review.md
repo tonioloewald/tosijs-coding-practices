@@ -180,6 +180,17 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   changelog typo. **Round count measures how hard the code is; mitigation risk measures what
   you should do about it.** — rule set by the owner
 
+  **In particular it does not measure size, so "split it smaller" is not the lever it looks
+  like.** Measured across 30 merged PRs on snowfox-app, findings-per-kloc runs *inversely* to
+  diff size: 66k-line and 42k-line PRs drew 0.12 and 0.31 findings/kloc, while 10k- and 2k-line
+  PRs drew 4.0 and 4.8 — and a 198-line single-file PR still took six rounds. The big diffs
+  were generated (schema emission); the churny ones were hand-written stateful logic.
+  Splitting a class-shaped change yields N smaller changes that each pay the same rounds. Same
+  warning for the other reflex explanation, *nit-class noise*: localization — the suspected
+  culprit there — was 3 of ~104 findings, and the review's own author confirmed nearly every
+  finding as a real defect. Check which before you reshape anything; both reflexes point away
+  from the remediation mode that is actually costing the rounds. — seen in: snowfox-app
+
 - **A BLOCK verdict must name its re-review scope.** "Fix and re-run" is how review waves
   happen. Each blocker states what must be re-examined after remediation — which lens(es),
   over what (default: correctness + blast-radius over the remediation diff only). A blocker
@@ -378,7 +389,26 @@ waves cost seven reviews. The class includes consciously
 matter how deliberately the divergence was noted (tosijs-schema's enum-vs-null nuance was
 observed in wave 5, waved off as documented `.optional` semantics, and confirmed a gate
 bypass in wave 7). At a gate, enforce or refuse at construction — never merely document.
-— seen in: tosijs-schema (v1.5.0 review)
+
+**The signature is measurable mid-flight: plot findings per round, and read the curve, not the
+count.** Class-fixing decays — each sweep removes a population, so later rounds find less.
+Instance-fixing stays flat, because every round samples the same undrained pool. Flat yield by
+round three means stop fixing and go find the class; you are three rounds into a series that
+will not converge on its own. Measured on snowfox-app's Copilot loop (PR #1396): 41 findings
+over 14 rounds in two days, yield `4 2 4 4 1 3 3 1 1 1 4 6 3 4` — round 12 the highest of the
+run — reducing to ~4 root causes (a key function that was not injective, 9 findings; a widened
+type whose readers were never swept, ~17; duplicated logic reported once per copy, 4 defects as
+8 findings). One command where the reviewer is an API:
+
+```bash
+gh api "repos/OWNER/REPO/pulls/<PR>/comments?per_page=100" --paginate \
+| jq -r '.[]|select(.user.login|test("copilot";"i"))|.created_at[5:16]' | sort | uniq -c
+```
+
+Findings *per file* is the companion cut — the concentration usually is the class. Full data,
+including two rival explanations tested and rejected:
+`reviews/2026-09-16-round-yield-snowfox-app.md`.
+— seen in: tosijs-schema (v1.5.0 review), snowfox-app (Copilot review loop)
 
 **Where you deliberately enforce only a SUBSET, the fail-open fix has a third form beyond
 enforce-or-refuse: make the gap ENUMERABLE.** A boundary that supports a documented subset is
