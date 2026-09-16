@@ -247,6 +247,45 @@ npm when it had). Any check that asks the registry a question uses `--prefer-onl
 direct fetch (`curl https://registry.npmjs.org/<pkg>`), or it answers confidently and
 wrongly. — seen in: tosijs-3d, tosijs-3d-ensemble
 
+**A direct fetch is necessary and NOT sufficient — a negative needs a second look.** The
+paragraph above is about `npm view`'s cache; this is the trap one layer down. An agent
+fetched the packument directly, saw the new version absent AND a `modified` timestamp twelve
+days old, and concluded from the timestamp that the publish had never been accepted — "this
+is not lag." The publish landed 56 seconds later. The reasoning was structurally wrong: a
+stale `modified` cannot distinguish _never written_ from _not written yet_, because both look
+identical to a reader who is early.
+
+So **"it is not there" is a provisional answer and "it never landed" is a claim**, and the
+second needs a second observation a minute later, from more than one path — packument,
+`/<pkg>/<version>` (404 vs 200), the abbreviated packument, an independent CDN like unpkg.
+The owner's one-line correction was _"check again, npmjs is frequently lagged"_, and it was
+the second time in the same project that a confident lag diagnosis had to be retracted.
+Telling a maintainer their publish failed when it is merely in flight costs them a trip back
+to their desk. — seen in: tosijs-3d-ensemble 0.3.0 (2026-09-16)
+
+**An INTERRUPTED `npm login` is indistinguishable from an expired token, and both are
+silent.** Since npm 9, `npm login` defaults to the web flow: it opens a browser, and the
+session is only established when that browser hands the token back. Close the window, the
+tab, or the shell before it does — impatience, a completed-looking page — and the login never
+finishes.
+
+The residue is the problem. `~/.npmrc` still holds an `_authToken`, so nothing looks missing;
+the registry answers **401** to it, so the next `npm publish` fails with an error that reads
+like a registry problem rather than a login problem. An agent seeing token-present-plus-401
+in this project diagnosed "expired or revoked", which was wrong and fit the evidence exactly
+as well.
+
+The discriminator is one line, and it belongs between login and publish:
+
+```bash
+npm whoami        # prints your username, or 401 → the login did not finish
+```
+
+Do not turn this into advice for the maintainer — it is a check the RELEASE FLOW should
+carry, and 2FA mechanism makes no difference to it: a biometric/WebAuthn prompt happens after
+npm has a valid session, so a dead session fails before the passkey is ever reached. — seen
+in: tosijs-3d-ensemble 0.3.0 (2026-09-15); mechanism described by the owner
+
 8c. **Install what you published, from the registry, and run it.** Not the local tarball —
 `npm pack` proves the files you _have_; only a registry install proves what a consumer _gets_.
 
