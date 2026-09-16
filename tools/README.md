@@ -5,7 +5,7 @@ Executable versions of the practices in this repo.
 ## `pre-release-review` — the nine-lens release-gate review
 
 The runnable form of [`practices/review.md` → Comprehensive pre-release
-review](../practices/review.md#comprehensive-pre-release-review-minor--major). Two pieces:
+review](../practices/review.md#the-lens-criteria-in-full). Two pieces:
 
 - **`pre-release-review.workflow.js`** — a Claude Code `Workflow` harness. It fans out nine
   independent lens reviewers (correctness, efficiency, DRYness, docs, test coverage, DX, ecosystem health, practices self-review, blast radius) over
@@ -51,6 +51,18 @@ improvements the repo lacked (defensive args parsing, log-spam DX criteria, a bl
 check, `repoDir` support) while the repo carried `severityUncertain` the installed copy
 lacked. **When you edit either copy, diff the other and merge both directions** — and a
 practices-repo audit should include that diff.
+
+> **This convention has now failed TWICE, which is the evidence that it should
+> stop being a convention.** 2026-09-12: a `dx` tier was added to the installed
+> copy during a tosijs release and did not reach the repo — found by a critique
+> agent, not by anyone diffing. The first failure (four improvements stranded in
+> the install) produced this paragraph; the paragraph did not prevent the second.
+> Per `CONTRIBUTING.md`'s promotion ladder, a rule that has been observed to fail
+> twice is not a rule to restate — it wants a mechanism: make the installed path
+> a symlink to this file, or generate it on install, so there is one copy and
+> `diff` is structurally unnecessary. **Open question for the owner** (it changes
+> how the skill installs, so it is not an agent's call).
+
 
 ### Use
 

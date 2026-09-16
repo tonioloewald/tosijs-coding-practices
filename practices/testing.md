@@ -3,7 +3,29 @@
 Default runner: **`bun test`**. Test files: colocated `*.test.ts` (or `*.test.tjs`) next to
 their source in `src/`. Configure via `bunfig.toml`. This is the baseline across the whole
 ecosystem — every project that has a suite uses it.
-— seen in: tosijs, tosijs-ui, tosijs-product, tosijs-3d, tosijs-schema, kith-email, lukko, editor2, tjs-lang, loewald-dot-com, haltija
+— seen in: tosijs, tosijs-ui, tosijs-product, tosijs-3d, tosijs-schema, kith-email, lukko, tosijs-editor, tjs-lang, loewald-dot-com, haltija
+
+## Append-only global state makes probes contaminate each other
+
+A module-level, append-only set — a secret-path registry, a seen-cache, a
+registration map — is shared by every test in the process. Two probes that use
+**the same key** are not independent: the first one's write is still there when
+the second runs, and the second silently measures the first.
+
+This produced a false result that survived a whole review round. Five probes of
+a secrecy fix all used the state path `z.v`; probe 1 legitimately leaked, probe
+2 marked `z.v` secret, and probes 3–5 then reported "covered" because they were
+reading probe 2's mark. Three of those conclusions were wrong, and they were
+used to decide what to fix.
+
+**Give every probe its own key** — `p1`, `p2`, … generated per call — and the
+contamination disappears. If a suite cannot do that, it must reset the global
+between tests; if the global is deliberately append-only (as an audit trail
+often is), per-key isolation is the only option.
+
+The tell is an ordering dependency: shuffle the probes, and contaminated
+results move with the order. Worth trying whenever a batch of results looks
+suspiciously uniform.
 
 ## Run
 
@@ -45,17 +67,61 @@ bun test src/               # unit tier only (when integration lives elsewhere)
   misunderstanding.** Four vacuous assertions in one haltija cycle were found by mutation testing
   and none by re-reading. If a regression test has never failed, it is unproven: break the fix on
   purpose and watch the test go red before you trust it. — seen in: haltija
+- **A CHECK YOU HAVE NOT WATCHED FAIL IS NOT A CHECK.** The mutation rule above
+  is stated for tests; it applies at least as hard to **gates** — build steps,
+  publish hooks, CI lanes — because a gate is written once and then trusted
+  forever, and unlike a test nobody re-reads it. Six gates written in a single
+  tosijs release week reported safety they had never established:
+
+  | the gate | why it was vacuous |
+  | --- | --- |
+  | "every `exports` target exists" | used `existsSync` — the **working tree**, not the commit. Went green over a commit whose bundles a dev run had deleted. |
+  | "every public type is importable" | regex-scanned a file that turned out to be a **24-line re-export stub**; compared two near-empty sets and still passed after the type was deliberately deleted. |
+  | same gate, v2 | *used* each type rather than importing it — arity errors on generics, so it failed for a reason unrelated to the thing under test. |
+  | "all non-markdown files are idempotent" | ran from the wrong directory: **"checked 0 files, unstable: 0."** |
+  | `exerciseContract()` (shipped, public) | classified refusals by substring-matching their prose; a message rewrite made a suite of pure counterexamples return `{passed: 2, failed: 0}`. |
+  | three new regression tests | fixture placed where the code under test never looked; a class chain where every level exercised the same branch; an element that was never wired, so the assertion examined nothing. |
+
+  Three corollaries, each of which cost real time:
+
+  - **Assert on the artifact a consumer resolves**, not a convenient proxy —
+    `git ls-files` not `ls`; the built `.d.ts` not the source compiling.
+  - **Any check with a scope query needs a floor assertion**
+    (`expect(filesChecked).toBeGreaterThan(50)`). "Scope is a silent
+    parameter" — seen independently in tosijs-3d-ensemble, whose peer-range
+    check guarded one of three peers and said nothing about the other two.
+  - **Prefer `test.skipIf` to an early `return`.** A silent skip is the one
+    form of skip nobody notices.
+
+  And the inverse failure, which is just as disabling: **a gate that cannot go
+  green.** `prettier --check` on a file whose printer is not idempotent is
+  unsatisfiable — `--write` then `--check` still fails — so it reports "not
+  formatted" when the truth is "cannot be formatted", and whoever meets it
+  disables it. Verify a new gate goes **both** red and green before trusting
+  it. — seen in: tosijs (1.10.x), corroborated in tosijs-3d-ensemble
+
+- **Findings deserve the same standard as gates: verified by observation, not
+  by inspection.** A pre-release review reported that nothing executed tosijs's
+  live ` ```js ` doc fences. False — the doc runner emits an implicit
+  `example loads without error` per fence, which is why the test total exceeded
+  the ` ```test ` fence count. Proved in ninety seconds by injecting an
+  undefined call and watching both engines go red; acting on the finding would
+  have meant building a second lane duplicating the first. The finding came
+  from reading a source comment rather than running the thing. — seen in: tosijs
+
 - **Never judge a run by a truncated tail.** `| tail -n` shows the summary and hides the failure
   lines above it; a pipeline's `$?` is the LAST command's, so `cmd | head` reports head's exit code.
   Assert on the failure/error count, or read the whole output. Three haltija commits merged on a red
-  Playwright gate this way. — seen in: haltija
+  Playwright gate this way. Recurred in tosijs: gates and the commit were run as
+  one command, the test tail read as green, and a commit landed with eslint red.
+  — seen in: haltija, tosijs
 - Capture noisy runs once, query many times: `bun test 2>&1 | tee /tmp/test-results.txt`
   then grep for failures. — seen in: tjs-lang
 
 ## DOM testing with Happy DOM
 
 Web-component and DOM tests run under **Happy DOM**, registered via a `bunfig.toml` `[test]`
-preload (`happydom.ts` / `test-setup.ts`). — seen in: tosijs, tosijs-ui, tosijs-product, editor2
+preload (`happydom.ts` / `test-setup.ts`). — seen in: tosijs, tosijs-ui, tosijs-product, tosijs-editor
 
 Known limitations to design around (each one is a recurring, non-obvious time-sink):
 
@@ -68,8 +134,8 @@ Known limitations to design around (each one is a recurring, non-obvious time-si
   `Window`, patch missing error constructors (`SyntaxError`/`TypeError`/`RangeError`), and
   copy an explicit allow-list of DOM globals (`HTMLElement`, `customElements`,
   `MutationObserver`, …) onto `globalThis`, binding window methods (`getComputedStyle`,
-  `requestAnimationFrame`, `fetch`). editor2's `test-setup.ts` is directly copyable.
-  — seen in: editor2, tosijs
+  `requestAnimationFrame`, `fetch`). tosijs-editor's `test-setup.ts` is directly copyable.
+  — seen in: tosijs-editor, tosijs
 
 ## Async state settling
 
@@ -182,6 +248,31 @@ Integration and browser tests do **not** auto-start their dependency:
 
 ## Live browser testing with Haltija
 
+- **Two measurement traps will make you "fix" code that was never broken.** Both cost a
+  session in tosijs-editor:
+  - **A version-stamped asset URL serves a stale bundle.** `tosijs-ui/site` emits
+    `hydrate.js?v=<package version>`, which does not change between rebuilds — so the browser
+    keeps executing the previous build while `curl` shows the new one served (tosijs-ui#151).
+    Before measuring after a rebuild:
+    `await fetch('/hydrate.js?v=…', { cache: 'reload' })`, then navigate. Busting the PAGE
+    url does nothing; the script url inside the HTML is unchanged.
+  - **`getComputedStyle` in the same tick as a class toggle returns stale values.** Toggling
+    a theme class and reading immediately gave colours that had not recomputed — and,
+    confusingly, custom properties DID update while the dependent `color` did not, which
+    reads exactly like a broken cascade. Await two `requestAnimationFrame`s between the
+    change and the read.
+  - Symptom of either: an edit that "has no effect" no matter how you write it. Confirm the
+    SERVED bytes contain your change before concluding anything about the code.
+  — seen in: tosijs-editor
+
+- **A private Electron instance is the quick way in when no tab is available.**
+  `haltija --ci --name <x> --port <n>` launches one (bare `--ci` defers to a running server
+  and launches nothing). Clean it up afterwards: `pkill -f "haltija --ci --name <x>"` kills
+  only the launcher, so also `pkill -f "node_modules/haltija/apps/desktop"` — and never
+  `hj shutdown` when the server is shared, or you kill another project's session.
+  — seen in: tosijs-editor
+
+
 For agent-driven, real-browser inspection of a running dev page, use the **`hj` CLI against a
 private named Haltija server**, not the Claude-in-Chrome extension.
 
@@ -212,6 +303,24 @@ throughout both)
 
 ## Doc / live-example tests
 
+**If you're on `tosijs-ui` and you aren't checking the live examples and using in-browser
+test fences for real tests, "you're a fool to yourself and a burden to others"** (owner). The
+machinery is already paid for and it is the honest tier of the instrument hierarchy: a real
+browser, real geometry, the same page a reader sees. Measured: switching fences on found two
+defects in a README's most-read example within a minute (tosijs-ui#142); tosijs-editor's
+live-example tests caught two bugs a green 135-test happy-dom suite structurally could not
+see; and tests passing has never once substituted for eyeballing the doc site.
+
+**And never build parallel test machinery beside it.** The corollary, from a same-day
+incident: tosijs, not paying attention to the shared test system, built its own broken
+parallel machinery — a structural twin in the *instrument* layer, which is the worst place
+for one, because a broken parallel test system doesn't just cost double maintenance, it
+returns wrong answers about everything it claims to cover while the working system sits
+unused. Before building any test/browser/reporting machinery in a `tosijs-ui` project:
+**check whether the site system already does it; if it almost does, that's a missing seam —
+file upstream (7a), don't fork.** A parallel harness is only ever justified by a recorded
+decision naming why the shared one can't serve. — seen in: tosijs (2026-09-13)
+
 Projects built on `tosijs-ui/site` can run tests as inline ` ```test ` blocks inside `/*# … */`
 doc comments; they execute in a real browser and POST results to `/report`, annotated by source
 line via `//# sourceURL`. Assertion discipline for these live examples:
@@ -221,7 +330,11 @@ line via `//# sourceURL`. Assertion discipline for these live examples:
 - **Give each `js` block its own imports** — blocks are separately-scoped async functions, no
   cross-block sharing.
 - **Never mix `html` + `js` blocks that both create the same element** — you get double-render bugs.
-— seen in: tosijs-ui
+- **No `*/` anywhere inside the example** — the block lives in a `/*# … */` comment, so a
+  JSDoc-style `/** … */` in a `test` block closes the doc comment early. The build reports
+  `Multiline comment was not closed properly` against the EXAMPLE, which sends you looking at
+  the code rather than at the comment delimiter. Use `//` inside examples.
+— seen in: tosijs-ui, tosijs-editor
 
 ## TJS inline tests
 
@@ -231,6 +344,59 @@ test facility for unit-level checks; keep integration/DOM tests as `*.test.ts`. 
 file gets footgun-free `==` unconditionally; see `practices/tjs-lang.md`.) Caveat: the
 `tjs run` CLI does **not** inject the `expect` harness — `test { … }` blocks only pass in the
 playground UI, not via CLI. — seen in: tjs-lang
+
+## The instrument hierarchy — coverage is not a goal
+
+An owner confession, recorded with its corroboration so nobody re-inherits the mistake:
+**much of the ecosystem's unit coverage was written for coverage's sake** — the metric
+chased as a goal, out of conventional notions of code quality rather than because each test
+pinned a promise. The corpus corroborates that the chased number bought little **as an
+oracle of the thing being changed**: a 956-test green suite coexisted with 7/7 release
+blockers; 898 green tests missed an emitter stripping `new` from every class; the
+vacuous-fixture record (almost all UI) measured where the light was. Coverage percentage is
+a middle-rung metric — "set up to work" — and chasing it manufactures echoes (see "A test
+that fails when the code is right…").
+
+**But the coverage does not buy nothing** (owner): a broad suite is a **tripwire mesh**, and
+a mesh's value concentrates in its *out-of-scope* reds — a test failing in an area you
+didn't touch is high signal precisely because it should almost never happen (the scope rule
+under the echo entry). That is the real justification for the existing review rule "every
+failing test is in scope, never dismissed as unrelated": the mesh's whole product IS the
+unexpected red. The record shows it working — a drift guard going red mid-session on an
+upstream change nobody was working on is the mesh doing its job. So the two roles get
+different accounting: as oracles of the changed thing, coverage-shaped tests earned little;
+as tripwires for unintended reach, breadth earns its keep — which is why the echo purge
+below weighs reach before deleting.
+
+The instruments, ranked by what they actually prove here:
+
+1. **Eyeballing the doc system.** Tests passing has **never** been a good substitute for
+   looking at the doc site — it is the dogfood instrument: real components, real build, real
+   content, real browser, and the failures that matter surface there first. Budget review
+   time for *looking* (review lens 3b) before budgeting for more tests.
+2. **The in-browser lanes and Haltija** — built as the *honest* tests, deliberately: real
+   geometry, real events, real focus, none of happy-dom's structural blindness.
+3. **Small tests asserting a specific promise** — pure-logic contracts, peer floors,
+   failing-first regressions. Highest value per line in the measured record.
+4. **Coverage-shaped tests** — tests that exist to move a number. As oracles, net negative:
+   they cost the update-chore forever and assert nothing a consumer relies on. As part of
+   the tripwire mesh they may still earn a place — judge each by **reach**: a test whose red
+   could ever be an out-of-scope surprise is a tripwire (keep it, and triage its reds by
+   scope); one that can only fail on deliberate change to its own subject is a pure echo
+   (delete).
+
+Standing implications:
+
+- **Never add a test to move a number; add it to pin a promise.** A coverage gap is a
+  question ("is there an unpinned promise here?"), not a deficit to fill.
+- The deliberate exception survives: **security-critical surfaces keep targeted high
+  coverage against a written audit** — that is promise-pinning at density, not a percentage.
+- **Retirement applies to suites too.** The quarterly pass may delete echo tests outright —
+  removing a test that measures nothing is a win, not a coverage loss, and the assertion-count
+  meter (below) distinguishes deliberate pruning from silent scope loss.
+
+— seen in: owner (confessed, 2026-09); corroborated: tosijs (7/7 under green), tjs-lang
+(emitter), the UI vacuous-fixture record
 
 ## What to test
 
@@ -253,6 +419,83 @@ playground UI, not via CLI. — seen in: tjs-lang
 - Not every project has a suite: pure demo/bridge libraries verify by running the demo app in
   the browser. If a repo has no `*.test.ts`, that's the intended workflow, not an omission.
   — seen in: react-tosijs
+
+## A test that fails when the code is right is a defect in the test
+
+The lived pattern (owner): you establish the code works — by dogfooding, by driving it — and
+now the suite fails, and updating it is a chore. Name what that red actually is: the test is
+not reporting a broken promise, it is demanding bookkeeping for its own stale copy of the
+implementation. **Red-when-right and green-when-wrong are the same defect class** — in both,
+the test is not measuring the promise — and red-when-right is the more corrosive over time:
+every ritual "test failed → update test" session trains the reflex of making tests agree
+with code *without asking which one is right*, and the suite decays from oracle to echo.
+(The reflex has fired both ways here: one reporter wrote a passing test for the wrong
+hypothesis and "fixed" working code — tosijs#35.)
+
+When a change you have verified working turns tests red, classify each red test **before**
+touching it:
+
+1. **A promise broke** — the test caught a real regression, or a deliberate break. Keep the
+   test; fix the code, or accept the break explicitly (changelog, migration). This is the
+   test doing its job.
+2. **An implementation detail legitimately changed** — the test asserted the *how*, not the
+   promise. Defect in the test: rewrite it against the promise it should have asserted.
+   Do not just re-record the new *how* — that's the echo reflex.
+3. **The test was only ever an echo** — snapshots, exact output strings, DOM-structure
+   asserts. These can only fail on legitimate change (any behavior change just re-records
+   them), so they have no oracle value: replace with a promise-level assertion or delete.
+   The degenerate endpoint (external: Google's automated golden testing, owner-witnessed —
+   "guaranteed to be broken by almost any change"): a test whose failure is near-certain
+   under *any* change carries zero information — its red doesn't discriminate regression
+   from progress, so the institutional response becomes "regenerate the goldens," which is
+   the echo reflex as standard procedure. **Always-red and always-green are the same
+   defect**: a check informs only insofar as its failure probability differs between right
+   and wrong code.
+
+   **The refinement (owner): an echo's information lives in its SCOPE, not its failure.**
+   A golden for the thing you changed fails with certainty — zero bits. A golden for a thing
+   you *didn't touch* should almost never fail, so when it does, that's huge signal: your
+   change reached somewhere you didn't intend. Echoes are worthless oracles and excellent
+   **tripwires** — a blast-radius instrument, not a correctness one (the same
+   reclassification as rebase pain: the signal is in the unexpected reach). So for any
+   golden-shaped check (rebuild-and-diff, docs-drift, artifact freshness): **partition the
+   mismatches by expected scope** — in-scope mismatch is bookkeeping, out-of-scope mismatch
+   is a finding, and the two must never be presented identically. That was the one-click
+   updater's real crime: it flattened the scope distinction, making the distant golden as
+   cheap to accept as the local one — bulk-accepting away exactly the bits the system still
+   carried.
+
+Two amplifiers:
+
+- **Mass failure on one legitimate change is a coupling measurement**, same signal as rebase
+  pain: the tests were written against the wrong seam. Don't update forty tests — move the
+  assertion to the seam that was stable.
+- **The chore is friction — log it.** A recurring test-update chore belongs in the AAR
+  friction bullet, and the periodic pass promotes it into action (rewrite that suite region
+  against promises). Quietly paying the chore forever is how a suite becomes a tax that
+  buys nothing — the measured local record is that *small tests asserting a specific
+  promise* age well and catch nearly everything real, while echo-tests only ever cost.
+
+**UI code is where this is worst, and the reason is the streetlight effect** (owner): the
+promise of UI is what a user experiences — visible, responsive, correct — which is hard to
+measure, so tests assert what is *easy* to measure instead: element counts, class names,
+tag nesting, innerHTML. Those are implementation details wearing assertion syntax, echoes by
+default. Note the local vacuous-fixture record is almost entirely UI: the shadow-DOM marker
+asserted on a wrapper instead of the host, the `describe()` test on an unwired `<div>`, the
+happy-dom zero-geometry that hid an entire behavioral tier from every test. Discipline:
+
+- Assert at the behavior seam that *does* exist even in UI: **user event → observable state
+  change → DOM *semantics*** (the bound value updated, the row appeared, the control is
+  disabled), never structure for its own sake.
+- **Structure is a promise only when it is a contract** — roles, labels, ARIA state,
+  form-association are promise-level (a screen reader consumes them); div-nesting and class
+  names are not.
+- What something **looks like** is checked by looking (review lens 3b: browser session or
+  labelled unverified) — a DOM assert is not a substitute, and happy-dom's zero geometry
+  means layout claims are *unmeasurable* in the unit tier by construction.
+
+— seen in: owner (recurring, cross-project); tosijs-3d-ensemble (promise-asserting tests as
+the only ones that ever caught defects); tosijs#35 (the echo reflex inverted)
 
 ## Testing A→B and B→C does not test A→C
 
@@ -325,6 +568,13 @@ unrelated reason."
 && …)` is enough), run the one test, confirm the failure message names the thing you fixed, restore.
 Two minutes, and it converts a plausible test into an established one.
 
+**Mutate a COPY when a watch server is live on that tree.** The mutation is a real edit: a dev
+server rebuilds it and serves the broken build to whoever is looking at the page, so the
+"regression" they report next is yours. Worse, if the falsification run dies before it restores
+(a hung test run is enough), the tree stays broken with no error anywhere and the next person to
+look — human or agent — debugs a bug you reintroduced on purpose. Stop the server, or copy the
+tree and mutate the copy. — seen in: tosijs-editor
+
 Worth the ceremony because the false-pass is invisible and looks exactly like success:
 
 - A test for "a framed widget must not steal the tab's window id" passed **without the fix**. The
@@ -340,6 +590,56 @@ Both would have shipped as green. The mutation is what found them — reading th
 Corollary: **assert that the mutation applied.** A `replace(x, '', 1)` that silently matched the
 wrong occurrence produces a "test still passes" result that reads as a vacuous test when in fact
 nothing was mutated. If the harness can't prove it changed the code, the run proved nothing.
+
+**This rule was written down and then broken three times in one session** (tosijs 1.11.0, rounds
+10–12), so here is the mechanical version, because the prose version demonstrably does not stick:
+
+> **A `perl -0pi -e 's/…/…/'` that matches nothing exits 0 and prints nothing.** Its result is
+> indistinguishable from a passing mutation. And the pattern you copied out of the file *will*
+> stop matching, because **the formatter rewraps it**: a two-term `if (a && b) {` becomes four
+> lines the moment a third term or a longer comment pushes it past the print width. Every failed
+> mutation in that session was a multi-line condition being matched with a single-line regex.
+
+So: **grep for the mutated text and fail loudly if it is absent**, before running anything.
+
+```sh
+python3 - <<'EOF'
+p='src/agent.ts'; L=open(p).read().split('\n')
+i=[n for n,l in enumerate(L) if "el.getAttribute('href')" in l][0]
+assert "record.tag === 'a'" in L[i-1], 'anchor moved — re-read the file'   # <- the guard
+L[i] = L[i].replace("el.getAttribute('href') != null", "record.href != null")
+open(p,'w').write('\n'.join(L))
+EOF
+grep -q "record.href != null" src/agent.ts || { echo "MUTATION DID NOT APPLY"; exit 1; }
+```
+
+The cost of skipping it is not a wasted run — it is a **confident false conclusion in the
+dangerous direction**. Those three no-op mutations produced, in order: "this new pin is vacuous",
+"the wiring fix is redundant with the other mechanism", and "these two fixes are belt-and-braces".
+All three were wrong, all three would have justified *deleting* a load-bearing guard, and all three
+looked exactly like a careful negative result. — seen in: tosijs
+
+### And if the FIX breaks no tests, the suite has a hole
+
+One step earlier than the above. When you change behaviour and the whole suite stays green, that is
+evidence about the **suite**, not about the change: nothing in it was watching the thing you just
+altered. The move is to add the tests the fix *would* have broken, then confirm they fail against
+the old code.
+
+Seen in tosijs, fixing a proxy discontinuity (leaf proxies were empty and path-resolving, object
+proxies still wrapped their target, so a held object box's `.value` was frozen — tosijs#35). The fix
+broke nothing, so tests were written that it would break; making *all* proxies empty then broke
+almost nothing else, with one real finding — array proxies must wrap an empty array, or
+`Array.isArray` fails. A green suite would have reported "no impact" and hidden both the hole and
+that constraint. — seen in: tosijs
+
+**A test that reads through the same broken accessor as the code proves nothing.** The consumer-side
+half of the same bug: I asserted "the write did not land", wrote a test, and it *passed* — because it
+read the value back through the very accessor that was stale. That confirmed my wrong theory, and I
+went on to "fix" a line that was already correct. What broke it open was reading the same state two
+different ways (`box.tosi.value` vs `box.n.value`) and finding them disagree. When a test and the
+code under test share a dependency, agreement between them is not evidence.
+— seen in: tosijs-3d-ensemble
 
 ## A ratchet measures a RATE, not a count
 

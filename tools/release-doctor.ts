@@ -115,9 +115,34 @@ const cannotRun = (out: string): string | undefined => {
   } else add('typecheck', 'SKIP', 'no typecheck script')
 }
 
+/**
+ * The full build is not always called `build`.
+ *
+ * tjs-lang calls its `make`, deliberately: `bun build` is a Bun BUILTIN (the bundler), so a
+ * `build` script means `bun build` silently runs the builtin while `bun run build` runs the
+ * script, and the two drift. Ordered, so a repo with both still gets `build`.
+ *
+ * Defined ONCE, because it was defined twice: check 4 knew about `make` and the
+ * artifact-freshness check below read `scripts.build` directly, so it reported
+ * `no build script` forever in exactly the repo that had renamed it.
+ *
+ * That cost a security-vulnerable publish. tjs-lang 0.13.7 shipped a sandbox-escape fix in
+ * `src/` and a `dist/` built 35 minutes earlier; Bun resolves that package to `src/` and Node
+ * to `dist/`, so every Node consumer got the vulnerable build. Artifact freshness is the check
+ * for precisely that, and it had never run there. A SKIP that can never become a PASS is worse
+ * than a missing check — it reads as coverage, and this tool's own summary line ("skips are
+ * NOT passes") is aimed at a reader who will believe it anyway.
+ */
+const buildScript = scripts.build
+  ? 'build'
+  : scripts.make
+    ? 'make'
+    : scripts['build:all']
+      ? 'build:all'
+      : null
+
 // 4. Build (build or make — never assume it ran tests)
 {
-  const buildScript = scripts.build ? 'build' : scripts.make ? 'make' : null
   if (buildScript) {
     const r = await run(['bun', 'run', buildScript])
     add(`build (${buildScript})`, r.ok ? 'PASS' : 'FAIL', r.ok ? '' : r.out.split('\n').slice(-6).join('\n'))
@@ -149,7 +174,10 @@ const cannotRun = (out: string): string | undefined => {
      * a release, it is the previous one wearing today's code.
      */
     if (!isPrivate && version) {
-      const { ok, out } = await run(['npm', 'view', pkg.name, 'version'])
+      // --prefer-online on every registry read: npm view answers from cache and
+      // has served a version minutes stale right after a publish, turning this
+      // check into a confident wrong answer (releasing.md step 8b).
+      const { ok, out } = await run(['npm', 'view', '--prefer-online', pkg.name, 'version'])
       const published = ok ? out.trim() : ''
       if (published === '') {
         add('release identity', 'SKIP', 'could not reach the registry')
@@ -198,10 +226,10 @@ const cannotRun = (out: string): string | undefined => {
   ])
   if (tracked.length === 0 || trackedOut.trim() === '') {
     add('artifact freshness', 'SKIP', 'no committed build output to check')
-  } else if (scripts.build == null) {
+  } else if (buildScript == null) {
     add('artifact freshness', 'SKIP', 'no build script')
   } else {
-    const built = await run(['bun', 'run', 'build'])
+    const built = await run(['bun', 'run', buildScript])
     if (!built.ok) {
       add('artifact freshness', 'SKIP', 'build failed — see the build check')
     } else {
@@ -257,7 +285,7 @@ const cannotRun = (out: string): string | undefined => {
   if (isPrivate) add('tag/publish reconciliation', 'SKIP', 'private package')
   else {
     const name = pkg.name
-    const { ok, out } = await run(['npm', 'view', name, 'version'])
+    const { ok, out } = await run(['npm', 'view', '--prefer-online', name, 'version'])
     if (!ok) add('tag/publish reconciliation', 'SKIP', `npm view failed (${out.trim().split('\n')[0]}) — could not check; do not read this as clean`)
     else {
       const npmVersion = out.trim()
@@ -286,11 +314,329 @@ const cannotRun = (out: string): string | undefined => {
   const blocked: string[] = []
   for (const dir of dirs)
     for (const f of readdirSync(dir).filter((f) => f.endsWith('.md')))
-      if (/verdict[:*\s]+block/i.test(readFileSync(join(dir, f), 'utf8'))) blocked.push(join(dir, f))
+      {
+        const body = readFileSync(join(dir, f), 'utf8')
+        if (!/verdict[:*\s]+block/i.test(body)) continue
+        /*
+        A RESOLVED report is not a finding.
+
+        Every gate a project ever failed stays on disk, so grepping for the
+        verdict alone means this warning grows monotonically and names the same
+        historical reports forever — and a check that fires on its most common
+        input teaches you to skim past it, which is exactly when it will be
+        right. A report that records its own resolution is answered: that IS the
+        confirmation this check asks for.
+        */
+        if (/\*\*STATUS:[^*\n]*\b(CLEARED|SUPERSEDED|RESOLVED)\b/i.test(body))
+          continue
+        blocked.push(join(dir, f))
+      }
   if (blocked.length > 0)
-    add('review verdicts', 'WARN', `reports with Verdict: BLOCK on disk — confirm each was resolved: ${blocked.join(', ')}`)
+    add('review verdicts', 'WARN', `reports with an UNRESOLVED Verdict: BLOCK — resolve each, or record the outcome as \`**STATUS: CLEARED**\` (or SUPERSEDED): ${blocked.join(', ')}`)
   else if (dirs.length > 0) add('review verdicts', 'PASS')
   else add('review verdicts', 'SKIP', 'no reviews/ directory')
+}
+
+/*
+Dependency declarations as a release gate — tosijs-ui#61 §2.
+
+Eight issues on that repo are one missing script: peers whose range excludes the
+version anyone would install, peers the repo does not itself install (so the
+combination shipped is not the combination tested), runtime imports that were
+never declared, and bins without a shebang — that last one filed TWICE.
+
+Each check FAILS only where the answer is unambiguous and WARNs where a
+maintainer could reasonably have meant it. A gate that cries wolf gets muted,
+and a muted gate is worse than no gate.
+*/
+{
+  const peers: Record<string, string> = pkg.peerDependencies ?? {}
+  const peerMeta: Record<string, { optional?: boolean }> = pkg.peerDependenciesMeta ?? {}
+  const deps: Record<string, string> = pkg.dependencies ?? {}
+  const devDeps: Record<string, string> = pkg.devDependencies ?? {}
+
+  // --- peers vs what is actually installed here -----------------------------
+  // Read node_modules, not devDependencies: the installed tree is what the test
+  // suite and the build actually ran against. A range that agrees with the
+  // manifest but not with the tree is the interesting failure.
+  const untested: string[] = []
+  for (const [name, range] of Object.entries(peers)) {
+    const mp = join(process.cwd(), 'node_modules', name, 'package.json')
+    if (!existsSync(mp)) {
+      if (!peerMeta[name]?.optional) untested.push(`${name} (declared ^peer but not installed here)`)
+      continue
+    }
+    try {
+      const installed = JSON.parse(readFileSync(mp, 'utf8')).version
+      if (!Bun.semver.satisfies(installed, range))
+        untested.push(`${name}: declares "${range}", tests against ${installed}`)
+    } catch {}
+  }
+  if (Object.keys(peers).length === 0) add('peer/dev agreement', 'SKIP', 'no peerDependencies')
+  else if (untested.length)
+    add('peer/dev agreement', 'FAIL',
+      `a declared peer is not what this repo builds and tests against — the shipped combination is untested:\n${untested.join('\n')}`)
+  else add('peer/dev agreement', 'PASS')
+
+  // --- bin shebangs (tosijs-ui#35 and #36 — the same bug, filed twice) -------
+  const bins: Record<string, string> =
+    typeof pkg.bin === 'string' ? { [pkg.name]: pkg.bin } : (pkg.bin ?? {})
+  const noShebang: string[] = []
+  for (const [binName, rel] of Object.entries(bins)) {
+    const f = join(process.cwd(), rel)
+    if (!existsSync(f)) { noShebang.push(`${binName} → ${rel} (missing)`); continue }
+    if (!readFileSync(f, 'utf8').startsWith('#!')) noShebang.push(`${binName} → ${rel}`)
+  }
+  if (Object.keys(bins).length === 0) add('bin shebangs', 'SKIP', 'no bin entries')
+  else if (noShebang.length)
+    add('bin shebangs', 'FAIL', `a bin without a shebang is not executable when npm links it:\n${noShebang.join('\n')}`)
+  else add('bin shebangs', 'PASS')
+
+  // --- every exports target must actually be IN the tarball -----------------
+  /*
+  `files` is an allowlist and `exports` is a promise; nothing checks that the
+  promise is covered by the allowlist. Caught for real in tosijs-product:
+  `dist/index.d.ts` re-exported seven modules while `files` shipped two of them,
+  so five declaration files were missing from the published package and every
+  TypeScript consumer importing anything but the theme API got an unresolved
+  module. Present for two releases; invisible to tests, typecheck and build,
+  because all three run against the repo and not the tarball.
+  */
+  if (isPrivate) add('packaged exports', 'SKIP', 'private package')
+  else {
+    const packed = await run(['npm', 'pack', '--dry-run', '--json'])
+    if (!packed.ok) add('packaged exports', 'SKIP', 'npm pack --dry-run failed')
+    else {
+      try {
+        const jsonStart = packed.out.indexOf('[')
+        const files: string[] = JSON.parse(packed.out.slice(jsonStart))[0].files.map((f: any) => f.path)
+        const targets = new Set<string>()
+        const collect = (v: unknown) => {
+          if (typeof v === 'string') { if (v.startsWith('./') || v.startsWith('dist/')) targets.add(v.replace(/^\.\//, '')) }
+          else if (v && typeof v === 'object') Object.values(v).forEach(collect)
+        }
+        for (const k of ['main', 'module', 'types', 'typings', 'browser']) collect(pkg[k])
+        collect(pkg.exports)
+        /*
+        Follow relative re-exports one level out of every packed declaration file.
+        The entry points being present is NOT the bug: tosijs-product shipped a
+        `dist/index.d.ts` that re-exported seven siblings while `files` packed two
+        of them, so `exports` was satisfied and five modules were still missing.
+        The promise a .d.ts makes is the whole graph it names, not its own path.
+        */
+        const declTargets = new Set<string>()
+        /*
+        Unreadable packed declarations are REPORTED, not skipped. `continue` here
+        was a silent skip: the check would examine fewer files and still say PASS,
+        which is the vacuous-guard failure this whole gate exists to catch — in the
+        guard itself. See tosijs-ui#61 (tosijs: "a check you have not seen fail is
+        not a check"; haltija: "a guard must be seen to fail").
+        */
+        const unreadable: string[] = []
+        for (const f of files.filter((x) => x.endsWith('.d.ts'))) {
+          const abs = join(process.cwd(), f)
+          if (!existsSync(abs)) { unreadable.push(f); continue }
+          const dir = f.includes('/') ? f.slice(0, f.lastIndexOf('/')) : ''
+          for (const m of readFileSync(abs, 'utf8').matchAll(/from\s+['"](\.[^'"]+)['"]/g)) {
+            const rel = m[1].replace(/^\.\//, '')
+            const base = (dir ? dir + '/' : '') + rel
+            /*
+            A declaration written for ESM says `from './x.js'` — the emitted
+            neighbour is `x.d.ts`, NOT `x.js.d.ts`. Getting this wrong made the
+            check report four phantom files on tosijs-ui, which is precisely the
+            cry-wolf this file warns about elsewhere. Candidates, in order; the
+            target counts as present if ANY of them is packed.
+            */
+            const norm = (x: string) => {
+              const out: string[] = []
+              for (const seg of x.split('/')) {
+                if (seg === '.' || seg === '') continue
+                if (seg === '..') out.pop()
+                else out.push(seg)
+              }
+              return out.join('/')
+            }
+            const cands = base.endsWith('.d.ts')
+              ? [base]
+              : [base.replace(/\.(js|mjs|cjs)$/, '') + '.d.ts', base + '.d.ts', base + '/index.d.ts']
+            declTargets.add(cands.map(norm).join('|'))
+          }
+        }
+        const missing = [...targets].filter((t) => !t.includes('*') && !files.includes(t))
+        // Alternatives are '|'-joined: satisfied if any candidate is in the tarball.
+        for (const alts of declTargets)
+          if (!alts.split('|').some((c) => files.includes(c))) missing.push(alts.split('|')[0])
+        const examined = targets.size + declTargets.size
+        if (missing.length)
+          add('packaged exports', 'FAIL',
+            `package.json points at files the tarball does not contain — consumers get an unresolved module:\n${missing.join('\n')}`)
+        else if (unreadable.length)
+          add('packaged exports', 'FAIL',
+            `packed declaration(s) could not be read, so their re-exports went unchecked — this check cannot vouch for the tarball:\n${unreadable.join('\n')}`)
+        // A PASS over an empty set is not a pass. Say so rather than bank it.
+        else if (examined === 0)
+          add('packaged exports', 'SKIP', 'nothing to check — no exports targets and no packed declarations')
+        else add('packaged exports', 'PASS', `${examined} target(s) (${targets.size} declared, ${declTargets.size} re-exported) present in ${files.length} packed files`)
+
+        /*
+        --- every bare import in SHIPPED code must be declared -----------------
+        Check the files against the manifest, never the manifest against itself
+        — a manifest is always self-consistent. tjs-lang shipped
+        editors/codemirror importing five @codemirror/* packages with no
+        peerDependencies block at all, resolving purely by hoisting luck: green
+        tests, green build, green typecheck, hard failure in any consumer with
+        an isolated install. Nominated for this script independently from two
+        threads (tosijs-ui#131, tosijs-ui#61 — ensemble's undeclared runtime
+        import is the same class). Scans only what `npm pack` would ship.
+        Dynamic import() of an undeclared package WARNs instead of failing:
+        `try { await import('optional-peer') } catch {}` is a recorded
+        deliberate pattern (performance.md).
+        */
+        try {
+          const { builtinModules } = await import('node:module')
+          const transpiler = new Bun.Transpiler({ loader: 'js' })
+          const builtin = new Set(builtinModules)
+          const declared = new Set([
+            ...Object.keys(pkg.dependencies ?? {}),
+            ...Object.keys(pkg.peerDependencies ?? {}),
+            ...Object.keys(pkg.optionalDependencies ?? {}),
+            pkg.name,
+          ])
+          const pkgOf = (spec: string) =>
+            spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0]
+          const undeclared = new Map<string, string[]>()
+          const dynOnly = new Map<string, string[]>()
+          const seen = (spec: string, file: string, dynamic: boolean) => {
+            // relative, absolute, builtin — and URL specifiers, which are
+            // valid ESM in a browser and are never a package to declare. A
+            // scaffolder that EMITS example code containing
+            // `import … from "https://cdn.jsdelivr.net/npm/…"` was reported as
+            // depending on a package called `https:`.
+            if (
+              spec.startsWith('.') ||
+              spec.startsWith('/') ||
+              spec.startsWith('node:') ||
+              spec.startsWith('bun') ||
+              /^[a-z][a-z0-9+.-]*:/i.test(spec)
+            )
+              return
+            const p = pkgOf(spec)
+            if (builtin.has(p) || declared.has(p)) return
+            const map = dynamic ? dynOnly : undeclared
+            const list = map.get(p) ?? []
+            if (!list.includes(file)) list.push(file)
+            map.set(p, list)
+          }
+          for (const f of files.filter((x) => /\.(js|mjs|cjs)$/.test(x))) {
+            const abs = join(process.cwd(), f)
+            if (!existsSync(abs)) continue
+            /*
+            PARSE, don't regex. The previous implementation matched the keyword
+            `import` inside string literals, and the two recorded false positives
+            are two faces of the same impossibility its own comment admitted —
+            "a regex cannot distinguish code from string contents":
+
+              1. `if(i==="@import")return`@import url('${r}');`` in a CSS-in-JS
+                 bundle, reported as a package called `)return`@import url(`.
+                 Patched by requiring the preceding char not be a quote or `@`.
+              2. A multi-line TEMPLATE LITERAL carrying example code —
+
+                     var help = `
+                       import { validate } from 'tosijs-schema' // ^1.8.0
+                     `
+
+                 where the character before `import` is a newline, so the patch
+                 above passes it straight through. Reported against
+                 tosijs-product, whose IIFE cannot contain a live import at all.
+
+            `Bun.Transpiler.scanImports` is the actual parser, so string contents
+            are invisible to it by construction and it returns the static /
+            dynamic / require distinction this check already wanted. Falls back to
+            the old regexes only if a shipped file will not parse as JS, so a
+            weird artifact degrades to the previous behaviour instead of going
+            unchecked.
+
+            NOTE for anyone mutation-testing this: you cannot do it end-to-end
+            through the script, because the `build` check above regenerates
+            `dist/` and wipes the mutation before this check reads it — which
+            makes both artifact-scanning checks LOOK vacuous. Exercise the
+            classify logic directly instead.
+            */
+            const src = readFileSync(abs, 'utf8')
+            let scanned = false
+            try {
+              for (const imp of transpiler.scanImports(src)) {
+                seen(imp.path, f, imp.kind === 'dynamic-import')
+              }
+              scanned = true
+            } catch {
+              /* unparseable — fall through to the regex approximation below */
+            }
+            if (!scanned) {
+              const stripped = src
+                .replace(/\/\*[\s\S]*?\*\//g, '')
+                .replace(/^[ \t]*\/\/.*$/gm, '')
+              for (const m of stripped.matchAll(/(?:^|[^\w$.'"`@])(?:import|export)\s*(?:[\w${},*\s]+from\s*)?['"]([^'"\n]+)['"]/g))
+                seen(m[1], f, false)
+              for (const m of stripped.matchAll(/(?:^|[^\w$.'"`@])require\s*\(\s*['"]([^'"\n]+)['"]\s*\)/g))
+                seen(m[1], f, false)
+              for (const m of stripped.matchAll(/(?:^|[^\w$.'"`@])import\s*\(\s*['"]([^'"\n]+)['"]/g))
+                seen(m[1], f, true)
+            }
+          }
+          for (const k of dynOnly.keys()) if (undeclared.has(k)) dynOnly.delete(k)
+          const fmt = (m: Map<string, string[]>) =>
+            [...m.entries()]
+              .map(([p, fs]) => `${p} (${fs.slice(0, 3).join(', ')}${fs.length > 3 ? ', …' : ''})`)
+              .join('\n')
+          if (undeclared.size)
+            add('shipped imports declared', 'FAIL',
+              `shipped code imports packages the manifest never declares — resolves only by hoisting luck:\n${fmt(undeclared)}`)
+          else if (dynOnly.size)
+            add('shipped imports declared', 'WARN',
+              `dynamic import() of undeclared package(s) — deliberate optional-peer pattern, or a missing declaration?\n${fmt(dynOnly)}`)
+          else add('shipped imports declared', 'PASS')
+        } catch (e) {
+          add('shipped imports declared', 'SKIP', `scan failed: ${String(e).slice(0, 120)}`)
+        }
+      } catch { add('packaged exports', 'SKIP', 'could not parse npm pack output') }
+    }
+  }
+
+  // --- declared peers vs what a consumer would actually install --------------
+  // Network-dependent, so it SKIPs offline rather than failing. A newer MAJOR
+  // outside the range is a legitimate "not supported yet" and only WARNs; a
+  // latest that is the SAME major and still out of range is a stale floor or
+  // ceiling with no such excuse.
+  const stale: string[] = []
+  const behindMajor: string[] = []
+  /*
+  CONCURRENT, and only over peers + runtime deps. Serially this walked every
+  dependency at one `npm view` apiece and blew a two-minute budget on a repo with
+  a normal-sized manifest — and a gate slow enough to interrupt you is a gate
+  people stop running, which costs more than the check is worth.
+  */
+  const rangeTargets = Object.entries({ ...peers, ...deps }).filter(
+    ([, r]) => !r.startsWith('file:') && !r.startsWith('workspace:')
+  )
+  await Promise.all(
+    rangeTargets.map(async ([name, range]) => {
+      const res = await run(['npm', 'view', '--prefer-online', name, 'version'])
+      if (!res.ok) return
+      const latest = res.out.trim().split('\n').pop() ?? ''
+      if (!/^\d+\.\d+\.\d+/.test(latest)) return
+      if (Bun.semver.satisfies(latest, range)) return
+      const latestMajor = latest.split('.')[0]
+      const rangeMajor = (range.match(/(\d+)\./) ?? [])[1]
+      if (rangeMajor && latestMajor !== rangeMajor) behindMajor.push(`${name}: "${range}" vs latest ${latest}`)
+      else stale.push(`${name}: "${range}" excludes latest ${latest} (same major)`)
+    })
+  )
+  if (stale.length)
+    add('dependency ranges', 'FAIL', `a range excludes the version a consumer installs today:\n${stale.join('\n')}`)
+  else if (behindMajor.length)
+    add('dependency ranges', 'WARN', `a newer MAJOR exists outside the declared range — deliberate, or stale?\n${behindMajor.join('\n')}`)
+  else add('dependency ranges', 'PASS')
 }
 
 // Report

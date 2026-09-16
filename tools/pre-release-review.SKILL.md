@@ -1,6 +1,6 @@
 ---
 name: pre-release-review
-description: Run the tiered pre-release review over a substantive diff — Tier 0 is the mechanical `release-doctor` script, then independent adversarially-verified lens passes (always-on: correctness + blast radius; pre-minor adds efficiency + security; quarterly: ecosystem, practices and the structural audit) ending in a GO / GO-with-followups / BLOCK recommendation. Trigger on the WORK, not the version letter: run it for any substantive change, and before cutting any tag. Use when preparing a release, cutting a version, after remediating a BLOCK, or when the user asks for a release review / pre-release check. Part of the shared tosijs-coding-practices process (practices/review.md).
+description: Run the tiered pre-release review over a substantive diff — Tier 0 is the mechanical `release-doctor` script, then independent adversarially-verified lens passes (always-on: correctness + blast radius; pre-minor adds efficiency + security; dx covers dx/docs/coverage/dryness; quarterly: ecosystem, practices and the structural audit) ending in a GO / GO-with-followups / BLOCK recommendation. Trigger on the WORK, not the version letter: run it for any substantive change, and before cutting any tag. Use when preparing a release, cutting a version, after remediating a BLOCK, or when the user asks for a release review / pre-release check. Part of the shared tosijs-coding-practices process (practices/review.md).
 ---
 
 # Pre-release review
@@ -29,9 +29,13 @@ independently (`releasing.md`).
 - **Before cutting any tag** — `tier: "pre-minor"`, `depth: "full"`. Once per coherent body of
   work, whatever the bump turns out to be. A patch is not exempt: 0.6.5 was a patch that
   shipped a broken tarball.
-- **After remediating a BLOCK** — re-run scoped to what each blocker named, which defaults to
-  correctness + blast-radius **over the remediation diff only**. Re-reading the whole span is
-  where review waves come from. A blocker whose fix is mechanical needs nothing beyond Tier 0.
+- **After remediating a BLOCK** — first answer out loud: **"did you solve the blocker
+  problem writ large, or just fix what failed?"** Apply the class fix, or record the
+  deferral explicitly (releasing.md "Say what you are NOT fixing"). Then re-run scoped to
+  what each blocker named — default: correctness + blast-radius **over the remediation
+  diff only** (re-reading the whole span is where review waves come from); a mechanical
+  fix needs nothing beyond Tier 0. (Why the question:
+  `reviews/2026-09-06-review-cost-measurement.md`.)
 - Whenever the user asks to "review before release", "do the release review", "pre-release
   check", etc.
 
@@ -47,13 +51,27 @@ install** before treating it as a code defect — a stale `node_modules` has fak
 
 1. **Confirm you're in the target git repo** and the working tree is committed (the review
    diffs against a release tag; uncommitted work should be committed or stashed first so the
-   diff is meaningful).
+   diff is meaningful). **Then freshen the inputs**: pull the practices checkout (a stale
+   copy reviews with last week's rules and last week's release-doctor) and
+   `gh issue list --state open` (open issues are review input — connect, don't re-derive).
+   Why: development.md "returning-from-a-gap".
 
 2. **Determine the base ref** (what to diff against — the last release):
    ```bash
-   git describe --tags --abbrev=0 2>/dev/null || echo main
+   git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || echo main
    ```
    Use that tag as `baseRef`. If the user named a base, use theirs.
+
+   **`--match 'v*'` is load-bearing, and its absence is silent.** A bare
+   `describe` returns the most recent tag of ANY kind, so a `checkpoint/*` tag
+   (`practices/releasing.md` recommends cutting them before risky migrations)
+   makes this resolve to the checkpoint and the review then diffs the wrong
+   span. Measured in tosijs at 1.11.0: unguarded returned
+   `checkpoint/1.11.0-pre-floorplan-0.5.0` — 3 commits — against a real release
+   span of 54, so the review would have skipped the entire `describe()` security
+   fix, the packaging change and the floorplan migration, and reported GO.
+   Nothing fails; the report simply describes a change nobody is shipping.
+   `bin/site.ts`'s own gz-delta emitter already guards this way.
 
 3. **Determine the bump level** — `patch`, `minor`, or `major`. Infer from the intended
    version if known, otherwise ask the user. `major` adds a completeness-critic pass and
@@ -90,9 +108,22 @@ install** before treating it as a code defect — a stale `node_modules` has fak
    - `tier: "pre-minor"` (default) + `depth: "full"` — adds efficiency + security; the
      once-per-coherent-body-of-work gate. Re-reviews after remediation scope to the
      remediation diff only, per each blocker's stated re-review scope.
+   - `tier: "dx"` — **dx + docs + coverage + dryness**, the consumer-facing set.
+     These four sat in the pool and in NO tier, so they ran only if asked for by
+     name: over tosijs 1.11.0 they went seven rounds without running once, on a
+     release that changed the emitted type surface, the published docs and the
+     tarball layout. The first run found a BLOCKER the seven security-focused
+     rounds had all walked past — the CHANGELOG's security entry cited a version
+     that was never released and never named the affected range, so a consumer
+     could not tell whether their version had leaked. Pair with a WHOLE-RELEASE
+     `baseRef`, not a remediation diff; these are release-level questions.
    - `tier: "quarterly"` — ecosystem + practices dispositions; a standing job with a
      deadline, never a release gate. The structural audit (redundant code paths, examples
-     audit, style conformance, render-creep) runs at this cadence too.
+     audit, style conformance, render-creep) runs at this cadence too, as does the **AAR
+     pattern review** — reading the short after-action reports each release appends to
+     `reviews/AAR.md` (releasing.md step 10) for patterns and opportunities. Per-release
+     reviews record facts; this pass does the analysis, in one bounded batch — process
+     changes originate here only, and each batch names what it retires.
 
    A run you're going to repeat several times during a release should be `fast`; the one right
    before you cut the tag should be `full`. If cost is making you skip the review entirely, use
@@ -128,7 +159,7 @@ install** before treating it as a code defect — a stale `node_modules` has fak
 | Lens | Destination |
 | --- | --- |
 | correctness, efficiency, DRYness, docs, coverage, DX | fix now, or this repo's `TODO.md` |
-| **ecosystem & abstraction health** | a **GitHub issue on the upstream repo** (`gh issue create -R tonioloewald/<target>`), mirrored in this repo's `UPSTREAM.md` with the issue URL. **Never edit the other repo** — file, don't fix. Also close any incoming issue this release fixes, naming the version. |
+| **ecosystem & abstraction health** | a **GitHub issue on the upstream repo** (`gh issue create -R tonioloewald/<target>`), body opening `From: <this repo> @ <version>` (everything posts from one account — provenance lives in the body or nowhere), mirrored in this repo's `UPSTREAM.md` with the issue URL. **Never edit the other repo** — file, don't fix. Also close any incoming issue this release fixes, naming the version. |
 | **practices & process self-review** | a **direct edit** to the shared **`tosijs-coding-practices`** repo (it is the standing exception to file-don't-fix — filing an issue there is a deferral, not a write-back; grep its cross-cutting docs for parallel mentions), and/or this repo's `CLAUDE.md`/`AGENTS.md`. The write-back must **name the commit range it covers** (`<base>..<sha>`, `<sha>` = the reviewed repo's HEAD at write time) — without the range, staleness has to be noticed instead of checked, and it is not noticed |
 
 Lenses 7–8 rarely block a release — they **compound**. If they returned no findings, be

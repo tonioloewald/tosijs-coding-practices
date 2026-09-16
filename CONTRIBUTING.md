@@ -56,7 +56,51 @@ entries ever retired — and found that the owner's own assertions entered as la
   and eventually gets skimmed instead of followed — the same failure as a noisy gate. Audits
   should retire or merge at least as much as they confirm, or say explicitly why not.
   Retirement is an edit like any other: append-only *history* is the safety net that makes
-  deletion of *current* text safe.
+  deletion of *current* text safe. **Triage order for retirement (owner): redundancy first,
+  then lack of brevity, then vagueness, then lack of demonstrated benefit, then low
+  benefit/cost.** Essays move to the journal rather than dying (the eviction path).
+
+### The promotion ladder — intention does not equal result (owner, 2026-09)
+
+We do things to accomplish goals, and the corpus records the doing — but **intention ≠
+result**, and an entry's existence is an intention. The evidence hierarchy, strongest first:
+
+> **Automated process beats structure beats qualitative assessment.**
+> *Does it work* beats *is it set up to work* beats *does it look like it should work.*
+
+Every idea in the corpus sits on one rung — a vibe/judgement ("keep the scoreboard fresh"),
+a structure (a numbered release step, a cascade gate, a template), or an automation (a
+script, a test, a generated artifact) — and the grades above tell it which way to move:
+
+- **Promote what works, up the ladder.** An entry that keeps earning its keep (fires in
+  AARs, catches real defects) should climb: judgement → cascade gate or checklist step →
+  script. Lived examples: scoreboard freshness went vibe → release step 9 → `scoreboard.ts`;
+  land-the-plane went incident → rule → `release-doctor` check. The top rung is the goal
+  because a script is never skipped, never re-litigated, and its failure is a fact.
+- **Retire what doesn't.** An entry that never fires, or whose observed effect contradicts
+  its intent (a gate that changed what it measured, a fix whose test couldn't fail), is
+  retired or reframed — not kept because the intention was good. The AAR loop's periodic
+  pass is where both moves happen, in bounded batches (review.md "the series must
+  converge").
+- **Never confuse the rungs when assessing.** "It looks like it should work" (plausible
+  prose, a sensible-sounding rule) is the weakest claim; "it is set up to work" (the check
+  exists, the step is documented) is the middle — and this corpus has repeatedly caught
+  checks that were *set up* and did not *work* (vacuous fixtures, wrong-scope gates,
+  never-seen-red checks). Only an observed result — the check seen red, the defect caught,
+  the friction measurably gone — is the top claim, and it is the only one that justifies
+  promotion.
+- **Category reputation is middle-rung evidence, even for consecrated practices** (owner).
+  TDD is supposed to improve quality; what it measurably does is reduce velocity — it *can*
+  improve quality, but that is not a given. TypeScript is supposed to reduce bugs; the
+  measured results are unconvincing. This corpus holds both directions locally: a full green
+  suite coexisted with 7/7 release blockers and an emitter stripping `new` from every class
+  (898 tests exercised `src/`, not the artifact), while the small tests that *assert a
+  specific promise* (peer floors, Node-resolvable imports, failing-first regressions) have
+  caught nearly every real defect; a typecheck stayed green while an `any` index signature
+  swallowed five lost methods, while `withAttributes()` took a consumer from 413 type errors
+  to 0. The unit of evaluation is the **specific mechanism in this ecosystem**, never the
+  category — which is why imports enter as hypotheses and why "everyone does it" promotes
+  nothing.
 
 ## Committing here: merge, never rebase
 
@@ -81,6 +125,15 @@ Likewise: **never force-push, never rebase over published commits, and never squ
 would swallow an intermediate edit.** Append only.
 
 ## Style
+
+- **Pithy beats abstract, and brevity is a virtue in itself** (owner, 2026-09). Prefer the
+  pointed question or one-line rule at the decision point over a paragraph of principle —
+  the question transmits where prose gets nodded past (measured: "writ large or fix what
+  failed?" worked; the guidance it condensed didn't). **War stories and evidence live in
+  journal entries, review reports, or measurement files — linked, never inline in
+  frequently-consulted documents.** Tool-facing docs (SKILL.md, lens prompts) pay their
+  length on every run; hold them tightest. Compressing an entry to this form IS retirement
+  (triage rule 2, lack of brevity) — an entry can be retired *into* a link and a question.
 
 - Terse. Bullets over paragraphs. Code fences for commands and snippets.
 - Second person, imperative. "Run `bun test`," not "one can run `bun test`."

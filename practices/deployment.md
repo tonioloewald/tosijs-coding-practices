@@ -18,7 +18,7 @@ for the version-stamp + npm-publish flow. — seen in: tosijs, tosijs-ui, tosijs
 
 The default for OSS libraries and doc-sites. The tosijs-ui `buildSite` prerenders one
 SEO `index.html` per doc, emits sitemap/robots/`llms.txt`, and can build an ePub.
-— seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, react-tosijs, editor2
+— seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, react-tosijs, tosijs-editor
 
 - **Serve from `main` branch `/docs`, NOT root.** `buildSite` emits root-absolute asset
   paths and writes `CNAME` + `.nojekyll` into `docs/`; serving from `/` 404s *every*
@@ -27,7 +27,7 @@ SEO `index.html` per doc, emits sitemap/robots/`llms.txt`, and can build an ePub
 - **`docs/` is generated output — never hand-edit it or put source `.md` there.**
   `buildSite` runs `rm -rf docs/` first, so anything you author in `docs/` is silently
   deleted with no error. Put source doc pages in `src/docs/*.md` and per-component docs in
-  inline `/*# ... */` comments. — seen in: tosijs-product, tosijs-3d, tosijs-ui, react-tosijs, editor2
+  inline `/*# ... */` comments. — seen in: tosijs-product, tosijs-3d, tosijs-ui, react-tosijs, tosijs-editor
 - **Verify no `docPaths` entry overlaps `outputDir` (`docs/`) before building.** `buildSite`
   deletes `outputDir` first but does NOT validate overlap — an overlapping source path is
   destroyed and the build "succeeds" producing an empty site. — seen in: tosijs-product
@@ -38,10 +38,19 @@ SEO `index.html` per doc, emits sitemap/robots/`llms.txt`, and can build an ePub
 **Contradiction — do you commit `docs/`?** Most projects **commit** `docs/` (and `dist/`):
 it's the Pages web root served from `main`, so a push auto-redeploys, and `dist/` is the
 published package. Expect large regenerated diffs; commit them, don't revert. — seen in:
-tosijs, tosijs-ui, tosijs-3d, tosijs-product. **But editor2 gitignores `docs/` + `dist/`**,
-so its Pages publish is a separate manual `gh-pages` step and a commit to `main` does NOT
-update the site. **Rule of thumb:** check `.gitignore` before assuming a push redeploys —
-commit `docs/` unless the repo deliberately ignores build output. — seen in: editor2
+tosijs, tosijs-ui, tosijs-3d, tosijs-product, tosijs-editor. **Rule of thumb:** check
+`.gitignore` AND the Pages source (`gh api repos/<owner>/<repo>/pages -q .source`) before
+assuming what a push does to the site — tosijs-editor served from the `master` ROOT with the
+demo committed at top level until it adopted `tosijs-ui/site` (2026-09-06), so deleting the
+top-level demo silently took the site down. — seen in: tosijs-editor
+
+- **After changing the Pages source path, request a build — the first deploy can be
+  partial.** Switching `tosijs-editor` from root to `/docs` reported `status: built` against
+  the right commit while serving only `index.html` and `llms.txt`; every sibling asset
+  (`iife.js`, `doc-system.css`, the per-doc pages) 404'd, which reads like a broken build
+  rather than a stale deploy. All the files were present on the branch. One explicit
+  `gh api -X POST repos/<owner>/<repo>/pages/builds` fixed it. Verify a few ASSETS after any
+  source change, not just the home page. — seen in: tosijs-editor
 
 ## Firebase
 
@@ -208,6 +217,50 @@ That is the whole ceremony. **No DNS change** (a `*.dev` wildcard already resolv
   pushing content to a host as publishing (it may be cached/indexed even if later removed).
 - Prefer reproducible builds: the same `bun run build` that runs in review produces the
   artifact you ship.
+- **A release that fixes a deployed path is not finished until that path is redeployed and
+  read back.** Publishing to npm and deploying a service are separate acts, and the gap is
+  invisible: the suite is green, the tag is pushed, the registry is updated, and the running
+  service is still on the old version because a deploy runs `npm ci` against a lockfile that
+  pins it. Expose the deployed version (`/health` reporting the dependency version, generated
+  at build time from the real dependency — not hand-written), then **assert on it**: a test
+  comparing the deployed version to `package.json` turns "did anyone redeploy?" from something
+  you have to remember into something that goes red. Generating the version and never reading
+  it back is the failure mode — the endpoint exists precisely so this is answerable.
+  — seen in: tjs-lang, twice (`cac3c62` shipped a pre-membrane VM to a public endpoint; the
+  0.13.10 review found the code-execution endpoints two security releases behind, on the exact
+  path the release rewrote)
+- **A gitignored build artifact is invisible to every "working tree is clean" gate.** If
+  `dist/` is gitignored, a prepublish check that asserts a clean tree proves nothing about it,
+  and a CI lane that rebuilds before asserting freshness cannot fail. The check has to run at
+  the **publish boundary** and assert the artifact exists, contains the files `exports` names,
+  and is newer than the newest tracked source — otherwise the "fixed in src, not in dist"
+  release ships again.
+  — seen in: tjs-lang 0.13.7 → 0.13.8, still ungated at 0.13.10
+- **Classify a token by its CAPABILITY, not by whether it pattern-matches "credential".**
+  Some tokens are *designed to ship in front-end code* — a Mapbox `pk.` token sits in every
+  visitor's devtools by design, and flagging its visibility as a "leak" is category
+  paranoia, not threat modeling (GitHub push protection does exactly this). Grade by what
+  the token can *do*: a public-scope read token's entire threat model is **billing/quota
+  freeloading** (someone embeds it in their site; their traffic drains your tier until your
+  own demos break) — no data exposure, recoverable in minutes. The proportionate responses,
+  in order: a URL restriction (kills the common copy-paste-freeloader case, because *their
+  visitors' browsers* send the wrong Referer — measured caveat: it does nothing against
+  spoofed scripted traffic); knowing your billing config (free tier worst case = "maps stop
+  loading"; a card with auto-scale is real cost exposure). Rotation alone is meaningless
+  for a published-by-design token — the replacement republishes in the next build. Secret
+  handling belongs to genuinely secret tokens (`sk.`, API keys with write scopes) — those
+  ARE leaks when visible, at any distance. — seen in: tosijs-ui (Mapbox, years public,
+  zero observed abuse), the weekly sweep's standing rule
+- **An ignore rule protects a path, not a secret.** If a build copies files, the copy is not
+  covered by the rule that names the original: a `static/manifest.webmanifest` gitignored
+  *specifically because it carries a preview token* was copied by the doc build into a tracked
+  `docs/`, which carried the token into history across every subsequent commit — through an
+  ignore rule naming the exact file. The general form: **generated output tracked in source
+  history will eventually contain a copy of something that was excluded from source history.**
+  Either the whole output directory is untracked (or on a deploy-only branch), or every
+  copied-through secret needs its own rule — and only the first of those fails safe. Sweep
+  check: for each gitignored path under `static/`/assets, grep the tracked output tree for its
+  basename. — seen in: manta-recon
 
 ## Project-specific practices
 

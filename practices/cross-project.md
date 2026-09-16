@@ -73,8 +73,12 @@ EOF
 )"
 ```
 
-- **Always put `From: <your-repo>` in the body.** Labels are nice but optional (`gh` errors on
-  a label that doesn't exist); the body always works.
+- **Always put `From: <your-repo>` in the body — and open cross-repo COMMENTS the same way**
+  (owner, 2026-09: recurring). Every issue and comment posts from ONE account, so without
+  the line all traffic reads as "from the owner" and triage loses the who-is-affected
+  signal. The RFC threads' convention ("Consumer answer: `<repo>` —") is this rule for
+  comments. Labels are nice but optional (`gh` errors on a label that doesn't exist); the
+  body always works.
 - **Don't leak private context into a public issue.** `lukko` and `kith-email` are private;
   most others are public. Describe the shape of the problem, not private code.
 - One issue per problem. A grab-bag issue gets triaged into nothing.

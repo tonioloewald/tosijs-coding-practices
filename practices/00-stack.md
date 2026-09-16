@@ -102,7 +102,7 @@ The "pick per project" choice, as actually made across the ecosystem:
 
 | Target | Projects | Shape |
 | --- | --- | --- |
-| **GitHub Pages** (committed `docs/`) | tosijs, tosijs-ui, tosijs-3d, tosijs-product, react-tosijs, editor2 | Static doc/library site built into `docs/`, served from the **`main` branch `/docs` folder** (not root), custom domain via `CNAME`. |
+| **GitHub Pages** (committed `docs/`) | tosijs, tosijs-ui, tosijs-3d, tosijs-product, react-tosijs, tosijs-editor | Static doc/library site built into `docs/`, served from the **`main` branch `/docs` folder** (not root), custom domain via `CNAME`. |
 | **Firebase** (Hosting + Functions) | tjs-lang (playground), loewald-dot-com | Full-stack; Cloud Functions in `functions/` run **npm + Node**, separate from the Bun root. |
 | **Cloudflare Pages / R2** | static-assets (primary), tosijs-3d (asset CDN `cdn.tosijs.net`) | Public asset CDN; free egress. Firebase Hosting kept as a byte-identical fallback. |
 | **Tauri v2 desktop DMG** | kith-email, lukko | Rust/webview or Bun-sidecar backend; "deploy" = code-sign + notarize a DMG, no web host. |
@@ -122,6 +122,11 @@ Where a project departs from the defaults, and why. Format: `project — what di
 - **tosijs-3d / tosijs-product** — **Babylon.js / DOM-driven scroll engine** carry most state; little-to-no tosijs state store — simulation determinism / DOM-as-state fit the domain better than a generic store. tosijs-ui is a **build-time devDep** (doc-site tooling), not a runtime UI dep.
 - **loewald-dot-com** — all Firestore access routed through **Cloud Functions RBAC** (`firestore.rules` deny-all); root Bun, `functions/` npm+Node 20 — the "PHP/LAMP simplicity via Firebase" thesis; the client never touches the Firestore SDK.
 - **lukko** — **tjs-lang is central**: VM atoms double as capability tokens — the security model and tool/DSL system are unified (the project's thesis).
-- **editor2 / kith-email / lukko / react-tosijs** — **plain TypeScript, no `.tjs`** — the TJS superset isn't needed for a standard component/integration library or (yet) these apps.
-- **Nearly all** — **no CI**; local quality gates + a "Landing the Plane" push discipline substitute for it (see [`releasing.md`](releasing.md)). Exceptions: haltija (3 GitHub Actions incl. Docs-Drift), tosijs-ui (GitHub Actions: `tsc` + unit lane + a Chromium E2E job; Firefox/WebKit only in the manual local lane), **tosijs** (`.github/workflows/ci.yml` since e12d641: a `unit` lane and a Playwright `e2e` lane, `main` only — so branch work is gated locally, not by CI — seen in: tosijs 1.8.0), tjs-lang (**two** gates with deliberately different coverage: GitHub Actions runs `test:fast` — no LLM, benchmarks or audit — while `.githooks/pre-push` runs the FULL suite on tag pushes only, where a human is present to warm the model server).
+- **tosijs-editor / kith-email / lukko / react-tosijs** — **plain TypeScript, no `.tjs`** — the TJS superset isn't needed for a standard component/integration library or (yet) these apps.
+- **CI presence varies — check the repo, don't assume** (the old "no CI" framing is
+  retired: the four most active repos all have Actions — haltija ×3 incl. Docs-Drift,
+  tosijs-ui, tosijs `main`-only, tjs-lang fast-lane with the full suite in a pre-push hook
+  on tags). Most others have none; local gates + landing-the-plane substitute
+  ([`releasing.md`](releasing.md)). **CI never publishes anywhere** — releases are local in
+  every repo.
 - **Nearly all libraries** — **Prettier pinned to v2.8.8** — a deliberate/stale pin; upgrading would reformat the tree. Watch it before assuming Prettier 3 behavior.

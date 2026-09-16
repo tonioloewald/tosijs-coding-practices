@@ -45,6 +45,15 @@ const TIERS = {
   'always-on': ['correctness', 'blast-radius'],
   'pre-minor': ['correctness', 'efficiency', 'security', 'blast-radius'],
   quarterly: ['ecosystem', 'practices'],
+  // THE CONSUMER-FACING TIER. `dx`, `docs`, `coverage` and `dryness` are in
+  // the pool and in no tier, so they run only if someone asks for them by
+  // name — and over tosijs 1.11.0 they went seven rounds without running
+  // once, on a release that changed the emitted type surface, the published
+  // docs and the tarball layout. Those are exactly the dimensions the other
+  // tiers do not look at: pre-minor asks "is it correct and safe", this asks
+  // "is it pleasant, honest and covered". Pair with a WHOLE-RELEASE baseRef,
+  // not a remediation diff — the questions are release-level.
+  dx: ['dx', 'docs', 'coverage', 'dryness'],
 }
 const VERIFY_SEVERITIES = depth === 'fast' ? ['blocker'] : ['blocker', 'major']
 // Key on the severity you'd ACT on, not just the label the finder typed: a reviewer who is
@@ -100,7 +109,7 @@ Look UP and OUT, not down. Lens 6 asks "is the DX we PROVIDE good?" — you ask 
 - **Nascent anti-patterns:** a clever workaround one copy-paste away from becoming convention; a pattern spreading because the right way is too hard; code fighting the observant model (reaching for a re-render because a binding was awkward to express).
 - **Compensating complexity:** defensive unwrapping, sanitizing inputs the upstream should have handled, indirection routing around a limitation, a version pin that dodges a bug instead of fixing it.
 - **Normalized friction:** loop steps we've stopped noticing (manual regeneration, port collisions, cert setup, two lockfiles, a script renamed to dodge a builtin). Familiarity is not the same as fine.
-For each outgoing finding, name the UPSTREAM tool and the missing seam/affordance, and propose the upstream fix. The recommendation must be to **FILE A GITHUB ISSUE on the upstream repo** (the channel) and mirror it in this repo's UPSTREAM.md with the issue URL — NEVER to go edit the upstream repo directly (agents stay in their own repo; that requires human signoff). Do not accept a silent workaround.
+For each outgoing finding, name the UPSTREAM tool and the missing seam/affordance, and propose the upstream fix. The recommendation must be to **FILE A GITHUB ISSUE on the upstream repo** (the channel), with the body OPENING \`From: <this repo> @ <version>\` — everything posts from one account, so provenance lives in the body or nowhere — and mirror it in this repo's UPSTREAM.md with the issue URL. NEVER edit the upstream repo directly (agents stay in their own repo; that requires human signoff). Do not accept a silent workaround.
 
 === 7b. INCOMING — what have our consumers filed against US? ===
 ENUMERATE, DO NOT GLANCE. This is not a footnote; it is half the lens. Resolve the repo from \`git remote get-url origin\`, then run:
@@ -169,6 +178,71 @@ Ask of each: WHO ELSE CAN THIS SURPRISE, AND CAN THEY UNDO IT? Prefer additive a
 Findings that touch the user's machine — a global binary, a kill policy, a test that writes to \$HOME — are BLOCKERS, not nits. A change that is correct in-repo and hostile on the machine has not passed review.`,
   },
 ]
+
+/*
+Cascades (2026-09, owner; practices/review.md "Lenses are cascades"): a criterion is a FACT
+CHECK (one right answer, obtained by looking) or a JUDGEMENT CALL (gated — it must name the
+fact that fires it and the fact that settles it). Each lens leads with its cascade: facts in
+order, each "no" closes a branch, judgement only where triggered. Measured basis: over nine
+consumer upgrades in the release-RFC threads, judgement ceremony caught nothing; every fact
+check that existed paid.
+*/
+const CASCADES = {
+  correctness: `1. Did runtime behavior change (non-test, non-doc code in the diff)? NO -> only gates 5-6 can fire.
+2. For each behavioral change: does a test exist that FAILS without it? (run it) NO -> finding.
+3. Does the changed code run in >1 mode (flags, http/https, dev/prod, headless/desktop)? YES -> state what it does in EACH mode. Hard rules: a default only one path sets = finding; a check reading input that is parsed later = finding.
+4. Greppable hard rules, each hit = finding: manual re-render; on<Event> callback props; value as initAttribute; proxy-on-proxy; path bindings inside shadow DOM.
+5. Diff touches measurement/inspection/remote-control code? YES -> can a result be right-looking-but-wrong? Then it must carry the caveat that makes it interpretable.
+6. Did an instrument gain a signal it previously lacked? YES -> every prior green obtained with the old instrument is unverified; re-run those checks.`,
+  efficiency: `1. Is the bundle-size delta printed? (if the build doesn't print it, THAT is the finding) Grew -> named in the CHANGELOG? Unexplained growth = finding; explained -> judgement: justified?
+2. New runtime dependency (package.json diff)? In a core library = finding, hard rule.
+3. Does the diff add work to a hot path (per-frame / per-keystroke / per-row / per-binding)? YES -> complexity before vs after; O(N) on a hot path = finding.
+4. Did build or suite wall-clock grow? Print the numbers — friction habituates, a printed number that grew does not.`,
+  dryness: `1. Did the code get NET LARGER? (git diff --stat, source lines) YES -> judgement, triggered: what does the size buy? Could it be smaller without losing function?
+2. Does new code duplicate an existing path? (search for the same shape: helper names, near-identical blocks, a second implementation of one behavior) YES -> unify, or record the keep-decision; a structural twin cannot be deferred without one.
+3. New abstraction with fewer than two real consumers? (count call sites) YES -> premature generalization, flag.
+4. Does an existing copy-pair show drift? (diff the twins) Drift = a correctness bug wearing two addresses; report both copies.`,
+  docs: `1. Do generated docs regenerate clean? (build, then git diff --exit-code)
+2. Did the public surface change (export/.d.ts diff)? Each new surface: named in a consumer-facing doc? REACHABLE from the error/warning a user hits when they have the problem it solves?
+3. CHANGELOG entry for this version? (Tier 0 answers this — trust its output.)
+4. Security-relevant fix? -> does the entry name the affected SHIPPED versions?
+5. Anything deprecated? -> warns once and names its replacement?`,
+  coverage: `1. Was the suite RUN and the output READ?
+2. Any failing or skipped test? Each is IN SCOPE — hard rule, no dismissals.
+3. For each bug fix: does a failing-first regression test exist? (verify it fails pre-fix where feasible)
+4. For each NEW test or check: has it been SEEN RED? A check nobody has seen fail is not a check.
+5. Any skip-guard or early return that can never un-skip? Green != ran.`,
+  dx: `1. Did public APIs change (exported surface / built .d.ts diff)? NO -> skip to gate 8.
+2. For each changed symbol: additive or breaking? (fact, per symbol)
+3. Every new API documented — and reachable, not just present?
+4. Any API deprecated? -> warns once, names the replacement, migration explained AND reachable from the installed artifact?
+5. Is the surface BIGGER (count exported symbols before/after)? YES -> judgement, triggered: justified? Could it be smaller without losing functionality?
+6. Are new names consistent with the existing API's style and vocabulary? A word meaning two things across the surface = finding. (Scope: the new names only.)
+7. Breaking? -> four facts, any missing one = finding: justified beyond what a deprecation could buy / version reflects it / CHANGELOG names exactly what broke / migration notes reachable from the artifact.
+8. Any new log/console output? Each line: does it change what a reader would DO? NO -> spam, finding.`,
+  ecosystem: `1. Does the diff contain a workaround, pin, defensive unwrap, or hand-rolled copy of something an upstream should provide? Each -> name the upstream + the missing seam; disposition = FILE AN ISSUE, never a silent workaround.
+2. Enumerate open incoming issues (gh issue list). Does EVERY one have a disposition (fixed-by-this-release / still-open / stale)?
+3. Cross-check every gate-1 workaround against the incoming list — is there already an issue for it?
+4. Breaking or tightening? -> MEASURE the consumer footprint (downloads + dependents + owner knowledge); grade severity against the measured base, both directions.`,
+  practices: `1. Did the practices move under this project? (git log --since last release on the practices checkout) Each change touching this project -> dispositioned: adopted / already compliant / deliberately diverging (recorded).
+2. Does a prior lens-8 write-back exist? -> does it name its commit range, and has anything landed after it? Stale claim = finding.
+3. Did this release contradict or vindicate a documented practice? (judgement, triggered by an OBSERVED divergence — name the practice and the observation.)
+4. Read reviews/AAR.md entries since the last pass — this lens is where their analysis happens. Deterministic triggers: a recorded blocker->fix->blocker cycle (-> ask WHY the review didn't frame the class the first time, and WHY the fix didn't close it); recurring friction lines (-> tooling opportunity); a lens returning zero findings twice running (dead weight, or nobody looked — say which); a check that fired but has never been seen red.`,
+  security: `1. Does the diff touch or sit adjacent to a security subsystem (sandbox/VM, capability/tool boundary, auth, URL/SSRF, regex over untrusted input, secrets, listeners)? NO -> say so; done. YES -> whole-subsystem depth (holes are latent; diff size is irrelevant).
+2. For each reachable surface: who can hit it, from where, unauthenticated? (fact)
+3. Every gate: fail-open or fail-closed? (fact, per gate; fail-open = finding)
+4. Is the hostile-input class covered by a test, not just the happy path? (fact)`,
+  'blast-radius': `1. Does the diff write, spawn, bind, kill, or delete ANYTHING outside the repo? (grep the diff: homedir, ~/, /usr/local, .local/bin, XDG_, process.kill, spawn, listen, out-of-repo writes, deletion paths) NO -> the harm half closes in ONE LINE; do not manufacture findings.
+2. YES -> enumerate the footprint; each item through the six done-right criteria (mostly facts: predicate stated? self-terminating? receipt written? opt-out documented?).
+3. Does the TEST SUITE touch any of it? Check even when the diff doesn't touch tests.
+4. Benefit half, triggered: does the diff fix a bug, work around a dependency, or copy a policy? Each -> captured or leaked (fixed where every consumer benefits? workaround filed upstream? does the copy sever propagation?)`,
+}
+LENSES.forEach((l) => {
+  if (CASCADES[l.key])
+    l.checks =
+      `CASCADE — answer the facts IN ORDER; each "no" closes its branch; judgement fires only where its trigger fact fired. "No findings" must mean "the gates answered no", never "nothing occurred to me" — state which gates closed on fact.\n${CASCADES[l.key]}\n\nFULL CRITERIA (rationale and evidence for the gates):\n` +
+      l.checks
+})
 
 // Fold the retired DRY/DX lenses into the survivors as framings (27% duplicate rate;
 // DX never originated a blocker — 2026-09 audit). Structural-twin DRY lives in Tier 3.
@@ -270,6 +344,8 @@ Scope: run \`${diffCmd}\` and \`git diff --stat ${base}...HEAD\` to see everythi
 Review ONLY through the ${lens.title} lens:
 ${lens.checks}
 
+REVIEW THE CODE AS WHAT IT IS — not as a deficient version of the mainstream thing it resembles. tosijs is NOT a deficient React (observant, not reactive: static-by-default DOM, pin-point updates, no re-render, no diff); tjs is NOT a deficient TypeScript. The stack's divergences from mainstream convention are DELIBERATE — they are the product — and a finding whose remedy is "make it more like React / TypeScript / the usual convention" is presumptively an imported prior, not a defect. To report such a finding you must ground it in a CONCRETE FAILURE SCENARIO in this stack or a documented principle of this stack (practices/observant-model.md, practices/model-priors.md, the project's own docs) — "this differs from what <mainstream tool> does" is not a failure scenario. (A deliberate divergence is not self-justifying either: if it causes a MEASURED problem here, report that on the measurement.)
+
 Report concrete, ranked findings. Each finding needs a real failure scenario (or, for non-correctness lenses, the concrete cost/risk) and an actionable recommendation. Prefer a few high-signal findings over an exhaustive dump; if the diff is clean on this lens, return an empty findings array. Severity: blocker (must fix before release) / major / minor / nit. BLOCKER IS A STATUS, NOT A SEVERITY: it means only "the release waits for this" — a typo'd name in docs can be a blocker without being poor work. Report blockers without moral weight; do not frame them as failures of whoever wrote the code. For each blocker, ALSO state its RE-REVIEW SCOPE: which lens(es) must re-examine what after the fix — default "correctness + blast-radius over the remediation diff only"; for mechanical fixes (typo, missing entry) say "Tier 0 only" so the cheap case stays cheap. If you are not confident in a severity label — especially "this minor might really be a blocker" — set severityUncertain: true so it gets adversarially verified regardless of the label.`
 
 const verifyPrompt = (f, lens) =>
@@ -282,7 +358,9 @@ File: ${f.file}${f.line ? ':' + f.line : ''}
 Claimed failure/cost: ${f.failureScenario}
 Claimed severity: ${f.severity}
 
-Return: confirmed (real, reproducible as described), plausible (likely real but you couldn't fully confirm), or refuted (not a real issue, or already handled). Set adjustedSeverity only if the claimed severity is clearly wrong.`
+Return: confirmed (real, reproducible as described), plausible (likely real but you couldn't fully confirm), or refuted (not a real issue, or already handled). Set adjustedSeverity only if the claimed severity is clearly wrong.
+
+REFUTE any finding whose only support is conformance to mainstream prior art (React/TypeScript/convention) rather than a concrete failure in THIS stack — this stack's divergences are deliberate (practices/observant-model.md, practices/model-priors.md), and the review channel must not re-import the patterns the design rejects. A finding grounded in a measured problem stands regardless of whether the code is conventional.`
 
 // ---- phase 1+2: review each lens, verify its findings as they land ----------
 phase('Review')
@@ -370,7 +448,7 @@ ${JSON.stringify(survived, null, 2)}
 ${refuted.length ? `
 Findings a skeptic REFUTED (the first-order claim is false — do NOT report these as defects):
 ${JSON.stringify(refuted.map((f) => ({ title: f.title, lens: f.lens, why_refuted: f.verdict && f.verdict.reasoning })), null, 2)}
-Do not discard these. Feedback offered in good faith is valuable even when wrong: a careful reviewer believing a false thing is usually evidence that the truth is UNDISCOVERABLE. For each, ask "what would make a competent reader believe this?" — the answer is often a real docs / naming / surfacing gap. Surface any such second-order finding (usually minor) as a follow-up, phrased as the discoverability fix, not the refuted claim. If a refutation reveals no gap (the reviewer simply erred), drop it silently — judgement, not a quota.` : ''}
+Mine these briefly: a competent reviewer believing a false thing often means the truth is undiscoverable — surface that as a docs/naming follow-up (minor); if the refutation reveals no gap, drop it silently. Not a quota.` : ''}
 ${gaps ? `\nCompleteness gaps (major release):\n${JSON.stringify(gaps.gaps, null, 2)}` : ''}
 
 Produce a triaged report:
@@ -384,6 +462,7 @@ Produce a triaged report:
   - lens **ecosystem** -> a **GitHub issue filed on the UPSTREAM repo** (name the tool and the missing seam), mirrored in this repo's \`UPSTREAM.md\` with the issue URL. NEVER a direct edit to another repo — agents stay in their own repo unless the human signs off. Also list any incoming open issues this release should have addressed or should now close.
   - lens **practices** -> a change to the shared \`tosijs-coding-practices\` repo (name the doc), and/or this repo's CLAUDE.md/AGENTS.md.
 - **ecosystem and practices findings rarely BLOCK** — they compound. Do not let them drag the verdict to BLOCK unless something is actively broken; but never drop them either.
+- **CYCLE FLAG (one line, no analysis).** Check \`reviews/\`: if any blocker in THIS run sits in code that was itself the remediation of a prior blocker, or the same lens has blocked twice this cycle, add ONE line to the report: "cycle: <lens> blocked again — record in reviews/AAR.md". Do NOT root-cause it here — the why-questions are asked at the periodic AAR review (practices/review.md "Lenses are cascades"), not inline; analyzing in-review is the process bloat that rule exists to prevent.
 
 reportMarkdown must be a complete, ready-to-read report: a one-line verdict, a per-lens summary, the blockers, then follow-ups as checkbox TODO lines **grouped by destination** (\`TODO.md\` / \`UPSTREAM.md\` + upstream repo / shared practices), then any completeness gaps.`,
   { label: 'triage', phase: 'Triage', schema: REPORT_SCHEMA, agentType: 'general-purpose' }

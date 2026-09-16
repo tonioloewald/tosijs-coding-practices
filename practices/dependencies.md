@@ -355,87 +355,26 @@ duplicated config. Whether you are pinning forward or backward, the reason has t
 something you verified, written where it will be read, with the condition for revisiting
 it stated.
 
-## 13. Price the disposal tax, because nobody else does
+## 13. Price the disposal tax
 
-Everyone evaluates **adoption cost**: how hard is it to get this in? Almost nobody
-evaluates **disposal cost**: three years from now, how hard is it to get this *out*?
-The maintainer's name for the second one is the **disposal tax**, and it is worth
-adopting because having a name makes it askable.
+Adoption cost is how hard it is to get in; the **disposal tax** is how hard it is to get
+*out*, a hundred files and three years later. Everyone optimises the first; everyone pays
+the second; nobody quotes it. Price it mechanically before adopting:
 
-Note what the question is *not*. "Can I revert the file I converted this morning?" is
-`git checkout` — not a feature and not the risk. The case that matters is a hundred files
-and three years in, when the reason to leave is that the team changed, the project was
-abandoned, or the thing simply did not work out. That is when the bill arrives, and it is
-never the moment you have budget for it.
+- **Write the degradation table** row by row: what it carries → what it comes back as →
+  lossy? Mechanical rows are free (a reverse transform exists); verbose rows are payable;
+  **semantic** rows (control flow, guarantees with no expression in the target) are the
+  real tax. Value and lock-in are usually the same feature, so the bar is **value net of
+  disposal tax**.
+- **Put the escape hatch in the syntax** (tjs-lang's `wasm { … } fallback { … }` can't be
+  written without the portable version) and **refuse rather than silently degrade** (an
+  exit path that compiles and lies is worse than none — name the loss, require an explicit
+  `--accept-loss`).
+- **If you are the one being adopted, say in the README how to leave and what it costs** —
+  the one objection that actually stops adopters, and the one nobody answers.
 
-**The counterexample proves the rule.** Languages and frameworks compete loudly on
-adoption — drop it in, migrate incrementally, works with your existing code — and
-essentially never on exit. Exit cost gets priced for data formats (export your data), for
-cloud (egress), for licensing, and almost never for tools. The exception is **TypeScript,
-whose disposal tax is close to zero.** That may be the single biggest reason it beat
-CoffeeScript (which compiled to output you would not want to inherit), Flow, and Dart. Its
-real pitch was *you can always leave* — and it is almost never stated that way, which is
-exactly the point.
-
-Be precise about it, though, because the shorthand overclaims. "Strip the annotations and
-you have JavaScript" holds **only for the erasable subset**: `enum` emits a runtime object
-with reverse mappings, parameter properties (`constructor(private x: number)`) generate
-assignments, `namespace` emits objects, and `emitDecoratorMetadata` generates runtime data.
-Those compile rather than strip.
-
-<!-- as-of: 2026-08-26 | TS erasable-subset tooling; re-check flag names and Node's stance -->
-Which is what makes it the *best* example rather than a caveat: **the ecosystem
-legislated the disposal tax.** Node's type-stripping and TypeScript's
-`--erasableSyntaxOnly` exist specifically to forbid the non-erasable constructs — a flag
-whose whole job is keeping you inside the subset you can leave from. That is the
-refuse-rather-than-degrade pattern below, enforced at authoring time instead of discovered
-at exit.
-
-And the erasability was not luck. "Types have no runtime semantics" was a TypeScript design
-goal from the beginning — a disposal-tax decision made years before anyone had a name for
-it — and the handful of places the language violated its own rule are precisely the places
-now being walked back. The exceptions prove the principle.
-
-**The uncomfortable corollary: value and lock-in are usually the same feature.** Everything
-a tool gives you over the thing it replaces is, by construction, something the replaced
-thing cannot express — and therefore something that cannot trivially come back. A
-mechanical, feature-free adoption has zero disposal tax *and* zero value. A deeply
-idiomatic one has real value *and* real disposal tax. They move together, necessarily. So
-the bar is not *value* — it is **value net of disposal tax**.
-
-### How to actually price it
-
-Not a vibe. Write the degradation table for the specific thing you are adopting, row by
-row, before you adopt:
-
-| what it carries | what it comes back as | lossy? |
-| --- | --- | --- |
-| … the things it stores or expresses … | … their form in the world without it … | … |
-
-Then sort the rows. **Mechanical** rows are free — a reverse transform exists. **Verbose**
-rows are payable — the result is ugly but correct. **Semantic** rows are the real tax:
-control flow, error propagation, guarantees that have no expression in the target. A tool
-whose rows are mostly mechanical is cheap to leave regardless of how deeply you use it.
-
-Two design patterns that pay the tax up front, both worth copying:
-
-- **The escape hatch is part of the syntax.** tjs-lang's `wasm { … } fallback { … }` cannot
-  be written without also writing the portable version — so the disposal payment is made
-  at authoring time, by construction, whether or not that was the intent.
-- **Refuse rather than silently degrade.** An exit path that quietly turns monadic errors
-  into `throw`, or drops the tests it cannot re-home, is worse than no exit path: it
-  produces something that compiles and lies. Name what would be lost and require an
-  explicit `--accept-loss`.
-
-### And if you are the one being adopted
-
-Say it in the README. **"Here is how you leave, and here is exactly what it costs"** is a
-stronger adoption argument than any migration guide, because it is the one objection that
-actually stops people — *what if this doesn't work out?* — and nobody else answers it. For
-anything pre-1.0, competing with an incumbent, it is close to the only answer that matters.
-
-Adoption tax is what everyone optimises. Disposal tax is what everyone pays and nobody
-quotes.
+Full essay (TypeScript as the legislated near-zero-tax example, the value/lock-in
+corollary): [`journal/2026-09-06-the-disposal-tax.md`](../journal/2026-09-06-the-disposal-tax.md).
 
 ## 14. Price compatibility caution against ACTUAL adoption, not aspirational adoption
 
@@ -505,8 +444,51 @@ The cheapest supply-chain fix is the dependency you didn't add.
 
 - **Prefer zero runtime dependencies in a library.** Every one becomes your
   consumers' problem — their audit output, their overrides, their install size.
+- **Weigh a dependency by its transitive closure × fix latency, not its name count**
+  (owner, 2026-09). One battle-hardened single-purpose artifact (Postgres) concentrates the
+  world's scrutiny on one codebase where big problems are rare and fixed fast; a bundled
+  SDK (Firebase) is a mare's nest of transitive nodes, each with its own maintainer cadence
+  — your advisories arrive through packages you never chose (the lukko exhibit: 2 critical
+  / 11 high, all via `firebase`'s subtree; tjs-lang's `functions/` alerts, same source).
+  Same logic against middleware: a runtime-native endpoint (`Bun.serve`) is zero marginal
+  supply chain where express brings its own nest — elimination **by construction**, like
+  the CodeMirror re-export. **And generality is itself a multiplier**: a functions platform
+  supporting N languages carries N runtime trees *plus* N deployment toolchains — and
+  deploy-tooling advisories are the worse kind, since that code runs with credentials in
+  hand. One tight universal endpoint running a **safe-by-design single language with zero
+  deployment** (sandboxed tjs; no containers, no deploy toolchain) collapses N×2 piles to
+  one membrane you own, test, and have already battle-hardened — the audit posture shifts
+  from *scan the pile* to *verify the boundary*. The trade accepted with eyes open: owned
+  bugs replace inherited ones ("owning your own bugs beats the savings"), and ops (backups,
+  migrations) moves in-house — name both in the decision record when making this move.
+  **The floor this aims at (owner): dependencies like `fetch` and POST — "if we're broken,
+  the web is broken."** Web standards are the one dependency class with unbuyable scrutiny,
+  vendor-funded fix latency, and no install step to attack. Use it as the test: every
+  dependency above that floor should have to explain what it delivers that the floor
+  doesn't.
 - **Gate a new dependency on a measured number**, not a vibe. For a browser library
   that is the printed gzip delta. "It's only one package" is not a measurement.
+- **Own it or require it — decided by who is on the other end, not by mechanism.**
+  *If your consumer might not know the dependency exists, own it (a real
+  `dependency`). If reaching your code requires them to already be using it, require
+  it (a peer).* `tosijs-ui`'s `<tosi-code>` is a finished editor component — its user
+  may never have heard of CodeMirror, so tosijs-ui owns the 12 packages and
+  re-exports the extension surface (`tosijs-ui/codemirror`) so extenders share the
+  same instance **by construction**. `tjs-lang/editors/codemirror` is a thin adapter
+  nobody reaches without already writing CodeMirror config by hand — optional peers
+  behind an explicit subpath are correct there, and a missing install fails loudly at
+  import. The two repos are not an A/B (they differ in everything); the rule is what
+  survives. Beware phrasing the reason as an implementation detail (e.g. "because
+  elements register eagerly") — details refactor away, the audience distinction
+  doesn't. — seen in: tosijs-ui, tjs-lang
+- **A peer declaration is a contract, not a detector.** Package managers warn on
+  unsatisfied peers *unreliably*: bun 1.4.0 said nothing about an installed
+  `tosijs-3d@0.8.0` against a declared `^0.7.8` (caret on 0.x pins the minor, so the
+  range excludes it) while warning about a *different* unsatisfied peer in the same
+  run. Declare peers because they state the contract and a resolver *can* act on
+  them — but anything that needs the mismatch **caught** wants a mechanical check
+  (release-doctor's peer/dev-agreement and dependency-range checks), not the package
+  manager's mood. — seen in: manta-recon, tosijs-3d-ensemble
 - **A justified exception must be written down.** `tosijs-ui` takes 12 CodeMirror
   packages as real runtime dependencies because the editor, its language modes, and
   the tjs extension must share one `@codemirror/state` instance — a naive optional

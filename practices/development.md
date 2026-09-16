@@ -7,23 +7,36 @@ How to work in a project day-to-day.
 - **Read the project's `CLAUDE.md`/`AGENTS.md` first.** It records the non-obvious: build
   entry points, watch-mode caveats, environment quirks. This shared repo is the *default*;
   the project file is the *exception*.
+- **The returning-from-a-gap checkpoint (owner, 2026-09): if this repo's HEAD is more than
+  ~24h old, re-sync with the world before working.** Two checks, both cheap, both facts:
+  1. **Practices updates**: pull the shared practices checkout (`git -C
+     <practices-checkout> pull --no-rebase`) and skim
+     `git -C <practices-checkout> log --oneline --since=<HEAD date>` — disposition anything
+     touching how this project works (adopt / already compliant / diverge-and-record).
+  2. **Open issues on THIS repo**: `gh issue list --state open` — issues are the ecosystem's
+     cross-repo mail, and a >24h gap means unread mail: a consumer may have filed the exact
+     defect you're about to trip over, or the fix you're about to duplicate.
+  Rationale: the structured practices consult otherwise happens only at review/release time,
+  so a repo touched rarely can run weeks on stale rules. The trigger is deterministic (HEAD
+  age), fires exactly when re-sync matters, and costs nothing on active repos.
 - **There is ONE build/dev entry per repo — find it, don't reinvent it.** Almost every
   project funnels dev server + build + version stamping + doc generation through a single
   hand-written script; looking for a webpack/vite config or extra npm scripts wastes time.
   Learn the one script and edit *it*.
   - `bin/site.ts` (thin wrapper over `tosijs-ui/site` `buildSite`/`devServer`, config in a
-    `*-site.config.ts` via `defineSiteConfig`) — tosijs, tosijs-ui, tosijs-3d, tosijs-product.
+    `*-site.config.ts` via `defineSiteConfig`) — tosijs, tosijs-ui, tosijs-3d, tosijs-product,
+    tosijs-editor.
   - A bespoke `dev.ts`/`serve.ts`/`build.ts` (prebuild → `Bun.build` → watch → serve) —
-    react-tosijs, editor2, lukko, loewald-dot-com.
+    react-tosijs, lukko, loewald-dot-com.
   - `bun run make` — tjs-lang (see project note on why it isn't named `build`).
-  — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, react-tosijs, editor2, lukko, tjs-lang
+  — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, react-tosijs, tosijs-editor, lukko, tjs-lang
 
 ## Bun is the toolchain
 
 - **Use Bun for everything: `bun install`, `bun <file>`, `bun test`, `bun run build`.** Never
   reach for node/npm/vite/jest — the tsconfigs assume bundler mode (`moduleResolution: bundler`,
   `allowImportingTsExtensions`, explicit `.js`/`.ts` extensions in imports), and node tooling
-  fights it. — seen in: tosijs-schema, editor2, kith-email, lukko, and the rest
+  fights it. — seen in: tosijs-schema, tosijs-editor, kith-email, lukko, and the rest
 - **Never add a `build` script to `package.json` in a Bun project.** `bun build` is a builtin
   (the bundler), so a `build` script makes `bun build` and `bun run build` do different things —
   a silent footgun. Name the full-build task something else (`make`). — seen in: tjs-lang
@@ -54,9 +67,9 @@ How to work in a project day-to-day.
   (`bun run tls` / `bun tls`, or `tosijs-dev-certs`). Generation is manual and needs sudo
   (`mkcert -install`) — the server won't auto-generate and exits telling you to run it. If the
   server won't start, check certs before anything else. — seen in: tosijs, tosijs-ui,
-  loewald-dot-com, editor2
+  loewald-dot-com, tosijs-editor
 - **Ports are fixed and differ per project** (tosijs 8018, tosijs-ui 8787, tosijs-product 8788,
-  react-tosijs 8016, editor2 8789, loewald 8020). To run two ecosystem dev servers at once,
+  react-tosijs 8016, tosijs-editor 8789, loewald 8020). To run two ecosystem dev servers at once,
   configure a distinct port — tosijs-product deliberately pins 8788 to dodge tosijs-ui's 8787.
   — seen in: tosijs-product, tosijs-ui
 - **Restart the dev server after editing the server script itself** (`serve.ts`/`dev.ts`), even
@@ -67,6 +80,53 @@ How to work in a project day-to-day.
 - **`bun start` may point at production, not a local backend.** In loewald-dot-com plain
   `bun start` connects to *production* Firebase; use `bun start-emulated` + `bun seed` for
   isolated local work. Know your target before you write data. — seen in: loewald-dot-com
+
+## Laziness with the right sign — minimize everyone's work
+
+Laziness is a legitimate engineering motivation, stated as policy by the owner: **DRY is, at
+bottom, applied laziness.** But like blast radius, laziness has a *sign*. Doing less work is
+good only when it saves work downstream too; a shortcut that offloads work onto consumers,
+future agents, or readers has the wrong sign and is not laziness, it is debt transfer. Treat
+**everyone** as someone whose work should be minimized: no one should have long build loops;
+no one should put up with spam.
+
+The corpus already contains sign-correct calls made on exactly this basis — use them as
+calibration:
+
+- tosijs 1.9.1 removed a deprecation warning entirely because it was "console spam in someone
+  else's build for a stylistic preference" — a nudge cheap for the producer, paid by every
+  consumer forever.
+- The review tax (a gate expensive enough to avoid gets avoided) is the same failure at
+  process level: work offloaded onto every release decision.
+- Log output is signal, not narration (`review.md`) — breadcrumb logging offloads the filtering
+  onto every reader.
+
+**Friction you have stopped seeing is the dangerous kind.** It accumulates precisely where the
+person able to fix it has habituated: the owner reports build bloat became *invisible to him*
+by exposure; agents absorb a slow loop without complaint because each session only pays it
+once, so nobody's annoyance ever crosses the threshold that triggers a fix. Countermeasures:
+
+- **Print the numbers so drift is a diff, not a feeling** — build wall-clock, bundle gzip
+  delta, suite duration, lines of output. Annoyance habituates; a printed number that grew
+  does not.
+- **Treat "I've gotten used to it" as a finding**, in yourself and in the repo. If you are
+  routing around something (skipping a gate, pre-filtering output, alt-tabbing during builds),
+  that routing is the measurement.
+- **Agents: flag friction instead of politely absorbing it.** An agent that tolerates a slow
+  loop or spammy output teaches it to stay — and the owner cannot see what only agents endure.
+  Same speak-up norm as for stale docs (README §5).
+- **Before you streamline a chore, ask whether the chore should exist.** Tooling that makes a
+  chore cheap is an *instrument reading*: someone measured the chore accurately — and then
+  aimed the laziness one level too low. The cautionary endpoint (external, owner-witnessed):
+  Google's golden-test tooling showed you the mismatches and updated the goldens *with one
+  click* — an institution recognizing its tests were a chore and then optimizing the chore
+  instead of questioning the tests. The friction of a wrong-sign chore is often the *last
+  remaining signal* that the underlying thing is broken; tooling the friction away makes the
+  broken state permanent and comfortable. Streamline work only after checking its sign — a
+  one-click "accept the new reality" button is the echo reflex (testing.md) given a UI.
+
+— stated by the owner (decree, with corroborating incidents above); seen in: tosijs,
+tosijs-ui, the 2026-09 review-economics audit
 
 ## Spawning background processes: capture the PID, tear them down
 
@@ -216,7 +276,7 @@ A missing `llms.txt` makes every downstream agent re-derive the project from sou
 missing changelog breaks version-naming in issue closes. Neither is optional because a repo
 is private — private repos have agent consumers too. — raised by the repo owner 2026-07-21;
 at that point 8 of 14 linked projects shipped both, and the sets were identical — the gap
-list (tosijs-schema — fixed at 1.5.0, editor2, lukko, loewald-dot-com, kith-email, static-assets, ariosto)
+list (tosijs-schema — fixed at 1.5.0, tosijs-editor, lukko, loewald-dot-com, kith-email, static-assets, ariosto)
 is tracked by issues filed on each.
 
 ## Generated files are committed — build before you commit
@@ -228,7 +288,7 @@ is tracked by issues filed on each.
 - **`src/version.ts` is generated from `package.json`, never source.** The prebuild stamps it
   and `index.ts` re-exports it; bump the version in `package.json` only. Hand edits are
   overwritten. Same idea syncs `tauri.conf.json` in Tauri apps. — seen in: tosijs, tosijs-ui,
-  react-tosijs, editor2, haltija, lukko
+  react-tosijs, tosijs-editor, haltija, lukko
 - **For generated-file merge/rebase conflicts, set the merge=ours driver once per clone:**
   ```bash
   git config merge.ours.driver true   # .gitattributes marks generated files merge=ours
@@ -236,23 +296,24 @@ is tracked by issues filed on each.
   Then rebuild to regenerate canonically. The driver isn't stored in the repo, so without it
   every generated-file conflict stalls the rebase — and hand-resolving is pointless since the
   next build overwrites them. — seen in: tosijs-ui
-- **CONTRADICTION — is the output committed or gitignored? Check per repo.** Most repos commit
-  `dist/`+`docs/` (a release diff includes big regenerated bundles; don't be alarmed). But
-  editor2 gitignores both, so its GitHub Pages publish is a separate/manual `gh-pages` step —
-  committing to `main` does *not* update the site there. Confirm before assuming. — seen in:
-  tosijs, tosijs-ui vs. editor2
+- **Is the output committed or gitignored? Check per repo.** Most repos commit
+  `dist/`+`docs/` (a release diff includes big regenerated bundles; don't be alarmed).
+  `docs/` must be committed wherever Pages serves it. tosijs-editor gitignored both and
+  served Pages from the `master` root until it adopted `tosijs-ui/site` (2026-09-06); it now
+  commits `docs/` like everyone else and still gitignores `dist/` (unpublished package).
+  Canonical detail in [deployment.md](deployment.md). — seen in: tosijs, tosijs-ui, tosijs-editor
 
 ## Publishing a library: externalize peers, emit types separately
 
 - **Wire sibling ecosystem deps as `file:` links locally, but declare them as
   `peerDependencies`** (mirror in `devDependencies` for local dev). Peers stop consumers from
   shipping duplicate framework copies; `file:` links let you iterate against unreleased upstream
-  locally. — seen in: tosijs-product, editor2, react-tosijs
+  locally. — seen in: tosijs-product, tosijs-editor, react-tosijs
 - **Build the shipped lib with `Bun.build` marking peers external, and emit `.d.ts` separately**
   via `tsc --declaration --emitDeclarationOnly` (then flatten types out of `dist/src/` if tsc
   nested them). Ship dual format: ESM with peers external + a self-contained IIFE for
   `<script>`/CDN. Full release runbooks live in [releasing.md](./releasing.md). — seen in:
-  react-tosijs, editor2, tosijs-product, tosijs-ui
+  react-tosijs, tosijs-editor, tosijs-product, tosijs-ui
 
 ## Ecosystem gotchas
 
@@ -323,6 +384,28 @@ single quotes, no semicolons, 2-space indent, ES5 trailing commas.
   repos have `.prettierignore` entries for hand-curated files (e.g. tosijs `xin-types.ts`).
 - Reference code as `file_path:line` in notes and reviews — it's clickable.
 
+## Reports carry facts, not blame or credit
+
+Owner norm for all communication — reports, commit messages, reviews, AARs, conversation.
+The work is one collaborative system (the owner plus agents following the owner's
+instructions), so assigning fault or merit inside it is beside the point; **the only thing
+that matters is what changed and why.** A report has four parts:
+
+1. **What happened.**
+2. **Why it matters — or doesn't.**
+3. **What should be done about it.**
+4. If that's unclear: **what needs to be decided, and briefly, what's at stake.**
+
+Skip the texture: no mea culpa ("that's on me", "all three were mine" — the same
+self-flagellation the BLOCKER-is-a-status rule targets, in commit-message form) and no
+credit assignment in the other direction either ("the owner's idea" as flattery). Both add
+words without information and the blame kind distorts the next iteration.
+
+**Keep provenance; drop ownership-of-fault.** `— seen in: project` and evidence grading
+("owner decree", "incident-derived") are epistemic traceability — they exist so entries can
+be trusted and retired, and they stay. "Whose fault" and "whose brilliance" serve nothing
+and go.
+
 ## Committing: path-limit it, then verify what you actually committed
 
 - **`git add <file> && git commit` does NOT commit only that file.** `git commit` commits the
@@ -390,7 +473,7 @@ _(dev-loop quirks that haven't earned a cross-project rule yet)_
   class.
 - **kith-email** — never build tosijs id-path values containing `[`, `]`, `/`, or spaces;
   sanitize with `str.replace(/[\[\]\/\s]/g, '_')` or you corrupt path parsing and bindings.
-- **editor2** — `bun run format` references eslint/prettier that aren't declared as devDeps and
+- **tosijs-editor** — `bun run format` references eslint/prettier that aren't declared as devDeps and
   have no config file; a fresh clone hits "command not found" — invoke via `bunx` or install
   first.
 - **tosijs-schema** — generate user-facing docs from executable code (`bun examples.ts >

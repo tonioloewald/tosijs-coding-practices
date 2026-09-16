@@ -1,5 +1,35 @@
 # Code review
 
+## Tell the lens what the diff basis IS, and what is out of scope
+
+A lens reviews `git diff <base>...HEAD`. It is not told that the working tree,
+not HEAD, is what ships — nor that some of what it is reading is generated. Both
+gaps produce confident, wrong blockers.
+
+**Generated artifacts are out of lens scope.** In `tosijs-ui/site` projects
+`dist/` and `docs/` are rebuilt on every file change by the dev server, so they
+are *expected* to be stale or dirty between releases; `releasing.md` says so
+almost verbatim. At tosijs-3d's 0.8.0 gate **two independent lenses each spent a
+blocker** on "committed `dist` is one commit behind `src`" — both correct about
+the bytes, both wrong about the conclusion. One built its case on an inverted npm
+mechanism, citing the *absence* of a `prepack` script as the reason stale code
+would ship; with no `prepack`, `npm publish` packs the on-disk tree, which is the
+*correct* rebuild.
+
+That two careful readers landed there independently says the guidance is
+unreachable from where a lens sits. State it in the lens preamble:
+
+> `dist/`, `docs/` and other generated output are NOT under review. Review
+> sources. The tree that ships is built at release time from the sources you are
+> reading, so staleness in committed artifacts is expected between releases and
+> is a release-step concern, not a finding.
+
+**And state the basis.** If the review runs against committed HEAD while work
+sits uncommitted, the lenses review the wrong thing — one recorded run reviewed
+a 13-line diff while the entire release sat unstaged. Print the basis
+(`git describe`, dirty-path count, and which paths are excluded) into the report
+header so a reader can see what was actually looked at.
+
 ## Tooling
 
 - **`/code-review`** (Claude Code) reviews the current diff at a chosen effort level. Use it
@@ -7,22 +37,13 @@
   cloud review of the branch or a PR — it is user-triggered and billed.
 - **`/security-review`** for changes with a security surface (auth, capability VMs, network
   sync, untrusted input, deployment config).
-- **CI is partial, and you must know exactly which lanes it covers.** This file used to say
-  there was _"no CI — no `.github/` workflows anywhere in the ecosystem"_. That is false
-  (tosijs-ui has `ci.yml`; tosijs has one too — a `unit` lane plus a Playwright `e2e` lane, `main` only; haltija has **four** workflows — unit-tests, test-qa, e2e, docs-drift;
-  tjs-lang added `ci.yml` in 0.13.0; see `00-stack.md`), and the falsehood
-  was load-bearing: a reader who believes there is no CI never asks **"which lanes does CI
-  actually run?"** — which is the exact question that catches a rotted lane. tosijs-ui's CI runs
-  the unit + e2e lanes and **not** the haltija doc-test lane, and that lane sat red for a month.
-  It is also false that `bun run build` runs tests — in tosijs-ui it does not (see
-  `releasing.md`). **Enumerate the lanes, check which are gated, and run the ungated ones by
-  hand.** An ungated lane always rots.
-
-  Two gates are not one gate twice. tjs-lang runs `test:fast` in Actions (no LLM, no
-  benchmarks, no audit) and the FULL suite in `.githooks/pre-push`, but only on tag pushes —
-  a deliberate split, and until 0.13.0 **nothing anywhere enumerated both**, which is the
-  same gap in a newer disguise. If a project has more than one gate, say what each covers in
-  the same place, or a reader will assume the stricter one runs everywhere.
+- **CI is partial — enumerate the lanes, check which are gated, run the ungated ones by
+  hand.** Per-repo CI facts live in `00-stack.md`; an ungated lane always rots (tosijs-ui's
+  CI runs unit + e2e but **not** the haltija doc-test lane, which sat red for a month; and
+  `bun run build` does not run tests there — releasing.md). **Two gates are not one gate
+  twice**: tjs-lang runs `test:fast` in Actions and the FULL suite only in a pre-push hook
+  on tag pushes — if a project has more than one gate, say what each covers in one place,
+  or readers assume the stricter one runs everywhere.
   — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, kith-email, react-tosijs
 
 ## The tiered review structure (adopted 2026-09, from the practices audit)
@@ -38,6 +59,37 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   **tag/publish reconciliation** (land-the-plane, mechanized — a divergence blocks version
   work regardless of audience), unresolved BLOCK verdicts. Plus mechanical clone detection
   where configured. Retires the old docs/coverage lenses' blocker classes.
+
+  **Dependency-declaration checks** (added 2026-09, from
+  [tosijs-ui#61](https://github.com/tonioloewald/tosijs-ui/issues/61) §2, which measured eight
+  issues on one repo collapsing into four mechanical rules):
+  - **peer/dev agreement** — every declared peer must be satisfied by what is actually
+    *installed* here. Reads `node_modules`, not `devDependencies`, because the installed tree
+    is what the tests and the build ran against; a manifest that agrees with itself but not
+    with the tree means the combination you ship is a combination nobody tested.
+  - **bin shebangs** — every `bin` target starts with `#!`. Filed twice on one repo.
+  - **packaged exports** — every file `main`/`module`/`types`/`exports` names is in the
+    tarball, **and so is every relative re-export reached from a packed `.d.ts`**. The second
+    half is the one that matters: `tosijs-product` shipped an `index.d.ts` re-exporting seven
+    siblings while `files` packed two, so `exports` was satisfied and five modules were still
+    missing — for two releases, invisible to tests, typecheck and build, because all three run
+    against the repo rather than the tarball.
+  - **dependency ranges** — a range that excludes `latest` FAILS when latest is the same major
+    (a stale floor with no excuse) and WARNs when latest is a newer major (legitimately "not
+    supported yet").
+
+  **Caveat, measured after the fact:** "docs blockers were 100% mechanical" is only a safe
+  retirement if the mechanical check actually covers them, and Tier 0 checks CHANGELOG
+  *presence and freshness* — not whether shipped prose asserts something false. Two defects
+  reached the tarball through that gap in one release (a README crediting the current
+  release's bundle win to the *previous* version, so a reader pinning it gets the old sizes;
+  and an instruction doc still describing a flag the same release removed, routing readers
+  onto a path that had just become unsafe). Both are in `package.json`'s `files`. If a diff
+  touches `README.md` / `CHANGELOG.md` / the agent-instruction doc, either run the docs lens
+  or extend Tier 0 to assert the checkable claims in them — a version stamp beside measured
+  numbers should equal `package.json`'s version, and a removed identifier should not survive
+  anywhere in shipped prose. A grep is enough for both.
+  — seen in: tjs-lang 0.13.10 (`v0.13.9..c967ec2`)
 - **Tier 1 — always-on (`depth: fast`), any substantive change.** **Correctness +
   blast-radius**, blockers-only verification. **Never keyed to the version letter** — two
   recorded gate-dodges came from letter selection; the trigger is a substantive diff, and
@@ -49,6 +101,17 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   separate agents (27% duplicate rate; DX never originated a blocker). **Re-reviews cover
   the remediation diff only** — four runs found blockers introduced by the previous wave's
   own fixes; re-reading the whole span is where review waves came from.
+- **The `dx` tier — dx + docs + coverage + dryness, run on a WHOLE RELEASE, not a
+  remediation diff.** These four sat in the lens pool and in no tier, so they ran
+  only if asked for by name. Over tosijs 1.11.0 they went **seven rounds without
+  running once**, while seven `pre-minor` rounds produced remediation code that
+  accreted unexamined — one predicate ended up written out three times inside the
+  function whose duplication the release was named for. Its first run found a
+  blocker all seven security-focused rounds had walked past: the CHANGELOG cited a
+  version that never shipped and never named the affected range, so a consumer
+  could not tell whether their version had leaked. **Run it after a BLOCK
+  remediation, not once at the end.**
+
 - **Tier 3 — the structural audit, quarterly (or per-major), whole-codebase scope.** The
   things diff-scoped review is structurally blind to:
   - **Redundant code paths / structural twins** (the emit-convert and double-`initAttributes`
@@ -64,6 +127,25 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
     `render()` use in component leaves — judicious vs drift — and report the distribution
     before arguing. The philosophy says static-by-default; the measurement says whether
     reality agrees.
+  - **AAR pattern review**: read the after-action reports accumulated since the last audit
+    (`reviews/AAR.md` per project — releasing.md step 10) and mine them for patterns and
+    opportunities: recurring friction → a tooling opportunity; recurring blocker→fix→blocker
+    cycles → the two why-questions ("Lenses are cascades" below); recurring "went well" → a
+    candidate practice. This is where process analysis lives — the per-release loop only
+    records facts, deliberately.
+
+    **The pass opens by auditing its own previous batch against consumer evidence** (owner).
+    The feedback channel already exists — no new ceremony: each repo's lens-8 dispositions
+    of practices changes (*adopted / already compliant / deliberately diverging*) plus any
+    AAR line naming a process change ARE the consuming repos' verdict on the last batch.
+    Read them first. A change consumers routed around, diverged from, or reported as
+    friction has failed "does it work" **regardless of its intention** (the promotion
+    ladder applies to process changes too) — revise or revert it in this batch. For a large
+    or contentious batch, an RFC-style ask on this repo (the #10 pattern: "what does your
+    repo actually do, what would have saved you something") is the heavyweight version.
+    **The regress is bounded by construction**: feedback on batch N is considered inside
+    batch N+1, there is no separate meta-review of the feedback step, and a complaint about
+    the process review itself is just another AAR line, mined like any other.
   - **Ecosystem + practices dispositions**, with a deadline and an owner — not a release to
     block (0 blockers in 28 runs; their findings re-printed verbatim across consecutive
     reviews when release-gated).
@@ -80,22 +162,138 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   iteration's judgment (rumination, over-caution, under-reporting). The metric that says
   anything about quality is finding→fix latency and escape rate, not the count of things a
   careful process caught before anyone was harmed. Catching them *is the process working*.
+  This extends to remediation commit messages and reports: "all three were mine" is blame
+  texture, not information — state what changed and why
+  (`development.md` "Reports carry facts, not blame or credit").
+- **Decide what to do about a blocker by the RISK OF ITS MITIGATION, not by its severity —
+  and not by how many rounds you are into the release.** These are different questions and
+  conflating them wastes releases in both directions. A documentation error that blocks is
+  just a documentation error: fix it, re-run Tier 0, ship. A blocker whose fix rewrites a
+  dispatch three call sites depend on is the one that should make you ask whether the release
+  should be split, deferred, or reshaped — and it should make you ask that on the *first*
+  round, not the third.
+
+  The failure mode this corrects, observed over tosijs 1.10.1's three rounds: an agent treated
+  "another blocker appeared" as the signal to reconsider the release shape. It happened to be
+  right there — all three rounds needed structural fixes — but the reasoning generalised from
+  the wrong variable, so the same instinct would have proposed splitting a release over a
+  changelog typo. **Round count measures how hard the code is; mitigation risk measures what
+  you should do about it.** — rule set by the owner
+
 - **A BLOCK verdict must name its re-review scope.** "Fix and re-run" is how review waves
   happen. Each blocker states what must be re-examined after remediation — which lens(es),
   over what (default: correctness + blast-radius over the remediation diff only). A blocker
   whose fix is mechanical (typo, missing entry) needs no re-review beyond Tier 0; say so
   explicitly, so the cheap case stays cheap.
+- **Respond to a blocker in development mode, not appeasement mode** (owner, 2026-09,
+  diagnosing the measured wave record). A blocker is a **bug report entering the normal
+  loop, not an exam question** — "focused on fixing the blocker" instead of writing good
+  code is what produced the incomplete-fix waves, and the record shows the mode's
+  signatures: fixes whose shape mirrors the finding's *wording* (the redaction saga patched
+  four cited addresses across four rounds; the class fix came at round 7), and tests written
+  to demonstrate compliance rather than to falsify (every incomplete fix shipped a test that
+  could not fail). Remediation is ordinary development: **reproduce first** (a failing-first
+  test can fail by construction), **ask the class question at fix time** — "when N findings
+  share one precondition, the finding IS the precondition" is cheapest *before* the fix is
+  written, not at the quarterly — **fix at the propagating layer**, run the standard gates.
+  Checkable smell in the diff: a fix shaped like the finding's sentence is appeasement; a
+  fix that looks like normal work is development. The response ladder has a third rung
+  above the class: **is the blocker evidence against a design decision?** The instance-fix
+  does the thing in front of you; the class-fix closes the category; the design response
+  asks what commitment made the category possible — and the record's best outcome came from
+  there: the redaction series ended not with the class guard (round 7) but with
+  expose-nothing-by-default (a design change that made four patched leaks *unreachable*).
+  Repeated blockers in one area are a review of the design, not of the fixes. (This is why remediation re-reviews keep
+  finding blockers: they compensate for work done outside the normal loop. Fix the mode and
+  the re-review default can lighten — see the clearance-evidence question queued in
+  `reviews/2026-09-06-review-cost-measurement.md`.)
 
 The section below defines the lens criteria in full; run them per the tiers above. The old
 "all nine on every minor" trigger is retired — reviews trigger on work, not letters.
 
-## Comprehensive pre-release review (minor & major)
+## Lenses are cascades: facts gate judgement (adopted 2026-09, owner)
 
-Before any **minor or major** version bump, run a structured multi-lens review — not one
-blended pass. Blending dilutes every lens; a reviewer told to "check everything" checks
-nothing deeply. Run **lens 0 once** to establish what the project _is_, then the **nine lenses below as independent passes**, each scoped to the diff
-since the last release (`git diff vLAST..HEAD`) plus the code it touches (for a **major**,
-review whole affected subsystems, not just the diff).
+A review criterion is one of two things, and the distinction is measured (the release-RFC
+threads: over nine consumer upgrades, *judgement ceremony* — "is this big enough to review,
+should I tag, do I branch" — caught none of the five real failures; every *fact check* that
+existed paid, every time):
+
+- A **fact check** — a question with one right answer, obtainable by looking: diff the
+  `.d.ts`, run the suite, count the exports, print the size. A script is never avoided; it is
+  wired up or it isn't. Push these down: **anything a script can answer belongs in Tier 0**
+  (`release-doctor`), not in a lens prompt.
+- A **judgement call** — requires an opinion. Judgement is not banned; it is **gated**. Every
+  judgement question must name (a) the **factual trigger** that fires it, and (b) the fact
+  that would **settle** it. A judgement question with no trigger runs on every review forever
+  (the review tax); one with no settling fact gets re-litigated every cycle (the decision
+  tax).
+
+So each lens is written as a **cascade**: factual gates first, cheap and deterministic; each
+"no" closes that branch of the lens; judgement fires only where a fact triggered it. A
+reviewer works the facts in order and reports which branches closed on fact and which opened
+into judgement — "no findings" from a lens should mean "the gates all answered no," not
+"nothing occurred to me."
+
+**A cascade must shorten the review, not decorate it** (owner). The gates exist to replace
+open-ended judgement with cheap facts and to close branches early; a lens change that adds
+reviewer work without closing branches earlier fails its own test. Process improvement does
+NOT flow through more in-review machinery — it flows through the **AAR loop**: a short
+factual after-action report per release cycle (releasing.md, "The after-action report"),
+mined *periodically* for patterns and opportunities (Tier 3). Reviews record facts; the
+quarterly pass does the thinking.
+
+**The blocker→fix→blocker cycle illustrates the split.** The trigger is deterministic — a
+re-review finds a blocker *in the remediation of a prior blocker*, or the same lens blocks
+twice in one release cycle (both observable in `reviews/`). The **in-review action is one
+line**: note the cycle in the report and the AAR. The **why-questions are asked at the
+periodic AAR review**, where patterns across cycles are visible:
+
+1. **Why didn't the review frame the problem better the first time?** The known failure mode
+   is reporting an *instance* when the finding was a *class*: "when N findings share one
+   precondition, the finding IS the precondition" (tosijs 1.9.0 — four secret-leak patches
+   across four rounds, all reachable only from one default; closing the default ended the
+   series). A review that names the class once beats one that catches instances forever.
+2. **Why didn't the fix solve the actual problem?** The known failure mode is a test that
+   could not fail: every miss in tosijs 1.10.0's incomplete-fix waves (shadow-DOM leak fixed
+   four times, `initAttributes` inheritance fixed twice) shipped with a test that passed
+   against the broken code — a marker on the wrong element, a fixture declaring something at
+   every level, an unwired host. The fix for a recurring blocker includes the demonstration
+   that the *class* is closed, not the instance.
+
+**And this applies to the review rules themselves.** When you add or change a criterion —
+here, or in `tools/pre-release-review.workflow.js` (keep them in sync) — hold it to the same
+standard:
+
+1. **Write it in cascade form**: trigger fact → check → verdict. If you cannot name the
+   factual trigger, it is a draft, not a rule — park it as an open question under the lens.
+2. **Prefer demotion to Tier 0**: if the check can be a script, add it to `release-doctor`
+   and leave only the *why* in prose.
+3. **State its death condition.** A rule about reviews is a check like any other: say what
+   evidence would show it is dead weight (e.g. "never fired across a season of reviews" —
+   which, per `CONTRIBUTING.md`'s retirement discipline, makes it a retirement candidate).
+   The lens data that built the tier structure existed only because verdicts were recorded;
+   a rule that can't be measured can't be retired, and unretirable rules are how the corpus
+   bloats.
+4. **The series must converge** (owner): continuous improvement must not become a test of
+   whether an infinite series converges. Concretely: process changes originate in **one
+   place** — the periodic AAR review — in **batches**, at most quarterly, never continuously
+   mid-cycle; each batch **names what it retires** (net process weight must not grow
+   monotonically — this corpus measured 20:1 add:retire before the quota existed); and each
+   change must be **checkable against the next few AARs** — if its benefit never shows up
+   there, revert it. An improvement that only adds obligations is the divergent term.
+   Each batch also **opens by judging the previous batch against consumer feedback** (the
+   lens-8 dispositions and AAR lines from the other repos — see the Tier 3 AAR bullet) and
+   revises or reverts accordingly: self-revision rides *inside* the existing batch rather
+   than spawning a review cycle of its own.
+
+## The lens criteria in full
+
+Tier selection and triggers live in "The tiered review structure" above (the old
+minor/major trigger is retired). This section defines each lens. Run them as **independent
+passes**, never one blended pass — blending dilutes every lens; a reviewer told to "check
+everything" checks nothing deeply. **Lens 0 once** per project, then the selected tier's
+lenses over the diff since the last release plus the code it touches (for a **major**,
+whole affected subsystems).
 
 **Security-subsystem escalation (applies to _minor_ bumps too).** When a release's diff
 touches a security-critical subsystem — a sandbox/VM, capability or tool boundary, RBAC,
@@ -269,6 +467,26 @@ obligations, which is why its reviews need more than the generic nine.
 
 ### 1. Correctness
 
+**Cascade** (facts first; each "no" closes its branch; judgement only where a fact fires it):
+
+1. **Did runtime behavior change?** (fact: the diff contains non-test, non-doc code) No →
+   only the instrument branch below can fire.
+2. For each behavioral change: **is there a test that fails without it?** (fact: run it) No →
+   finding.
+3. **Does the changed code run in more than one mode?** (fact: enumerate flags, http/https,
+   dev/prod, headless/desktop from the code) Yes → state what the change does in *each* mode.
+   Hard rules, no judgement: a default only one path sets is a finding; a check reading input
+   that is parsed later is a finding.
+4. **Greppable hard rules** — each hit is a finding: manual re-render introduced;
+   `on<Event>` callback props; `value` as initAttribute; proxy-on-proxy; path bindings inside
+   shadow DOM.
+5. **Does the diff touch measurement/inspection/remote-control code?** Yes → can its result
+   be right-looking-but-wrong? Then it must carry the caveat (hard rule, below).
+6. **Did an instrument gain a signal it previously lacked?** Yes → every prior green obtained
+   with the old instrument is unverified: re-run those checks (hard rule, below).
+
+Detail and evidence for the gates above:
+
 - Observant correctness: new state paths actually observed/bound (no manual re-render sneaking
   in); `await updates()` around post-mutation assertions; id-path surgical updates intact.
 - Boxed vs. raw: no proxy-on-proxy nesting; `===` on a BoxedScalar and `toDOM` getting raw
@@ -303,16 +521,11 @@ obligations, which is why its reviews need more than the generic nine.
   (The consumer-side counterpart is [`model-priors.md`](model-priors.md) #9: an honest caveat is
   worth nothing if a reader who distrusts the tool discards it — which is what happens when a
   component has been annoying lately, and is how a correct diagnosis gets read as noise.)
-- **Fixing an instrument invalidates the results you got with the broken one.** This is the
-  corollary of the rule above and it is the expensive half. When a diagnostic gains a signal it
-  previously lacked — a console that finally reports uncaught exceptions, a check that finally
-  measures contrast, a map that finally shows real wiring — every prior "that looked fine" was
-  reached with the broken version and is now unverified. Nothing new broke; you just stopped being
-  blind to it. So **budget for the backlog the fix uncovers, and re-run the checks that previously
-  passed** rather than treating the green history as evidence. The upside is the same size: an
-  improvement to a shared instrument propagates a wave of findings to every consumer at once — which
-  is lens 9's blast radius pointing the _good_ way, and the strongest argument for investing in
-  tools the whole stack looks through.
+- **Fixing an instrument invalidates prior greens** (cascade gate 6): every earlier "looked
+  fine" was reached with the broken version — budget for the uncovered backlog and re-run
+  previously-passing checks rather than treating green history as evidence. The upside is
+  symmetric: a shared-instrument improvement propagates findings to every consumer at once
+  (lens 9's blast radius pointing the good way).
 - **Done when:** the changed behavior has been **driven end-to-end** (see the next section),
   not just unit-tested — and driven in **more than one mode** if it supports more than one.
 
@@ -323,6 +536,21 @@ returned a confident wrong answer until the result was made to carry a warning �
 
 ### 2. Efficiency
 
+**Cascade:**
+
+1. **Is the bundle-size delta printed?** (fact — if the build doesn't print it, *that* is the
+   finding) Grew → is the growth named in the CHANGELOG? Unexplained growth is a finding;
+   explained growth triggers judgement: is it justified?
+2. **New runtime dependency?** (fact: `package.json` diff) In a core library → finding, hard
+   rule.
+3. **Does the diff add work to a hot path?** (fact: identify touched code that runs per-frame,
+   per-keystroke, per-row, per-binding) Yes → state the complexity before and after; O(N) on a
+   hot path is a finding.
+4. **Did build or suite wall-clock grow?** (fact: print the numbers — friction habituates,
+   a printed number that grew does not; `development.md` "Laziness with the right sign")
+
+Detail:
+
 - Surgical updates, not rebuilds; id-paths for in-place list mutation; bulk-mutate-raw-then
   `touch()`-once for large updates.
 - Bundle size: gzip delta printed; **no new runtime dep in a core library**; peers `external`;
@@ -332,6 +560,21 @@ returned a confident wrong answer until the result was made to carry a warning �
 - **Done when:** bundle-size delta is known and no O(N) regression sits on a hot path.
 
 ### 3. DRYness (reuse & simplification)
+
+**Cascade:**
+
+1. **Did the code get net larger?** (fact: `git diff --stat`, source lines only) Yes →
+   judgement, triggered: what does the size buy? Could it be smaller without losing function?
+2. **Does new code duplicate an existing path?** (fact: search the repo for the same shape —
+   helper names, near-identical blocks, a second implementation of one behavior) Yes → unify,
+   or record the keep-decision; a structural twin cannot be deferred without one (Tier 3
+   rule — every future fix must land twice).
+3. **New abstraction with fewer than two real consumers?** (fact: count call sites) Yes →
+   premature generalization, flag it.
+4. **Does an existing copy-pair show drift?** (fact: diff the twins) Drift is a correctness
+   bug wearing two addresses — report both copies.
+
+Detail:
 
 - Duplicated non-trivial logic that should be one shared helper; reuse what the stack already
   provides (`dom.ts`, `throttle`/`debounce`, bindings, `StyleSheet()`/`vars` — never raw CSS
@@ -370,6 +613,21 @@ plausible-but-wrong results rather than errors:
 
 ### 4. Documentation accuracy & up-to-dateness
 
+**Cascade:**
+
+1. **Do generated docs regenerate clean?** (mechanical: build, then `git diff --exit-code`)
+2. **Did the public surface change?** (fact: export/`.d.ts` diff) For each new surface:
+   **named in at least one consumer-facing doc?** (fact) **Reachable from the error or warning
+   a user hits when they have the problem it solves?** (fact: read that error path)
+3. **Did a documented GUARANTEE change?** (fact) Yes → **grep the OLD wording** across the
+   canonical reference, `CLAUDE.md`/`AGENTS.md` and the emitted `.d.ts`.
+4. **CHANGELOG entry for this version?** (Tier 0 answers this — trust its output)
+5. **Is any fix security-relevant?** Yes → does the entry **name the affected shipped
+   versions**? (fact)
+6. **Anything deprecated?** Yes → warns once and names its replacement? (fact)
+
+Detail:
+
 - **Regenerate and diff-check generated docs**: `bun run build` (or the doc generator) then
   `git diff --exit-code` over `docs/`, `llms.txt`, `version.ts`, `examples.md`, `API.md` — a
   dirty tree means shipped docs are stale.
@@ -378,6 +636,12 @@ plausible-but-wrong results rather than errors:
 - `CHANGELOG.md` has an entry for this version; README / `CLAUDE.md` / `AGENTS.md` reflect the
   change; if a **durable cross-project practice** changed, update the shared KB (and grep the
   cross-cutting docs for parallel mentions — see `../CONTRIBUTING.md`).
+- **Code without a doc sweep is the mirror of `release-check`'s markdown-only diff**, and
+  nothing gates it. Grep the **old** wording, not the new: you already know the new sentence,
+  so searching for it finds your own edit, while the stale promise is phrased the way it was
+  before you touched it — reconstruct that phrase deliberately. **JSDoc is a doc surface**: it
+  survives into the emitted `.d.ts` and is what an adopter reads on editor hover. — seen in:
+  tosijs-ui 1.14.0, three instances in one release (F3, F4, F11), each spanning three files.
 - **Security-relevant fixes name the affected shipped versions** (releasing.md step 2) — "was
   fail-open" without "in ≤ X.Y.Z" leaves consumers unable to tell if they're exposed. — seen
   in: tosijs-schema (v1.5.0 review passed this checklist while missing exactly that).
@@ -401,6 +665,21 @@ plausible-but-wrong results rather than errors:
 
 ### 5. Test coverage
 
+**Cascade:**
+
+1. **Was the suite run and the output read?** (mechanical — reviewing coverage without
+   running it is guessing)
+2. **Any failing or skipped test?** (fact) Each one is in scope — hard rule, no dismissals
+   ("pre-existing", "flaky", "not mine" are all findings, not exemptions).
+3. **For each bug fix in the diff: does a failing-first regression test exist?** (fact — and
+   where feasible, verify it fails against the pre-fix code)
+4. **For each NEW test or check: has it been seen red?** (fact: recorded red run,
+   `releasing.md`) A check nobody has seen fail is not a check.
+5. **Any skip-guard or early-return that can never un-skip?** (fact: read the guard) Green ≠
+   ran.
+
+Detail:
+
 - **Run the suite and read the output** — reviewing coverage without running it is guessing.
 - **Every failing or skipped test is in scope — never dismiss one as "pre-existing," "flaky,"
   or "not caused by this change."** A change easily slips out of context and causes a
@@ -418,6 +697,30 @@ plausible-but-wrong results rather than errors:
   previously asserted it as universal, in the one place a reviewer would rely on it.
 
 ### 6. Developer experience (DX)
+
+**Cascade** (this lens is the worked example of the cascade form — owner, 2026-09):
+
+1. **Did public APIs change?** (fact: diff the exported surface / built `.d.ts`) No → skip to
+   step 8; the rest of the lens cannot fire.
+2. For each changed symbol: **additive or breaking?** (fact, per symbol)
+3. **Is every new API documented?** (fact — and per lens 4, reachable, not just present)
+4. **Is any API deprecated?** Yes → warns once, names the replacement, migration explained
+   **and reachable from the installed artifact**? (facts)
+5. **Is the API surface bigger?** (fact: count exported symbols before/after) Yes → judgement,
+   triggered: is the growth justified? **Could the surface be smaller without losing
+   functionality?**
+6. **Are new names consistent with the existing API's style?** (judgement scoped to the new
+   names: check each against the existing conventions — `handle<Event>`, established
+   vocabulary) **Are any words used in inconsistent or confusing ways** relative to what the
+   API already means by them? (same scope: a word that means two things across the surface is
+   a finding)
+7. **Breaking?** → the four hard conditions below (justified beyond what a deprecation could
+   buy · version reflects it · CHANGELOG names exactly what broke · migration notes reachable
+   from the artifact). Each is a fact; any missing one is a finding.
+8. **Any new log/console output?** (fact: grep the diff) For each line: does it change what a
+   reader would DO? No → spam, finding (detail below).
+
+Detail:
 
 - API ergonomics: emitted types are accurate (no required→optional `.d.ts` drift), inference is
   good, and no re-introduced footgun (`on<Event>`, `value`-as-attribute, boolean-defaulting-true).
@@ -447,11 +750,9 @@ plausible-but-wrong results rather than errors:
   relative links resolve **in the packed artifact** rather than in the repo.
   — seen in: tosijs (`Migration.md`), tosijs-ui (1.7 dropped `<tosi-code>`'s pre-1.7 ACE
   props), tjs-lang (shipped an index with 29 of 43 links 404 inside the tarball)
-- **A deprecation alias is the wrong answer when the old name was a knob whose setting became
-  unconditional.** Keeping it working then means it silently does nothing — worse than
-  removing it, because it carries a compatibility promise it cannot keep. Make it an error
-  that names the replacement, and add a guard test that nothing keeps recommending it. See
-  [code-quality.md](code-quality.md#tombstones). — seen in: tjs-lang (nine mode directives)
+- **A deprecation alias for a knob that became unconditional silently does nothing** —
+  worse than removal. Canonical: [code-quality.md](code-quality.md#tombstones) (error naming
+  the replacement + guard test). — seen in: tjs-lang
 - The "point an agent at it and it works" test: `CLAUDE.md`/`AGENTS.md` current, gotchas
   written down, and `bun install` → `bun start` / `bun test` / `bun run build` succeed from a
   **fresh clone** (TLS certs, single lockfile).
@@ -462,6 +763,19 @@ plausible-but-wrong results rather than errors:
 This lens runs in **two directions, and both halves are mandatory.** Agents reliably do the
 outgoing half and skip the incoming half — **do not.** Run 7a and 7b as separate passes and
 report both.
+
+**Cascade:**
+
+1. **Does the diff contain a workaround, pin, defensive unwrap, or hand-rolled copy of
+   something an upstream should provide?** (fact: hunt per 7a) Each one → name the upstream
+   and the missing seam; the disposition is *file an issue*, never a silent workaround.
+2. **Enumerate open incoming issues** (mechanical: `gh issue list`). **Does every one have a
+   disposition?** (fact: fixed-by-this-release / still-open / stale)
+3. **Cross-check every 7a workaround against the incoming list** (fact: is there already an
+   issue for it? a loosened test routing around our own open bug is the signature failure).
+4. **Is the release breaking or tightening?** Yes → **measure the consumer footprint** (fact:
+   download stats + dependents + owner knowledge) and grade severity against the measured
+   base, both directions.
 
 #### 7a. Outgoing — are we paying for someone else's missing seam?
 
@@ -505,25 +819,13 @@ gh issue list -R tonioloewald/<this-repo> --state open
   for this?_ **A test loosened, or complexity added, to route around a bug we filed against
   ourselves is the signature failure of this half** — 7a will flag the _shape_ of it and not
   connect it to the open issue unless you deliberately do.
-- **Glance at the consumer footprint on a breaking or tightening change.** When the release
-  breaks something (a validation tightening, a removed/renamed API), the "who breaks / how far
-  does this propagate" reasoning must be grounded in the *actual* downstream base, not assumed.
-  Look at npm downloads and GitHub dependents so the blast-radius claim is quantitative:
-
-  ```bash
-  curl -s https://api.npmjs.org/downloads/point/last-month/<pkg>   # download trend
-  gh api "/repos/tonioloewald/<repo>" --jq '.stargazers_count'      # + the repo's "Used by" page
-  ```
-
-  A policy of breaking-toward-correctness in minors often rests on "no significant external
-  consumers" (see [`releasing.md`](releasing.md) "Versioning philosophy"). This is where that
-  assumption gets *validated* rather than restated — a footprint that has quietly grown flips the
-  calculus, and you want to notice before a break bites someone, not after. **The numbers also
-  calibrate severity in the other direction**: a breakage or publish-integrity finding on a
-  package with a measured-zero consumer base is bookkeeping (minor/notable), not a blocker —
-  grade against the base you measured, not the one you imagined (releasing.md "Responsibility
-  scales with the MEASURED user base"). — seen in:
-  tosijs-schema (breaking-in-a-minor twice; the assumption held, but nothing was checking it).
+- **Measure the consumer footprint on a breaking or tightening change** (cascade gate 4):
+  `curl -s https://api.npmjs.org/downloads/point/last-month/<pkg>` + GitHub dependents +
+  owner knowledge of private consumers. The numbers calibrate severity **both ways** — a
+  quietly-grown footprint makes a casual break a real finding; a measured-zero base makes a
+  breakage finding bookkeeping, not a blocker (releasing.md "Responsibility scales with the
+  MEASURED user base"). — seen in: tosijs-schema (breaking-in-a-minor twice; the assumption
+  held, but nothing was checking it).
 - **Done when:** every open incoming issue has a stated disposition, every workaround found
   in 7a has been checked against the issue list, and a breaking release has looked at who
   actually consumes the package.
@@ -535,6 +837,23 @@ ago and left open, and a loosened `title` assertion routing around our own open 
 
 The review reviews itself. Practices are living documents, and a release is when they get
 tested against reality.
+
+**Cascade:**
+
+1. **Did the practices move under this project?** (fact:
+   `git -C <practices-checkout> log --since=<last release>`) Each change touching this
+   project → dispositioned: adopted / already compliant / deliberately diverging (recorded).
+2. **Does a prior lens-8 write-back exist?** (fact: reviews/, TODO) → does it name its commit
+   range, and has anything landed after it? (facts) Stale claim → finding.
+3. **Did this release contradict or vindicate a documented practice?** (judgement, triggered
+   by an observed divergence between what the practice says and what actually happened —
+   name the practice and the observation)
+4. **Did the process hold?** Read the AARs accumulated since the last pass (releasing.md
+   step 10) — this lens is where their analysis happens. Deterministic sub-triggers: a
+   blocker→fix→blocker cycle recorded (→ run the two why-questions from "Lenses are
+   cascades"); recurring friction lines (→ a tooling opportunity); a lens returning zero
+   findings twice running (→ dead weight or nobody looked — say which); a check that fired
+   but has never been seen red (→ recorded-red-run debt).
 
 - Did this release **contradict, outdate, or vindicate** a documented practice? A practice
   that didn't match reality is a **bug in the knowledge base** — fix it (with attribution),
@@ -570,6 +889,21 @@ tested against reality.
   in: tosijs-schema (v1.5.0 review, KB 4 commits ahead at wave 5).
 
 ### 9. Blast radius — what does this change PROPAGATE outside the repo, cost _or_ benefit?
+
+**Cascade:**
+
+1. **Does the diff write, spawn, bind, kill, or delete anything outside the repo?** (fact:
+   grep for `homedir`, `~/`, `/usr/local`, `.local/bin`, `XDG_`, `process.kill`, `spawn`,
+   `listen`, out-of-repo `writeFileSync`, deletion paths) No → the harm half closes in one
+   line; do not manufacture findings.
+2. Yes → **enumerate the footprint** (fact) and put each item through the six done-right
+   criteria below — most are facts (predicate stated? self-terminating? receipt written?
+   opt-out documented?).
+3. **Does the test suite touch any of it?** (fact — check even when the diff doesn't touch
+   tests; a spawned process re-reads the real `$HOME`)
+4. Benefit half, triggered: **does the diff fix a bug, work around a dependency, or copy a
+   policy?** Each → captured or leaked? (judgement, triggered: was the fix made where every
+   consumer benefits? is the workaround filed upstream? does the copy sever propagation?)
 
 Lenses 1–6 review the code. This one reviews the **footprint**: everything the change writes,
 spawns, binds, or kills that outlives the process and is shared with software we don't own.
@@ -760,6 +1094,54 @@ condition, **the finding is the condition**, not the N instances.
 > zero-area elements — so an entire tier of the agent map was invisible to every test in
 > the suite, in a way no real browser reproduces. If a guard depends on geometry, layout,
 > or timing, make the environment supply it rather than trusting the green tick.
+>
+> **The general rule is procedural, not environmental: MUTATION-VERIFY EVERY PIN — run it
+> against the code it is meant to fail on, and record that you watched it fail.**
+> — seen in: tosijs 1.11.0, in the release that *claimed* this discipline
+>
+> The environment is only one of the things that can suppress an assertion. A fixture can
+> be cleared by a *different clause of the same predicate*: adopting a shared
+> `isInteractive` changed seven verdicts, and two of the seven pins passed identically
+> against the OLD predicate, because each fixture's evidence sat in a field that the
+> unrelated half of the change also neutralised. No environment involved, no green tick to
+> distrust — the tests simply asserted something both versions already agreed on.
+>
+> The CHANGELOG claimed all the changes were "pinned by tests written to fail against the
+> previous predicate, and watched doing so." The author *had* run the mutation and *had*
+> watched N tests fail — and then reported the count as if it covered the whole set,
+> without checking WHICH ones failed. **Watching the suite fail is not watching THIS test
+> fail.** Verify per-pin, name the ones that did not discriminate, and fix them before the
+> claim ships.
+
+**A guard threaded as a PARAMETER is not a guard until every harvest calls it.**
+— seen in: tosijs 1.8.3 → 1.11.0, seven times, for one invariant
+
+> `describeElement(el, withheld?: ContentGuard)` received the guard and asked it in
+> exactly two of its harvests. The attribute harvest below — `href`, `placeholder`,
+> `title`-as-name, a checkbox's `checked` — ran unguarded, so a reset token in an `href`
+> was published in cleartext **beside a `text` on the same record that had been correctly
+> withheld.** A response that contradicts itself is the tell.
+>
+> The `ContentGuard` had been introduced *specifically* as the consolidation that ended
+> per-site restatement of this rule. It still reached two of the sites in the function it
+> was passed to. **Consolidating a rule into a parameter moves the duplication from the
+> logic to the CALL SITES, where it is invisible** — nothing type-checks "did you ask?"
+>
+> Two durable moves:
+> - **Enumerate the addresses in the guard's own docstring**, and treat adding a harvest
+>   without adding an address as the defect. A guard that cannot say where it applies is
+>   a convention, not a mechanism.
+> - **Assert on the secret SUBSTRING in the whole serialized response, never on a named
+>   field.** `expect(JSON.stringify(describe())).not.toContain(token)` is inherited
+>   automatically by whatever harvest someone adds next; `expect(rec.href).toBeUndefined()`
+>   protects exactly one field forever. The suite here had 17 `data-tosi-secret` tests and
+>   two token-in-`href` fixtures, and could not have caught this — both anchors were
+>   **unwired**, so they passed for a reason unrelated to secrecy.
+>
+> And check the other direction in the same commit: the fix must ask the **secrecy** arm,
+> not a combined secrecy-and-scope guard, or it strips ordinary data (here: the
+> destination of every out-of-scope link). Over-redaction is this class's second failure
+> mode and it has shipped too — write the over-redaction control test alongside.
 
 **Comment-vs-code.** Prose doesn't execute. A validator commented _"matches declarations at
 statement level (not inside strings/comments)"_ did no such thing — the claim was in the
@@ -930,31 +1312,15 @@ followups. — seen in: tosijs-product (0.6.x)
 
 ## What to look for (stack-specific)
 
-- **Observant correctness:** are new state paths actually observed/bound, or did someone
-  reach for a manual re-render? Is `await updates()` used where a test asserts post-mutation?
-- **`content()` vs `render()`:** bindings belong in `content()` (runs once); `render()` is
-  for structural attribute-change updates only. Imperative DOM patching in `render()` or
-  conditional logic in `content()` produces stale/duplicated UI. — seen in: tosijs, tosijs-ui,
-  kith-email, tosijs-3d, tosijs-product
-- **`on<Event>` callback trap:** `elementCreator()`/`elementSet` treats ANY `on*`-prefixed
-  prop as an `addEventListener` target, so a callback prop named `onFoo` silently never
-  fires — no error. Flag it: use `handle<Event>` (component members) or non-`on` names
-  (`drive`, `whenDestroyed`); set a real function prop via the `apply(el){ el.onFoo = fn }`
-  escape hatch. — seen in: tosijs, tosijs-3d, tosijs-product
-- **Boxed vs. raw leaks:** proxies must not nest (proxy-on-proxy). Watch spreads of proxied
-  objects into state; the stack unwraps on set/get but new code can defeat it. `===` on a
-  BoxedScalar and `toDOM` callbacks getting raw values are common silent misbehaviors.
+The observant-model checklist (observant correctness, `content()` vs `render()`,
+`on<Event>` trap, boxed/raw leaks, `value`-never-an-attribute, light-vs-shadow) lives in
+**lens 1's cascade + detail above and canonically in
+[web-components.md](web-components.md)** — retired here as redundant (2026-09 D8). What is
+unique to this list:
+
 - **id-path sanitization:** reject id-path values containing `[`, `]`, `/`, or spaces —
   they break path parsing and corrupt bindings. Sanitize with
   `str.replace(/[\[\]\/\s]/g, '_')`. — seen in: kith-email
-- **id-path opportunities:** list code that rebuilds instead of using surgical updates.
-- **Component conventions:** `static preferredTagName` (survives minification); `value` is a
-  property, never an `initAttribute`; boolean attributes default false.
-- **Shadow vs. light DOM:** path bindings do NOT work inside shadow DOM, so apps default
-  components to LIGHT DOM (`role` in `initAttributes`) — contradicting the library's own
-  shadow-DOM default. Rule of thumb: shadow DOM only when you truly need CSS isolation
-  (e.g. rendering untrusted email HTML); otherwise light DOM. — seen in: kith-email,
-  tosijs-3d, tosijs-product
 - **TJS boundaries:** validation at public edges, not smeared through hot paths; throws
   converted to monadic errors where that's the module's contract.
 - **No accidental reformatting** of `.prettierignore`'d or unrelated files — notably
@@ -975,6 +1341,26 @@ followups. — seen in: tosijs-product (0.6.x)
 
 ## Review posture
 
+- **Review the code as what it IS — not as a deficient version of the mainstream thing it
+  resembles** (owner, from a live review). tosijs is not a deficient React; tjs is not a
+  deficient TypeScript. This stack exists to fix problems produced by mainstream
+  antipatterns that went unchallenged — its divergences are the *product*, not deviations
+  awaiting correction, and **the review channel is a re-entry vector for exactly the prior
+  art the stack rejects**: a finding that says "should re-render," "needs a virtual-DOM
+  diff," "should behave like `tsc` here" carries a reviewer's authority while importing the
+  convention the design deliberately refused. The discipline, cascade form:
+  - A finding whose remedy is "make it more like React / TypeScript / the mainstream
+    convention" is **presumptively an imported prior, not a defect**. To survive, it must
+    be grounded in a **concrete failure scenario in this stack** or a **documented principle
+    of this stack** (`observant-model.md`, `tjs-lang.md`, the project's own docs) — never in
+    conformance to external convention. "This differs from what React does" is not a
+    failure scenario.
+  - The burden points the other way too, honestly: a deliberate divergence is not
+    self-justifying. If a divergence causes a *measured* problem here, that finding stands
+    on the measurement — what it may not stand on is the divergence itself.
+  - Verifiers: refute findings whose only support is prior-art conformance. That is the
+    review-side twin of `model-priors.md` (which guards the writing side); this guards the
+    judging side.
 - Report faithfully. If tests fail, say so with output. Don't claim "done and verified"
   without having driven it.
 - Findings should be actionable and ranked by severity. A finding without a concrete

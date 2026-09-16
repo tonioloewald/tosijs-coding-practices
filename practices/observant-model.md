@@ -40,45 +40,22 @@ mutate exactly the bound nodes that changed, and nothing else.
 
 ## The path is one substrate with many consumers
 
-The reason surgical DOM updates are possible is usually stated as "we know where everything
-is." The more useful form is: **every write carries a stable, global address** —
-`list[id=123].color`, not an object reference and a key. Once that is true, capability after
-capability turns out to be a *reader of an address that already exists* rather than new
-machinery:
+**Every write carries a stable, global address** (`list[id=123].color`), so the surgical
+DOM update, the observer, the sync delta (`{ path, value }` on the wire), the agent surface
+(`read`/`write`/`describe`), and write-time checks are each *readers of an address that
+already exists* — new capabilities keep coming out "basically free" because the addressing
+was already paid for. Two design rules follow:
 
-- the **surgical DOM update** — which bound node to touch
-- the **observer** — who cares that this changed
-- the **share/sync delta** — `{ path, value }` on the wire, unchanged across processes
-- the **agent surface** — `read`/`write`/`describe` are path-addressed by construction
-- a **type check on write**, and a **flight-recorder entry** if it fails
-
-This is why such features keep coming out "basically free," and it is worth naming, because
-the cheapness gets mis-attributed. It is not that the checks are cheap (though they are). It
-is that **the addressing was already paid for**, so each new consumer is a use of existing
-information rather than a new index to build and keep correct.
-
-Two things follow for design.
-
-**Prefer new readers of the path over new registries.** A feature that wants to know "what
-changed, where" should reach for the path. A feature that builds a parallel map keyed by
-something else has to keep that map correct under the same churn the path already survives —
-which is the mistake behind every rejected path→element index.
-
-**Check on writes, not reads.** Reads are self-limiting and constant — every binding
-evaluation and observer callback is a read. Writes are bounded by typing speed and network
-arrival, so validation lands exactly where traffic is low, often by orders of magnitude.
-Writes are also the dangerous direction: a bad read returns `undefined` and the caller
-copes, while a bad write *creates* the structure it walks through and silently grows state
-nothing is bound to.
-
-State that as typical traffic, not a guarantee. Animation driving state, high-frequency
-sync and drag operations are genuinely write-heavy — tosijs already routes drag through the
-raw proxy for that reason. Which is why any such check needs a **dial**, and why the dial
-should track the **trust level of the channel** rather than being one global setting: no
-single strictness is right for both a human keystroke (refusing breaks the app under their
-hands, and they can see the wrong result anyway) and an untrusted agent's tool call
-(refusing hands it a structured error it can act on, and silence corrupts state a human is
-blamed for later).
+- **Prefer new readers of the path over new registries.** A parallel map keyed by anything
+  else must stay correct under the same churn the path already survives — the mistake
+  behind every rejected path→element index.
+- **Check on writes, not reads.** Reads are constant (every binding evaluation); writes are
+  bounded by typing speed and network arrival, and are the dangerous direction — a bad
+  write *creates* the structure it walks through. Genuinely write-heavy paths (drag,
+  animation) route through the raw proxy; any write check needs a **dial keyed to the
+  channel's trust level**, because no single strictness suits both a human keystroke
+  (refusal breaks the app under their hands) and an untrusted agent's tool call (refusal
+  hands it a structured error; silence corrupts state a human gets blamed for).
 
 ## Why the word matters
 
@@ -110,6 +87,79 @@ The single most common mistake (seen across every component project in the ecosy
 importing the reactive habit: putting conditional/dynamic logic in `content()`, rebuilding
 DOM in `render()`, or reaching for a re-render to reflect a change. The fix is always the
 same — **build once, bind, mutate state, let the observer do the pin-point update.**
+
+## Boxes are not transparent, and the three ways that bites
+
+A tosijs proxy resolves a *path*; it is not the value at that path. Reads through
+it come back **boxed**, and JavaScript cannot make a box behave like its
+contents — an object wrapper is always truthy, so `new Boolean(false)` is truthy,
+and no proxy can fix that. (`.tjs` can: native `==` there is a footgun-free
+`===` that unwraps boxed primitives. In `.ts` you do not get it.) So:
+
+    store.pieces.find(p => p.id === 'a')   // {} — p.id is a box, === is false
+    if (box) …                             // true even when it holds false
+    structuredClone(store)                 // DataCloneError
+
+**Use the proxy for binding and observing; use `.value` for everything else.**
+Anything that expects plain data — a JSON serialiser, a validator, a builder,
+`structuredClone` — gets `.value`. In a component, make the plain document a
+*getter* over the store rather than a second copy.
+
+Three specific traps, each of which cost real time in `tosijs-3d-ensemble`:
+
+- **A held OBJECT box disagrees with itself** (leaf boxes are fine). Leaf proxies
+  are *empty* — path only — so they resolve live. Object proxies still wrap their
+  target, so `.value` on a held one returns whatever it closed over, permanently.
+  Within one object box, `objBox.n.value` traverses and is correct while
+  `objBox.tosi.value` is the original: two mechanisms, one object. It presents as
+  a failed *write*, so every diagnosis goes to the wrong end — a test asserting
+  "the write did not land" passed for the wrong reason, and a correct line of
+  code got "fixed". **Never hold a boxed proxy — read it through the chain each
+  time** (every access mints a fresh one; `store.q === store.q` is `false`).
+  Historical, per the author: leaves used to be bare values, then wrapped
+  primitives (stale, and `new Boolean(false)` truthy), then honest empty
+  proxies — and objects were left behind. tosijs#35 tracks emptying them too,
+  after which holding a box becomes safe. — seen in: tosijs-3d-ensemble
+- **An observed path is the path you OBSERVED, not the leaf that changed** — and
+  sometimes it *is* the leaf path, which is worse, because code that parses it
+  appears to work. Treat the notification as "something under here moved" and
+  read the document; use the path only where a coarse value is harmless, such as
+  a coalescing key. — seen in: tosijs-3d-ensemble
+- **Do not write a box from inside an observer.** The write notifies again and
+  that second notification is indistinguishable from a fresh edit — it recorded
+  an undo step for a change the user never made. Mutate the plain object under
+  the store instead when the point is to normalise what was just written.
+  — seen in: tosijs-3d-ensemble
+
+## Do not roll your own coalescing, memoization, or dirty-checking
+
+Updates are queued on an rAF and tosijs skips writes that change nothing.
+Measured: **50 writes to one path produce 1 notification, and an unchanged write
+produces 0.** If you find yourself debouncing, memoizing, or comparing a "new"
+value against the last one you saw, the framework already did it — you are
+adding work, losing its performance, and taking on the correctness burden its
+test suite already carries.
+
+The same applies one level up: do not decide *when* to re-render. In
+`tosijs-3d-ensemble` I wrote a `_changesPanelShape()` predicate, a `describe`-string
+coalescing key for undo, and a `chrome: false` flag threaded through the mutation
+path — three mechanisms, all worse versions of what the store does for free, all
+deleted once the panel was bound.
+
+## `Component` disables `tsc` for your whole class
+
+`Component` declares `[key: string]: any`, and an index signature propagates to
+every subclass. So on any component, `this.typoedMethod()` and
+`const n: number = this.notAThing` both type-check under `--strict`.
+
+This is not theoretical: a mis-splice deleted five method definitions from a
+component and `tsc --noEmit` stayed green, as did 312 tests — the methods were
+only reachable from a browser path. It failed at runtime with
+`this._box is not a function`.
+
+**So for components, a green typecheck is weaker evidence than it looks.** After
+any refactor that moves or renames members, exercise the component in a browser
+before believing it. Filed as tosijs#36. — seen in: tosijs-3d-ensemble
 
 ## Act on committed state (the Enter-commit race)
 

@@ -1,10 +1,10 @@
-# Weekly security & health sweep — 2026-08-28 (UTC)
+# Weekly security & health sweep — 2026-09-11 (UTC)
 
 Reconnaissance only at sweep time. Prior weeks live in git history (this file is overwritten,
 never appended).
 
-**Scanned:** 14 GitHub repos, **20 dependency trees** (6 nested workspaces found and audited
-separately, including the two that were UNCHECKED last week).
+**Scanned:** 14 GitHub repos, **20 dependency trees** (6 nested workspaces audited separately),
+**13 published tarballs**.
 
 | Scanned | Nested trees also audited |
 | --- | --- |
@@ -13,257 +13,334 @@ separately, including the two that were UNCHECKED last week).
 **Skipped, with reason:**
 
 - `kith-email`, `static-assets`, `ariosto` — marked *(private)* in the scoreboard, out of scope.
-- `tosijs-editor` — back-burnered per the scoreboard.
+- `tosijs-editor` — back-burnered per the scoreboard. ⚠️ **That label looks wrong now:** the row's
+  own Activity cell describes a substantial 2026-09-06 overhaul (new build, browser tests, audit
+  gate). If it is no longer back-burnered, say so on the row and it enters scope next week —
+  today it is an unscanned blind spot, by rule rather than by evidence.
 - `tosijs-3d-ensemble`, `manta-recon` — local-only repos, no GitHub link.
 - `lukko` again needed an `add_repo` attach before it would clone; then scanned in full.
   `package.json` sets `private: true`, so its npm 404 is correct.
 
-**Tooling:** `bun 1.3.11` / `bun audit --json` (**exit code read before output** — bun's clean
-tree is exit 0 + a 3-byte `{}`, and its JSON is `{pkg: [advisories]}`, *not* npm's
-`{vulnerabilities}` shape; parsing it as npm's silently reports every tree clean, which is the
-`practices/dependencies.md` §1 unearned pass and was caught mid-sweep). `npm audit --json` on
-package-lock trees; `npm view` for registry state; `git ls-remote --tags` for tags; `npm pack`
-+ grep for published-tarball contents.
+**Tooling:** `bun 1.3.11` / `bun audit --json` (exit code read before output — a clean bun tree is
+exit 0 + a 3-byte `{}`, and its JSON is `{pkg: [advisories]}`, *not* npm's `{vulnerabilities}`);
+`npm audit --json` on `package-lock` / lockfile-less trees, `npm install --ignore-scripts`
+throughout; `npm view <pkg> dist-tags` for registry state; `git ls-remote --tags` for tags;
+`npm pack <pkg>@latest` + extract + grep for published-tarball contents.
 
 ---
 
-## Last week's majors: three of five are fixed
+## Last week's majors: two of three closed, and the biggest one closed completely
 
-Verified fixed in the repos this week — worth saying plainly, because most of the work landed:
-
-- **`tjs-lang/functions`** — `firebase-admin` `^13.6.1` → **`^14.3.0`**, `firebase-functions`
-  `^7.3.2`. **3 criticals / 21 highs → 0 critical / 0 high** (7 moderate remain). Closes
-  [tjs-lang#30](https://github.com/tonioloewald/tjs-lang/issues/30).
-- **`haltija/apps/desktop`** — `electron` `^40.6.1` → **`^43.4.1`**, and `electron-builder`
-  dropped as a dependency (285 packages → 14, invoked via `npx` in the `build:*` scripts).
-  **1 critical / 54 high → CLEAN.** Closes [haltija#35](https://github.com/tonioloewald/haltija/issues/35).
-- **`haltija/apps/mcp`** — `@modelcontextprotocol/sdk` re-locked `1.25.2` → **`^1.30.0`**,
-  `hono` 4.13.3. **CLEAN.** Closes [haltija#36](https://github.com/tonioloewald/haltija/issues/36).
-- **`tosijs-ui` 1.10.1/1.10.2** ([#101](https://github.com/tonioloewald/tosijs-ui/issues/101))
-  — cleared; 1.11.0 through 1.12.4 are all published. A **new** instance replaces it (§3).
-- **`tosijs-3d` dist-tag drift** ([#33](https://github.com/tonioloewald/tosijs-3d/issues/33)) —
-  cleared; the `next` dist-tag is gone entirely and `latest` = 0.7.2. The issue can be closed.
-
-Still open, unchanged: `tosijs-platform/functions` (§2), `lukko` (§4), `wobbly`, the untagged
-published releases, `storage.rules`, the react-tosijs eslint-8 dev tree.
+- **`haltija` M1 — CLOSED, verified in the published artifact.** npm `latest` is now **1.12.9**.
+  All four stranded security fixes are in the shipped tarball: `apps/desktop/terminal.html` loads
+  `cdn.babylonjs.com/**v9.25.0**/babylon.js` with `integrity` attributes (4 present), and
+  `dist/ws-origin.*` exists in the dist. The only remaining `cdn.babylonjs.com/babylon.js`
+  strings in the tarball are a source comment and a CHANGELOG line describing the fix. Repo, tag
+  and npm all agree on 1.12.9.
+- **`tosijs` M2 — CLOSED.** 1.10.1 is tagged (`v1.10.1`) and published. **A new, one-minor-later
+  instance of the same failure replaces it — §M2 below.**
+- **`lukko` M3 — UNCHANGED**, 19 days open. §M3.
+- Also cleared since last week: `tjs-lang` 0.13.12 tagged-not-published (now published);
+  `tosijs-floorplan` had zero tags (now `v0.3.0`, `v0.4.0`).
 
 ---
 
 ## MAJOR findings
 
-### 1. `haltija` — three unauthenticated endpoints give any caller on the port shell execution (live in published 1.12.5)
+Ordered by *what needs you*, not by class. Three of the five are already filed by you; they are
+listed because the sweep reports on published state, and published state has not moved.
 
-[haltija#40](https://github.com/tonioloewald/haltija/issues/40), opened **2026-08-27** by the
-owner after an adversarial review. Confirmed by reading the source at HEAD (1.12.6): with
-`HALTIJA_TOKEN` unset, these have **no auth gate at all**:
+### M1. `tosijs-schema` — 1.9.1 fixes the fail-open an **external** consumer reported, and is neither tagged nor published
 
-| Endpoint | Source | What it does |
+| Signal | Value |
+| --- | --- |
+| `package.json` version | **1.9.1** |
+| Latest git tag on remote | `v1.9.0` |
+| npm `latest` | **1.9.0** |
+| HEAD commit | `6f2b30f` — *"1.9.1 — expose affectedRoots(), add unknownPath:'refuse' (#10)"*, 2026-09-09 |
+| CHANGELOG | `## [1.9.1] — 2026-09-09`, written as a completed release |
+
+**This is graded MAJOR, not bookkeeping, and the reason is the calibration's own escape clause.**
+`practices/releasing.md` names non-owner issue authors as the *strongest* public adoption
+instrument. [`tosijs-schema#10`](https://github.com/tonioloewald/tosijs-schema/issues/10) is
+authored by **`anssip`** (not `tonioloewald`), is still **open**, and was last updated
+**2026-09-09** — the same day as the unpublished fix commit. That is adoption measured at sweep
+time on the strongest instrument available, so the measured-zero default does not apply here.
+
+What is stranded: `agentContract().check()` answered a bare `true` both for *"valid"* and for
+*"this path touches nothing I contract"*, so the natural `if (verdict !== true) refuse()` did no
+validation at all over every uncontracted root. 1.9.1 adds `affectedRoots()` and
+`unknownPath:'refuse'`. **The person who reported a fail-open in a capability-gated write path
+cannot install the fix.**
+
+**Recommended action:** publish 1.9.1, tag at publish, and close or update #10 so the reporter
+knows. This is the single highest-value action in this sweep.
+
+### M2. `tosijs` — 1.11.0 is in `package.json` with a dated CHANGELOG entry, but is neither tagged nor published
+
+| Signal | Value |
+| --- | --- |
+| `package.json` version | **1.11.0** |
+| Latest git tag on remote | `v1.10.1` |
+| npm `latest` | **1.10.1** |
+| CHANGELOG | `## [1.11.0] - 2026-09-07`, written as a completed release |
+| HEAD | `0b59e5f` *"docs: post-build stamps"*, **2026-09-11** (today) |
+
+tosijs is one of the two packages with **known private production consumers** (Nonono, Snowfox),
+so publish integrity here is major by the calibration in `practices/releasing.md`.
+
+This is the **second consecutive week** a tosijs minor has sat in `package.json` unpublished, and
+it is the same shape as last week's M2 — which did land. **Honest caveat, so this triages in
+seconds:** HEAD carries commits from today, so this is plausibly a release in flight rather than a
+stalled one. It is reported because "a version sitting in `package.json` but never published" is
+the ecosystem's known recurring failure and the sweep always reports it.
+
+What consumers on 1.10.1 are missing: 1.11.0's `auditAccessibility()` rework — the vendored
+floorplan copies deleted in favour of tosijs-floorplan 0.4.0's exported `isInteractive` /
+`targetSizeFinding`, ending a rules divergence the repo had written down rather than fixed.
+Deliberately a minor: the same input now produces different findings in both directions.
+
+**Recommended action:** finish the 1.11.0 release (tag *at* publish), or move the version back if
+it is not ready.
+
+### M3. `lukko` — 2 critical / 11 high, all from one dependency edge, unchanged since 2026-08-23
+
+`bun audit`: **2 critical, 11 high, 16 moderate, 3 low** — byte-identical in shape to last week.
+
+| Severity | Package | Advisory |
 | --- | --- | --- |
-| `POST /terminal/command` | `src/server.ts:1973` | runs the body through `spawn('sh', ['-c', …])` |
-| `POST /terminal/agent-prompt` | `src/server.ts:1783` | launches an agent with permission prompts disabled |
-| `POST /files/write` | `src/server.ts:2266` | writes a file; the containment check is skipped for **absolute** paths (`body.path.startsWith('/')` bypasses the `..` guard) |
+| critical | `protobufjs@<7.5.5` | Arbitrary code execution |
+| critical | `websocket-driver@<0.7.5` | Message corruption via protocol length headers |
+| high ×2 | `@grpc/grpc-js@<1.9.16` | Malformed request / compressed message crashes client or server |
+| high ×5 | `protobufjs` | Code-generation gadget after prototype pollution; code injection via bytes-field defaults; unbounded recursion; unsafe option paths; unbounded `Any` expansion |
+| high ×4 | `undici@<6.27.0` | WebSocket permessage-deflate memory exhaustion; 64-bit length overflow; `server_max_window_bits` unhandled exception; fragment-count DoS |
 
-The `requireToken()` gate exists (`src/api-handlers.ts:1812`) and is correctly fail-closed —
-it refuses when no token is set — but it is wired only to the **session-mirror** handlers.
-The three routes above never call it. The server's own comment states the conditions that make
-this reachable: *"The server binds beyond loopback and answers `Access-Control-Allow-Origin: *`,
-so 'it is only localhost' is not true by default."*
+**Single root cause, unchanged.** `lukko` pins `tjs-lang: ^0.3.0`; its `bun.lock` holds
+`tjs-lang@0.3.0`, which carried `firebase@10.14.1` as a **runtime** dependency. Every advisory
+above lives in that subtree. Current tjs-lang (0.13.x) has firebase as a *devDependency* only, so
+the subtree disappears on upgrade.
 
-**Severity is not audience-scaled** — this is a code-level security finding in a **published**
-package (`haltija@1.12.5` is `latest` on npm), and haltija is the ecosystem's own agent CLI, run
-on developer machines everywhere in the internal base.
+`lukko` is `private: true` and unpublished — nothing reaches a consumer — but the tree installs on
+the dev machine. [lukko#2](https://github.com/tonioloewald/lukko/issues/2), open **19 days**.
 
-**Recommended action:** the owner has deliberately framed this as a posture decision rather than
-a quick patch, which is right — but the interim default is arbitrary code execution from any
-page the developer visits. A stopgap worth landing before the design lands: default-bind to
-loopback with explicit opt-in for LAN, and require `Origin`/`Sec-Fetch-Site` to be same-origin or
-absent on these three routes. If `--token` is going to be the boundary, `requireToken()` needs to
-be on the terminal and file routes too, not just the session mirror.
+**Recommended action:** `bun add tjs-lang@^0.13.12` and re-lock. One line, and it is the same one
+line as last week.
 
-### 2. `tosijs-platform/functions` — 3 critical / 41 high, unchanged, in deployed auth-handling code
+### M4. `tosijs` — published 1.10.1 returns cleartext secrets through the agent surface (your #41, listed because it is *shipped*)
 
-[tosijs-platform#2](https://github.com/tonioloewald/tosijs-platform/issues/2), filed 2026-08-23,
-**no change this week.** `firebase-admin` is still pinned `^12.7.0` (resolved 12.7.0) while
-upstream is 14.x — the sibling project fixed exactly this pin, so the path is now proven.
+[`tosijs#41`](https://github.com/tonioloewald/tosijs/issues/41), opened 2026-09-09, reopened,
+last updated **today**. Your own filing states it is present in **every released version**,
+verified back to v1.10.1 — i.e. in what production consumers are running right now.
 
-| Sev | Package | Installed | Advisory |
+- A light-DOM **wrapper** carrying the value binding over a contained `<input type="password">` is
+  never learned as a secret path, because `refreshSecretPaths` walks up only across a shadow
+  boundary (`getRootNode()?.host`), which light DOM does not have.
+- Because the miss is in *path learning*, it defeats `read()` and `changes()`, not just
+  `describe()` — `agent.read('lc.password')` returns the cleartext with no `describe()` involved.
+- `describe()` emits a self-contradicting record: `secret: true` beside the cleartext value.
+- Reproduces for a plain `<form>` with any custom `fromDOM` binding, so it is not component-specific.
+
+**Graded major on class, not on novelty:** a credential-disclosure path in a *published* artifact
+on the one package with known production consumers keeps its severity regardless of measured base.
+**Your sequencing reasoning is recorded and not disputed** — it is not a regression, and this code
+path produced a blocker in three consecutive pre-release review rounds, so it deserves its own
+change with its own review. The sweep's job is to keep it visible until published code changes.
+Note it also supersedes last week's N7 ([#32](https://github.com/tonioloewald/tosijs/issues/32),
+spelling-sensitive secret paths) as the widest instance of this family.
+
+### M5. `tjs-lang` — published 0.13.12 dynamic-imports an **unpinned major range** from a CDN
+
+Confirmed **in the published tarball**, not merely in the repo —
+`tjs-lang-0.13.12.tgz` → `package/dist/tjs-browser-from-ts.js`:
+
+```js
+var Je = "https://esm.sh/typescript@5"        // DEFAULT_TYPESCRIPT_URL
+function Ve(e = Je) { … import(e).then(…) }   // loadTypeScript()
+```
+
+`typescript@5` is a rolling major range; a dynamic `import()` of a cross-origin module cannot carry
+`integrity`, so there is no SRI backstop either. Whatever esm.sh serves for that range executes in
+the consumer's page. Same class as last week's haltija M1 (unpinned, un-SRI'd CDN code in a
+published artifact) — you closed that one by pinning `v9.25.0` with `integrity`.
+
+**Blast radius stated honestly, because it is narrower than M1's:** this is an *opt-in* entry point
+(`tjs-browser-from-ts`), overridable per call via `typescriptUrl`, and it lands in a browser page
+context — not, as haltija's did, in a frame holding a relay to `spawn('sh', …)`.
+
+Already filed as [tjs-lang#55](https://github.com/tonioloewald/tjs-lang/issues/55) (2026-09-06),
+which also notes the range is **invisible to every consumer lockfile**. Unchanged in published
+code, so it is reported.
+
+**Recommended action:** pin an exact version in `DEFAULT_TYPESCRIPT_URL` (the haltija fix, applied
+to a module specifier), and keep the `typescriptUrl` override for consumers who want their own.
+
+---
+
+## Notable, non-major
+
+### N1. Publish integrity elsewhere — bookkeeping on measured-zero packages
+
+| Repo | package.json | Latest tag | npm `latest` | State |
+| --- | --- | --- | --- | --- |
+| `wobbly` | 0.6.0 | `v0.6.0` | `wobbly-js` **0.1.0** | five releases unpublished ([wobbly#1](https://github.com/tonioloewald/wobbly/issues/1)), unchanged |
+| `tosijs-timezone-picker` | 0.6.0 | **none** | 0.6.0 | published, still untagged ([#2](https://github.com/tonioloewald/tosijs-timezone-picker/issues/2)) — `v0.6.0` at `f013750` is safe when wanted |
+| `tosijs-platform` | 1.0.6 | **none** | 1.0.6 | published, repo has zero tags |
+| `tosijs-ui` | 1.14.1 | `v1.14.1` | 1.14.1 | ✅ clean |
+| `tjs-lang` | 0.13.12 | `v0.13.12` | 0.13.12 | ✅ clean (last week's gap cleared) |
+| `tosijs-floorplan` | 0.4.0 | `v0.4.0` | 0.4.0 | ✅ clean (last week's zero-tags item cleared) |
+| `haltija` | 1.12.9 | `v1.12.9` | 1.12.9 | ✅ clean (M1 cleared) |
+| `tosijs-3d` / `tosijs-product` / `react-tosijs` / `ngx-tosijs` | 0.8.1 / 0.7.0 / 1.2.1 / 0.9.1 | match | match | ✅ clean |
+
+Nine of thirteen published packages now agree across repo, tag and registry — the best reading
+this sweep has recorded. The two majors above are both *fresh* divergences, not stale ones, which
+is the shape `releasing.md` predicts when the release step and the tag step are separate habits.
+
+### N2. Stale npm dist-tags on two packages — unchanged from last week
+
+| Package | `beta` | `rc` | `latest` |
 | --- | --- | --- | --- |
-| **critical** | `protobufjs` | 7.5.4 | [GHSA-xq3m-2v4x-88gg](https://github.com/advisories/GHSA-xq3m-2v4x-88gg) arbitrary code execution (`<7.5.5`) |
-| **critical** | `websocket-driver` | 0.7.4 | [GHSA-xv26-6w52-cph6](https://github.com/advisories/GHSA-xv26-6w52-cph6) message corruption via protocol length headers |
-| **critical** | `fast-xml-parser` | 4.5.3 | [GHSA-m7jm-9gc2-mpf2](https://github.com/advisories/GHSA-m7jm-9gc2-mpf2) entity-encoding bypass via regex injection |
-| **high** | `jws` | 3.2.2 / 4.0.0 | [GHSA-869p-cjfg-cm3x](https://github.com/advisories/GHSA-869p-cjfg-cm3x) improperly verifies HMAC signature — **both** installed copies are in range |
-| **high** | `node-forge` | 1.3.1 | Ed25519 forgery [GHSA-q67f-28xg-22rw](https://github.com/advisories/GHSA-q67f-28xg-22rw), RSA-PKCS forgery [GHSA-ppp5-5v6c-4jwp](https://github.com/advisories/GHSA-ppp5-5v6c-4jwp), basicConstraints bypass [GHSA-2328-f5f3-gj25](https://github.com/advisories/GHSA-2328-f5f3-gj25), ASN.1 unbounded recursion + validator desync (new this week) |
-| **high** | `@grpc/grpc-js` 1.13.4, `lodash` 4.17.21, `path-to-regexp` 0.1.12, `brace-expansion`, `minimatch`, `js-yaml`, `picomatch`, `glob`, `form-data`, `flatted` | | 41 high total across 23 packages |
+| `tosijs` | 1.7.0-beta.2 | 1.8.0-rc.3 | 1.10.1 |
+| `haltija` | 1.3.0-beta.12 | 1.12.0-rc.5 | 1.12.9 |
 
-`jws` and `node-forge` sit on the **JWT-verification and certificate-chain** paths of the
-internet-facing, token-verifying surface. Two *new* `node-forge` highs appeared since last week,
-so the tree is drifting further, not holding still.
+Nobody is served by an `rc` tag three minors back. `npm dist-tag rm <pkg> beta|rc` each.
 
-**Recommended action:** unchanged and now overdue — `firebase-admin` 12 → 13 → 14 (tjs-lang's
-functions did it; copy that). If the major cannot land now, `overrides` for
-`protobufjs >= 7.5.5`, `websocket-driver >= 0.7.5`, `fast-xml-parser >= 4.5.5`,
-`node-forge >= 1.4.0`, `jws >= 3.2.3` plus a **time-boxed** exemption (§3) for the remainder.
+### N3. Dev-tree advisories that reach no consumer
 
-### 3. `tosijs-ui` 1.12.5 is tagged but never published — and it fixes a regression that *is* published
+- **`react-tosijs`** — **11 high / 4 moderate**, every one descended from `eslint@8.57.1` (EOL):
+  `brace-expansion` ×3, `minimatch` ×3, `js-yaml` ×3, `flatted` ×2, plus `ajv` (moderate). The
+  package has **zero runtime dependencies** (peers only: `react`, `tosijs`), so nothing reaches a
+  consumer. One new `brace-expansion` high since last week (`<1.1.18`, bypassing the CVE-2026-14257
+  mitigation) — the tally keeps climbing, which is exactly the §7 "advisory count per package is a
+  code smell" signal. [react-tosijs#4](https://github.com/tonioloewald/react-tosijs/issues/4),
+  open since 2026-08-23.
+- **`tjs-lang`** (root) — 3 high / 5 moderate / 1 low: `flatted` ×2 (eslint), `form-data@<2.5.6`
+  (CRLF injection, via the firebase dev deps), `protobufjs` ×2, `qs` ×2, `uuid`, `esbuild` (low,
+  Windows dev-server only). Runtime deps are `acorn`, `acorn-loose`, `acorn-walk`,
+  `tosijs-schema` — **all clean**.
+- **`haltija/apps/mcp`** — 5 moderate (was 2): three new `hono@<4.13.5` advisories (`toSSG()`
+  path traversal — incomplete fix for CVE-2026-39408; `parseBody()` memory exhaustion; query-parser
+  cache-key differential) plus `qs` ×2. A one-line `hono` bump clears three.
+- **`tjs-lang/functions`** — 7 moderate, 0 high/critical (`uuid` → `gaxios`/`teeny-request`, `qs`,
+  `@google-cloud/storage`, `firebase-admin`, `retry-request`). Improved by one since last week.
+- **Clean trees (0 of everything):** `tosijs`, `tosijs-ui`, `tosijs-schema`, `tosijs-floorplan`,
+  `tosijs-3d`, `tosijs-product`, `tosijs-timezone-picker`, `wobbly`, `haltija` (root),
+  `haltija/apps/desktop`, `tosijs-platform` (root), `tosijs-platform/create-script`,
+  `tjs-lang/editors/vscode`.
 
-| Repo | Tag | npm `latest` |
+### N4. `ngx-tosijs` — 3 new moderates, and one of them is a message for *consumers*
+
+New since last week, all against Angular 22.0.x in the dev tree:
+
+| Severity | Package | Advisory |
 | --- | --- | --- |
-| `package.json` **1.12.5** | `v1.12.5` exists on the remote | **1.12.4** |
+| moderate | `@angular/common@>=22.0.0 <22.1.1` | Information leak via `HttpTransferCache` bypass when using `withRequestsMadeViaParent` |
+| moderate | `@angular/core` / `@angular/compiler@>=22.0.0 <22.1.0` | Sanitization bypass via directive host bindings on concrete host elements |
 
-Graded MAJOR under `releasing.md`'s calibration: tosijs-ui is one of the two packages with
-**known private production consumers** (Nonono, Snowfox).
+ngx-tosijs ships **zero runtime dependencies** (peers only: `@angular/core >=16 <23`, `tosijs`), so
+nothing is shipped vulnerable. But the declared peer range *admits* the affected versions, so a
+consumer on Angular 22.0.x is exposed through their own tree. A line in the README or CHANGELOG
+saying "on Angular 22, take ≥ 22.1.1" costs minutes and is the kind of thing a bridge package is
+uniquely placed to say.
 
-What consumers on `latest` are missing: 1.12.5 fixes a **narrow-screen navigation regression
-introduced by 1.12.3, which they do have** — tapping a nav link changes the URL and leaves the
-nav covering the article, because the full-screen exit path wrote `contentVisible = false` on
-every navigation. It also fixes [#115](https://github.com/tonioloewald/tosijs-ui/issues/115)
-(a lone custom element wrapped in `<p>`, resolving to a 33px box instead of 842px) — reported
-by tosijs-3d, i.e. an in-ecosystem consumer is already waiting on it.
+### N5. `tosijs-platform/functions` — still clean of criticals, still unpinned
 
-This is the **fourth consecutive sweep** finding a tagged-but-unpublished release somewhere in
-the ecosystem, and the second on tosijs-ui specifically. `releasing.md`'s "confirm the publish"
-step is not being executed as written; the check needs to be mechanical (a CI job comparing
-`npm view <pkg> version` against the tag it just pushed), not procedural.
+Audited fresh today: **0 critical / 0 high / 10 moderate** (`@google-cloud/firestore`,
+`@google-cloud/storage`, `firebase-admin`, `firebase-functions-test`, `gaxios`, `google-gax`,
+`retry-request`, `teeny-request`, `ts-deepmerge`, `uuid`).
 
-**Recommended action:** publish 1.12.5.
+[`tosijs-platform#2`](https://github.com/tonioloewald/tosijs-platform/issues/2) still reads
+*"3 critical / 41 high"* — **second week running that it does not reproduce**. An issue whose
+headline is measurably false is worse than no issue: re-scope it to "firebase-admin is two majors
+behind (12.x vs 14.x)" rather than leaving a number nobody can reproduce.
 
-### 4. `lukko` — 2 criticals from the `tjs-lang ^0.3.0` pin, unchanged
+⚠️ **Caveat that limits this result, unchanged:** `functions/` commits **no lockfile**
+(`package-lock.json` is gitignored), so what deploys is whatever resolves at deploy time. Today's
+clean result is a point-in-time resolution, not a pinned one.
 
-[lukko#2](https://github.com/tonioloewald/lukko/issues/2), filed 2026-08-23, **no change**.
-`tjs-lang@0.3.0` shipped `firebase@10.14.1` as a *runtime* dependency, so lukko's tree still
-carries `protobufjs@7.5.4` (**critical** RCE), `websocket-driver@0.7.4` (**critical**),
-`@grpc/grpc-js@1.9.15` ×2 and `undici@6.19.7` ×4 — 32 advisories, 2 critical / 11 high.
-`tosijs: ^1.4.0` (current 1.8.0) and `tosijs-ui: ^1.2.1` (current 1.12.4) are equally drifted.
+### N6. Security-relevant open issues, unchanged and unaged-out
 
-Private and unpublished bounds the blast radius to the app itself, but the app is
-*capability-secured LLM agent middleware*. **One line fixes it:** `tjs-lang` → `^0.13.6`.
+- [`tosijs-platform#3`](https://github.com/tonioloewald/tosijs-platform/issues/3) —
+  `storage.rules`: user-scoped paths are world-readable, "confirm this is deliberate". Open since
+  2026-08-23, no movement. On the repo the scoreboard now calls *the ecosystem's service layer*,
+  this is the one open item that is a live data-exposure question rather than a design one.
+- [`haltija#44`](https://github.com/tonioloewald/haltija/issues/44) (2026-09-06) — "the REST
+  surface answers any origin, so socket-level gating is theatre — decide `--token`'s role". A
+  posture question directly adjacent to the exposure 1.12.9 just closed; worth deciding while the
+  context is fresh.
+- [`tosijs-ui#135`](https://github.com/tonioloewald/tosijs-ui/issues/135) — the live-example pins
+  **tjs-lang 0.13.4, which is deprecated on npm**; 0.13.12 is published and clean. Open since
+  2026-09-04. `releasing.md` is explicit that deprecation strings pointing at superseded versions
+  are simply wrong and cost minutes to correct, regardless of audience size.
 
----
+### N7. Issues opened in the last 14 days (2026-08-28 → today)
 
-## Notable non-major findings
+**45 still-open issues** were opened in this window (closed ones not counted); the
+security-relevant ones are covered above
+(`tosijs#41`, `tjs-lang#55`, `haltija#44`, `haltija#45`). The rest are design/correctness work,
+concentrated in `tosijs-floorplan` (**9 of 9 open issues opened in this window** — #7–#15, the
+post-convergence audit of the newly-shared renderer) and `tjs-lang` (#49, #50, #53, #55, #56).
+`tosijs-product` and `ngx-tosijs` have **zero** open issues.
 
-- **`haltija` 1.12.6 is tagged but unpublished — and it is the security release.** npm `latest`
-  is 1.12.5. 1.12.6 carries the Electron 43 bump, the MCP SDK re-lock, and three silent-failure
-  fixes in the server that *is* shipped on npm (the widget never sent `X-Haltija-Token`, so a
-  `--token` server broke every page-side feature; `wss://` recording was a no-op `replace`;
-  LAN/Bonjour access handed the browser `localhost`). Measured-zero on public instruments, so
-  **notable, not major** per the calibration — but the internal base runs this CLI everywhere,
-  and §1 above is a reason the token path wants to be working in the published build.
-  (1.12.3 and 1.12.4 are also tagged-and-never-published, but 1.12.5 superseded them, so their
-  content did reach npm — bookkeeping only.)
-- **`tosijs-3d` 0.7.3 tagged, npm `latest` = 0.7.2.** Measured-zero → bookkeeping. Note the
-  release ships a **breaking** biped control-layout change, so it wants a changelog-accurate
-  publish rather than a quiet one.
-- **`wobbly`** ([#1](https://github.com/tonioloewald/wobbly/issues/1)) — repo 0.6.0, tags through
-  `v0.6.0`, `wobbly-js` on npm still **0.1.0**. Five releases never published. Unchanged.
-- **Published releases with no git tag at all:** `tosijs-floorplan` (0.3.0 on npm, zero tags —
-  [#6](https://github.com/tonioloewald/tosijs-floorplan/issues/6)), `tosijs-timezone-picker`
-  (0.6.0 on npm, zero tags — [#2](https://github.com/tonioloewald/tosijs-timezone-picker/issues/2),
-  and the tree to tag is already identified as `f013750`), `tosijs-platform` (1.0.6, zero tags).
-  Unchanged. Untagged published releases cannot be diffed or reproduced later.
-- **Stale pre-release dist-tags.** `tosijs`: `rc` → 1.8.0-rc.3 and `beta` → 1.7.0-beta.2, both
-  behind `latest` 1.8.0. `haltija`: `rc` → 1.12.0-rc.5, `beta` → 1.3.0-beta.12. `latest` is
-  correct in both cases, so nobody gets an old build by default — but `install <pkg>@rc` hands
-  out a superseded prerelease (and for tosijs the neighbouring rc.2 is the deprecated one).
-- **`react-tosijs` — 10 high, 100% dev-only, 100% from `eslint@8.57.1`**
-  ([#4](https://github.com/tonioloewald/react-tosijs/issues/4)): `brace-expansion@1.1.12`,
-  `minimatch@3.1.2`, `js-yaml@4.1.0`, `flatted@3.3.3`. Zero runtime deps (peers only), so nothing
-  reaches adopters. Unchanged; the eslint 10 migration is still the fix.
-- **`tjs-lang` root — 3 high, all dev-only, and improved.** Last week's 11 `undici` advisories are
-  gone (the `firebase` devDep went 10.x → 12.18.0). What remains: `flatted@3.3.3` (via
-  `flat-cache` ← eslint) and `form-data@2.5.5` ([GHSA-hmw2-7cc7-3qxx](https://github.com/advisories/GHSA-hmw2-7cc7-3qxx),
-  CRLF injection, `<2.5.6`). Runtime deps (`acorn`, `acorn-loose`, `acorn-walk`, `tosijs-schema`)
-  are clean.
-- **`tjs-lang/functions` — 7 moderate remain** after the firebase-admin 14 bump: `uuid <11.1.1`
-  (missing buffer bounds check) and the `@google-cloud/storage` / `retry-request` / `teeny-request`
-  / `gaxios` chain under it. No criticals, no highs.
-- **`tosijs-platform` root — 2 criticals via the *browser* `firebase@12.16.0` SDK**
-  (`protobufjs@7.5.4`, `websocket-driver@0.7.4`, plus `@grpc/grpc-js@1.9.15`). These are firebase's
-  **Node** entry points and are most likely absent from the shipped browser bundle — listed
-  non-major for the browser tree only; the same criticals are genuinely live in `functions/` (§2).
-  Still worth confirming against the actual bundle rather than assuming.
-- **`tosijs-platform/storage.rules` — user-scoped paths still world-readable**
-  ([#3](https://github.com/tonioloewald/tosijs-platform/issues/3), unchanged):
-  `match /users/{userId}/{path=**} { allow read: if true; }` plus a catch-all `allow read: if true`.
-  Writes are correctly scoped and `firestore.rules` is deny-all, so this is plausibly a deliberate
-  public-CDN bucket — it just needs one deliberate confirmation, because `/users/{uid}/` reads
-  like private storage and is not.
-- **The `tjs-lang` demo Firebase web key no longer ships.** `AIzaSy…` is still committed in
-  `demo/src/{agent-client,firebase-auth,user-store}.ts` (public-class: it identifies, it does not
-  authorize), but `demo/` is **no longer inside the npm `files` glob** — verified by grepping the
-  published `tjs-lang@0.13.6` tarball, which contains no `AIza` match at all. Improvement over
-  last week. Still worth confirming the key carries HTTP-referrer restrictions.
-- **A live TLS private key was caught before it went public — verified.** `tosijs-3d`'s 0.7.0
-  pre-tag review (`reviews/0.7.0-pre-tag-gate.md` B2) found `tls/key.pem.bak` + `certificate.pem.bak`
-  tracked in an unpushed HEAD. Checked this sweep: **no `.pem` exists in any tree of the last 400
-  commits** of the public history, and `.gitignore:183-184` is now an allowlist (`tls/*` +
-  `!tls/.gitkeep`) rather than another suffix. Nothing to do — recorded because the near-miss is
-  the practice working.
-- **Security-relevant open issues, last 14 days:**
-  - `haltija` **#40** (Aug 27) — §1 above.
-  - `haltija` **#39** (Aug 26) — a `--private` instance has no lifetime bound; one found 12 days
-    old at 5.7 GB and ~150% CPU. Resource exhaustion on the developer's own machine.
-  - `tjs-lang` **#45** (Aug 28) — *"Discriminated unions are unenforced."* Same fail-open class as
-    the tosijs-schema advisories: a validation surface that returns success for data it does not
-    actually check.
-  - `tosijs-ui` **#116** (Aug 28) — the dev server answers a missing static asset with the SPA
-    shell (HTML, **200**) instead of 404. A §1-shaped unearned pass: every "is it deployed?" check
-    against that server returns success.
-  - `tosijs-ui` **#117** (Aug 28) — no safe stop/restart, so everyone reaches for
-    `pkill -f 'bun bin/site.ts'`, which kills sibling checkouts silently. This is the same
-    kill-the-wrong-process family as 1.10.2's `killStrayServer` fix; `haltija`
-    [#34](https://github.com/tonioloewald/haltija/issues/34) says the reference implementation
-    (`port-pid.ts`) already exists and two sibling copies have diverged from it — a
-    negative-blast-radius candidate rather than a third local fix.
-  - `tosijs-ui` **#114** (Aug 28) — dev-server auth sessions are in-memory, so every restart
-    invalidates every issued edit link.
-  - `tosijs-3d` **#46** (Aug 28) — `b3dWater` defaults `normalMap` to `/waterbump.png` which the
-    package does not ship (a broken default in a published package, not a security issue).
-- **Clean trees (0 advisories, exit code verified):** `tosijs`, `tosijs-ui`, `tosijs-schema`,
-  `tosijs-floorplan`, `tosijs-3d`, `tosijs-product`, `tosijs-timezone-picker`, `ngx-tosijs`,
-  `wobbly`, `haltija` (root), `haltija/apps/desktop`, `haltija/apps/mcp`, `tjs-lang/editors/vscode`,
-  `tosijs-platform/create-script`.
-- **Published tarballs are clean.** All 13 published packages were downloaded with `npm pack` and
-  grepped: **no** `sk-`, `ghp_`, `github_pat_`, `AKIA`, `xox*`, `sk.eyJ` or PEM private-key
-  matches; no `.env`, no `reviews/`, no `*.pem` shipped in any tarball. The only matches are the
-  Mapbox **`pk.`** public demo token in `tosijs-ui/dist/mapbox.js`, its `dist/iife.js.map`, and
-  `tosijs-product/README.md` — the owner-accepted finding, unchanged in class, not re-raised.
-  No repo tracks a `.env`; the only tracked env file anywhere is `tosijs/.env.example`
-  (placeholders only).
-- **Scoreboard drift — fixed in this commit.** Six rows were behind reality (tosijs-ui 1.10.0 →
-  1.12.5/npm 1.12.4, tosijs-schema 1.8.0 → 1.8.1, tjs-lang 0.12.0 → 0.13.6, tosijs-3d
-  0.6.2/0.7.0-beta.6 → 0.7.3/npm 0.7.2, haltija 1.12.2 → 1.12.6/npm 1.12.5, timezone-picker
-  status). Version cells, publish state and "As of" dates updated from measured registry/tag
-  state; activity prose left as the owner wrote it except where a publish claim was wrong.
+`tosijs-floorplan#8` is worth one line here because it is this repo's own rule turned on a
+consumer: *"targetSizeFinding inherits the renderer's producer-flag supersession, so an audit
+built on it reports a pass it did not earn."* That is `dependencies.md` §1 verbatim, discovered
+independently — and tosijs 1.11.0 (unpublished, §M2) is the release that adopts that very code.
+
+### N8. Secrets: nothing new, and the one recurring hit is the accepted token
+
+- **Mapbox `pk.` public token** — verified again to be a **single token** (identical SHA-256)
+  across `tosijs-ui/src/mapbox.ts` + `dist/`, the **published** `tosijs-ui@1.14.1` tarball
+  (`dist/mapbox.js`, `dist/iife.js.map`), `tosijs-product`'s README + the doc-demo block inside
+  `src/tosi-scroll-map.ts`, `tosijs-3d`'s docs sourcemaps and `tosijs-timezone-picker`'s docs
+  sourcemap. That is the accepted long-standing public demo token, appearing exactly where the
+  accepted-findings note says it does. **Not re-raised.** The `src/tosi-scroll-map.ts` hit was
+  checked specifically against the re-raise condition: it sits inside the file's inline
+  `<tosi-product class="doc-demo">` documentation block, not in runtime code.
+- **No `sk.` secret token anywhere** in any repo or any of the 13 published tarballs. No `AKIA`,
+  no `ghp_`/`github_pat_`, no `xox*`, no `sk-`.
+- **Firebase web API keys (`AIza`)** in `tjs-lang/demo/src/{firebase-auth,agent-client,user-store}.ts`
+  — public-class (identifies the project, does not authorize). Notable, not major; the rules are
+  the actual boundary, which is why `tosijs-platform#3` still matters. **Not in any tarball.**
+- **`tosijs-3d/reviews/0.7.0-pre-tag-gate.md`** matches `-----BEGIN … PRIVATE KEY` — the same
+  **false positive** as last week: prose quoting `head -1 tls/key.pem.bak` in the review that
+  caught the mkcert key. No key material, no `-----END` marker, `tls/` absent from the tree.
+  `tosijs-ui/src/no-secrets.test.ts` matches for the same reason — it is the guard, not a leak.
+- **No committed `.env`** anywhere.
+- **Tarball hygiene:** no `reviews/`, no `journal/`, no `.env` in any of the 13 published packages.
+  One benign note — `tosijs-ui@1.14.1` ships `tls/create-dev-certs.sh`; read in full, it is an
+  mkcert wrapper containing **no key material**.
 
 ---
 
-## UNCHECKED — coverage gaps, stated honestly
+## Scoreboard correction applied
 
-A sweep must never report a pass it did not earn (`practices/dependencies.md` §1). These were
-**not** checked; do not read their absence above as clean.
+`README.md`'s haltija row still carried the standing ⚠️ *"1.12.9 tagged, NOT published — carries
+four security fixes"*. That is now false (verified in the published tarball, §"Last week's majors"),
+so the Activity cell was corrected in the same commit as this report, per the scoreboard's
+"any agent that notices a stale row should fix it". No other row needed a fact corrected — the
+tosijs, tosijs-schema and wobbly rows already carry accurate ⚠️ version cells.
 
-- **GitHub API is blocked for every repo but `tosijs-coding-practices` and (after `add_repo`)
-  `lukko`** — both `api.github.com` and direct `github.com` HTML return **403** through this
-  session's proxy. Open issues were read via `WebFetch` of the public issue pages instead, which
-  returns **titles and dates only**: labels, closed issues, comment threads, PRs, Dependabot
-  alerts and GitHub secret-scanning alerts were **not** enumerated. Counts may lag.
-- **Secret scanning covers only the tip of the default branch** of `--depth 1` clones, except
-  `tosijs-3d` where 400 commits were fetched to verify the TLS-key near-miss. **Git history was
-  not scanned elsewhere**, so a credential committed and later removed would not appear.
-- **npm-lockfile trees were audited via `npm install --package-lock-only`**, which can in
-  principle re-resolve. Checked: the only lockfile change was `haltija/apps/desktop`'s own
-  `version` field (1.12.5 → 1.12.6, a `sync-version` drift in the repo, not a dependency change).
-  No resolution moved, so those audits reflect the committed trees.
-- **Private repos not scanned at all:** `kith-email`, `static-assets`, `ariosto`. **Local-only
-  repos not scanned:** `tosijs-3d-ensemble`, `manta-recon`. **Back-burnered, skipped:**
-  `tosijs-editor`. Each may carry findings; none were looked for.
-- **Advisory *reachability* was not assessed.** Findings are reported as the auditor reports them;
-  CVSS scores the worst case, context-free. Whether a given ReDoS is reachable in your usage is
-  the human judgment the time-boxed exemption exists to record.
-- **§1 was confirmed by reading the source, not by running the server.** No endpoint was
-  exercised against a live haltija instance.
-- **Not run:** SAST / code-level review beyond the specific checks above, license audit, npm
-  provenance & attestation verification, `tosijs-platform` bundle analysis (to confirm the
-  Node-only firebase paths really are absent from the browser build), and any check of the
-  deployed hosts themselves.
+---
+
+## Coverage — what this sweep did NOT earn
+
+- **Private production consumers (Nonono, Snowfox) — UNCHECKED, and uncheckable.** They are
+  private repos, invisible to every instrument. Whether M2 or M4 affects them has to come from you.
+- **`tosijs-editor` — UNCHECKED.** Skipped by the scope rule (back-burnered), which its own
+  scoreboard row now contradicts. See the skip list.
+- **`tosijs-ui`, `tosijs-platform/functions`, `tosijs-platform/create-script`,
+  `tjs-lang/editors/vscode` were audited against a FRESH resolution**, not a committed lockfile
+  (tosijs-ui gitignores `bun.lock` by design; the others commit no lockfile). Their clean results
+  describe today's registry, not a pinned tree, and are not reproducible by version alone.
+- **GitHub REST API is not directly reachable from this session** (egress policy returns 403 for
+  `api.github.com`). Open issues were read through the GitHub MCP tools after attaching each repo
+  — equivalent data, but recorded since the sweep prompt names the REST endpoint.
+- **Only `latest` tarballs were scanned** for published-artifact secrets. Older published versions
+  were not re-scanned.
+- **Adoption was not re-measured from scratch.** M1's grading rests on `tosijs-schema#10`'s author
+  being a non-owner, which is directly observable; it does **not** rest on downloads, dependents
+  graphs or jsDelivr, none of which were queried this week. Whether `anssip` is the friend already
+  named in `releasing.md`'s baseline is still **your call to confirm** — it was flagged last week
+  and the baseline paragraph has not been updated either way.
+- **No runtime/dynamic testing.** M4 and M5 are established by reading the filed repro and the
+  published tarball respectively, not by exploiting them.

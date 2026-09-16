@@ -4,7 +4,7 @@
 
 - **Run `bun run format` before committing.** Across the stack this is `eslint --fix`
   then `prettier --write` (some projects scope eslint to `src demo`). One command, in that
-  order. — seen in: tosijs, tosijs-ui, tosijs-product, tjs-lang, editor2
+  order. — seen in: tosijs, tosijs-ui, tosijs-product, tjs-lang, tosijs-editor
 - **Prettier house style:** single quotes, **no semicolons**, 2-space indent, ES5 trailing
   commas, ~80 col. Prettier is deliberately **pinned to v2** in most repos — don't "upgrade"
   it; v3 reflows the whole tree. — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product,
@@ -13,10 +13,14 @@
   `argsIgnorePattern: '^_'`); otherwise lint fails. — seen in: tosijs, tosijs-ui,
   tosijs-product, tjs-lang, tosijs-3d
 - **Match the file, not a global rule.** Some repos have **no committed eslint/prettier
-  config** (react-tosijs is 2-space, *double*-quoted, *with* semicolons; editor2's `format`
-  script references eslint/prettier that aren't even devDependencies and may fail on a clean
-  install). If there's no config file, copy the surrounding code's style — don't impose the
-  single-quote/no-semi default. — seen in: react-tosijs, editor2
+  config** (react-tosijs is 2-space, *double*-quoted, *with* semicolons). If there's no config
+  file, copy the surrounding code's style — don't impose the single-quote/no-semi default.
+  A `format` script is not evidence a formatter is installed: tosijs-editor's referenced
+  eslint and prettier when neither was a devDependency, so it failed on a clean install
+  (fixed 2026-09-07 — Prettier v2 + house style, and no eslint: `lint` is
+  `tsc --noEmit --noUnusedLocals --noUnusedParameters`, which covers what eslint would catch
+  in a small TS library without the plugin surface). Check the devDependencies before
+  trusting the script. — seen in: react-tosijs, tosijs-editor
 - Pre-existing lint errors in unrelated files are expected — don't let them block your
   commit, and don't fix-and-reformat files you aren't otherwise touching.
 - Respect `.prettierignore`. Some files are hand-laid-out on purpose (e.g. tosijs
@@ -29,6 +33,12 @@
   breaking your prose — it's Prettier *reporting* that the renderer already ate it. Don't
   `.prettierignore` the file to silence it. — seen in: tjs-lang (CHANGELOG.md, TODO.md —
   it recurs)
+- **In a doc-comment project, `embeddedLanguageFormatting: 'off'` is not optional.** A
+  `tosijs-ui/site` project's pages ARE markdown and `/*# … */` comments whose fenced blocks
+  are executable live examples; letting Prettier reformat them rewrites running code and
+  RTL sample markup. (Prettier does not touch comment contents, so the `/*# … */` blocks are
+  safe either way — it is the `.md` files that need the override.) — seen in: tosijs-editor
+
 - **Turn off Prettier's *embedded* formatting for markdown, not Prettier itself.** Prettier
   reformats fenced code **inside** `.md`, which mangles hand-laid-out examples: two separate
   ` ```js ` lines `'5' == 5` and `[1] == 1` become the single nonsense expression
@@ -65,7 +75,7 @@
 - **`tsc` is the type gate, not `bun build`.** `bun build` does **not** type-check or emit
   `.d.ts`. Wire `tsc -p tsconfig.build.json --emitDeclarationOnly` (or `tsc --noEmit`) into
   the build and run it directly while developing; a type error must fail the build. — seen
-  in: haltija, editor2, react-tosijs, tosijs-schema
+  in: haltija, tosijs-editor, react-tosijs, tosijs-schema
 - **`any` is permitted where it earns its place** (the shared ESLint config sets
   `no-explicit-any: 0`) — but it's a smell, not a default. — seen in: tosijs, tosijs-ui,
   tosijs-product, tjs-lang
@@ -84,7 +94,7 @@
   the package. Never hand-edit them or revert their (large) diffs. Bump the version in
   `package.json` only; the prebuild stamps `version.ts`. Run `bun run build` before
   committing so committed generated files match source. — seen in: tosijs, tosijs-ui,
-  tosijs-3d, react-tosijs, editor2, haltija
+  tosijs-3d, react-tosijs, tosijs-editor, haltija
 - **Enforce it with a "docs-drift" check:** rerun the generator in CI (or locally) and fail
   via `git diff --exit-code` on the generated set. Cheap way to guarantee committed
   artifacts stay in sync with their source/schema. — seen in: haltija
@@ -153,16 +163,31 @@ philosophy says static-by-default and the measurement says whether reality agree
 
 ## Naming & idioms
 
-- Match the file you're in. House convention for component callbacks is `handle<Event>`
-  (not `on<Event>`, which the element factory intercepts as an `addEventListener` target — the
-  class field stays null and the callback silently never fires). See
-  [web-components.md](web-components.md). — seen in: tosijs, tosijs-3d, tosijs-product
+**The house prefix conventions, stated explicitly** (owner, 2026-09-15 — tacit conventions
+are exactly what an agent back-fills with mainstream defaults, per model-priors.md "The
+missing prior"; write them down or inherit React's):
+
+| Pattern | Means | Notes |
+| --- | --- | --- |
+| `isFoo` / `hasFoo` | boolean property | typically computed or read-only — don't write to one without checking |
+| `handleFoo` | handles an event of type `foo` | the house callback convention |
+| `on<Event>` | **forbidden as a callback prop** | the element factory intercepts any `on*` prop as an `addEventListener` target; the field stays null, the callback silently never fires |
+| `initFoo` (`initAttributes`, `initVars`) | initialization-time declaration | consumed once at setup, not a live property |
+| `bind<Thing>` | binding factory | wires state↔DOM; not an imperative setter |
+| `static preferredTagName` | the component's tag | survives minification; never derive tags from class names |
+
+Extend this table **the moment you catch yourself (or an agent) assuming a convention** —
+an unwritten convention reads as "no convention" to every fresh context, and the blank gets
+filled with the mainstream prior.
+
+- Match the file you're in. See [web-components.md](web-components.md) for the component
+  conventions in depth. — seen in: tosijs, tosijs-3d, tosijs-product
 - `static preferredTagName` over derived tag names (survives minification). See
   [web-components.md](web-components.md).
 - **Open the main module file with a `/*# ... */` markdown doc-comment block** (usage,
   how-it-works, commands). It feeds generated docs — keep it in sync when the public API
   changes. Only fenced blocks tagged `js`/`html`/`css`/`test` become live examples; use bare
-  ``` for non-runnable snippets. — seen in: editor2, tosijs, tosijs-ui, tosijs-3d
+  ``` for non-runnable snippets. — seen in: tosijs-editor, tosijs, tosijs-ui, tosijs-3d
 - **Don't ship a package name that near-collides with a sibling — and if one slips out,
   rename before the first external consumer, because that window never reopens.**
   `tosijs-schematic` vs `tosijs-schema` read as related-but-distinct to their author and
@@ -208,35 +233,15 @@ the mapping made the divergence unrepresentable — tosijs-3d#10)
 
 ## A small API surface is what makes future refactoring cheap
 
-The API surface is not just a usability concern — it is the **contract that
-pins your internals**. Everything a consumer can name, you must keep true
-forever; everything else you are free to rewrite, rename, delete, or move to
-another package. That relationship is asymmetric and compounding:
-
-- **Small, clean surface → refactoring stays cheap.** Missed abstractions,
-  duplicated subsystems, a module that should have been extracted years ago:
-  all of it is fixable in one release, because nobody's code depends on how
-  it was arranged. tosijs extracted its entire schematic renderer into a
-  separate package, then re-vendored it, with zero consumer impact — because
-  what shipped was `schematicSVG(map)`, not the shape of its internals.
-- **Drifted surface → the same cleanup is a breaking change.** Every extra
-  export, every incidentally-public helper, every field a consumer discovered
-  and started using is a load-bearing wall you didn't mean to build. The
-  refactor doesn't get harder because the code got worse; it gets harder
-  because the *promises* multiplied.
-
-So the discipline is preventative, not curative: **be reluctant at the
-export, generous inside.** Prefer one function that takes options over five
-near-duplicates; keep helpers module-private until a second real consumer
-appears; put convenience behind the thing it's convenient for rather than
-beside it; and when you must expose something provisional, say so where
-consumers will see it (tosijs's agent surface ships marked EXPERIMENTAL for
-exactly this reason).
-
-The corollary for size work: a size regression in a project with a tight API
-is a *scheduling* question, not a design one. You can always go and fix it.
-That is what a small surface buys — see
-[performance.md](performance.md#bundle-size).
+Everything a consumer can name you must keep true forever; everything else you are free to
+rewrite (tosijs extracted and re-vendored its entire schematic renderer with zero consumer
+impact — what shipped was `schematicSVG(map)`, not its internals). Every
+incidentally-public helper is a load-bearing wall you didn't mean to build: the refactor
+gets harder because the *promises* multiplied, not the code. So **be reluctant at the
+export, generous inside** — one function with options over five near-duplicates; helpers
+module-private until a second real consumer appears; provisional surface marked
+EXPERIMENTAL where consumers see it. Corollary: a size regression behind a tight API is a
+*scheduling* question, not a design one — see [performance.md](performance.md#bundle-size).
 
 ## Deprecations
 
@@ -290,6 +295,71 @@ actual value.** Two failure modes, both shipped, both in the same API.
 > caller could paste.* If the advice string won't compile, the deprecation is wrong, not
 > the wording. (A downstream consumer reached the second conclusion independently while
 > the upstream `.d.ts` had already conceded it in prose — read your own docs as evidence.)
+
+## Fail loudly; degrade honestly
+
+Silent failure is the dominant defect class in this ecosystem, measured: **14 of 56 issues
+(25%) on one repo's entire backlog** were "it did nothing and said nothing" — a component
+rendering empty on a resolution failure, an orchestrator swallowing `tsc` errors, a dev server
+serving stale artifacts after a failed rebuild, a destructive `rm -rf` with no guard. Adopt as
+a design rule and a review lens, not as one-at-a-time fixes:
+
+- **No empty render on failure.** A component that can't resolve its input renders an error
+  state, not nothing. Blank-forever is the failure mode that most punishes a consumer who
+  can't file an issue and get a same-day fix.
+- **No swallowed exceptions** in orchestrators, dev servers, or build pipelines. Exit nonzero
+  or surface the error; "kept going" is not resilience.
+- **No destructive filesystem op without a guard** (`rm -rf` of a directory that could contain
+  source is the recorded worst case — silent data loss).
+- **Degrading is fine; lying about it is not.** A fallback (screenshot → schematic, rich →
+  plain) must say it's the fallback. A low-fidelity result presented as the real thing is a
+  *third* failure mode, distinct from failing and from succeeding — a failed screenshot is at
+  least honest about having failed.
+- **A partial failure is worse than a total one.** A total mismatch is a hypothesis you can
+  test in one step; a partial one leaves the surrounding machinery working, which actively
+  *supports* the wrong hypothesis (the bug must be in the code you just wrote). Recorded
+  twice: a partially-deduped duplicate dependency where state worked and the view silently
+  didn't; a scanner corrupting four fixture suites of which only one turned red — the other
+  three converted cleanly and lied at runtime. The rule it yields: **a defect is visible in
+  proportion to how badly it breaks things, which is exactly backwards from how much it
+  costs** — so weight review attention toward the failures that would present quietly.
+
+— seen in: tosijs-ui (#61), tosijs, tjs-lang, tosijs-platform, manta-recon
+
+## A warning is not a boundary
+
+The sharper companion to *fail loudly*: once you know a call can do harm, **warning about it is
+not a mitigation** — it is documentation with a `console` prefix. If the harm is real, refuse;
+if it is not, say nothing. The middle option is the one that gets walked through.
+
+Measured, in haltija, twice in one week:
+
+- `haltija/test` resolved an unset target to the shared default port and **warned on stderr** that
+  it was about to drive a browser nobody chose. The code carried a long comment describing the
+  exact hazard. Its own integration suite then adopted another project's live server and called
+  `navigate` and `click` against six of that developer's tabs. The warning fired. Nobody read it,
+  because nothing was watching stderr — nothing ever is, in a green test run.
+- The machine-control surface (shell execution, filesystem read/write) was reachable by any caller
+  on the port. The mitigation shipped for months was a *documented* threat model. What actually
+  closed it was refusing the whole route prefix.
+
+**The test for whether you have a boundary:** can the wrong thing still happen? If yes, you have a
+label. This is why "we should warn about X" is rarely the end of a design discussion — it is
+usually the point at which the real question (refuse, or allow?) gets deferred.
+
+Corollary, and the more expensive half:
+
+> **A hazard fixed in your own lane but left in your published library is not fixed.**
+
+haltija fixed its *own* test suite to refuse the shared default, then shipped the next release with
+the library's default unchanged — so every adopter's CI inherited the original hazard, on machines
+where the damage lands least expectedly and where nobody has commit rights to file the bug fast.
+Fixing the local instance is the natural stopping point because it makes your symptom go away; that
+is precisely why it needs to be a stated rule rather than a habit.
+
+Ask, on every fix to something you ship: *did I fix the instance, or the thing consumers get?*
+
+— seen in: haltija (#40, #42), tosijs-ui (#61)
 
 ## Errors as curriculum
 
