@@ -181,16 +181,59 @@ const buildScript = scripts.build
       const published = ok ? out.trim() : ''
       if (published === '') {
         add('release identity', 'SKIP', 'could not reach the registry')
-      } else if (published === version) {
-        add(
-          'release identity',
-          'FAIL',
-          `package.json is ${version} and npm already publishes ${published} — ` +
-            'bump before tagging, or the artifact ships self-identifying as its ' +
-            'predecessor'
-        )
-      } else {
+      } else if (published !== version) {
         add('release identity', 'PASS', `${version} (npm has ${published})`)
+      } else {
+        /*
+         * Local version EQUALS the published one. That is the shape described
+         * above — and it is ALSO the shape of a repo that just shipped and has
+         * not been touched since, which is the healthiest state a project is
+         * ever in. Failing both alike left every project red from the moment it
+         * published until its next bump: tosijs-product went green-to-red purely
+         * by a successful `npm publish` landing. A Tier 0 that is red in the good
+         * state teaches people to stop reading it, which costs more than the bug
+         * this guard catches.
+         *
+         * What separates the two is whether any work rides on top of the release.
+         * With no commits since the tag, HEAD *is* the published artifact and
+         * there is nothing yet to misidentify. The original failure had new code
+         * under the old version — commits since the tag — so it still fails.
+         */
+        let tag = ''
+        for (const candidate of [`v${version}`, version]) {
+          const found = await run(['git', 'rev-parse', '--verify', '--quiet', `refs/tags/${candidate}`])
+          if (found.ok) {
+            tag = candidate
+            break
+          }
+        }
+        const counted = tag ? await run(['git', 'rev-list', '--count', `${tag}..HEAD`]) : null
+        const ahead = counted?.ok ? parseInt(counted.out.trim() || '0', 10) : Number.NaN
+        if (!tag || Number.isNaN(ahead)) {
+          // Published under this version but no local tag names it: we cannot tell
+          // shipped-and-idle from unbumped-new-code, so stay strict.
+          add(
+            'release identity',
+            'FAIL',
+            `package.json is ${version} and npm already publishes ${published}, and ` +
+              'no local tag names it — bump before tagging, or the artifact ships ' +
+              'self-identifying as its predecessor'
+          )
+        } else if (ahead === 0) {
+          add(
+            'release identity',
+            'PASS',
+            `${version} shipped and unchanged since ${tag} — the next change needs a bump`
+          )
+        } else {
+          add(
+            'release identity',
+            'FAIL',
+            `package.json is ${version}, npm already publishes ${published}, and ` +
+              `${ahead} commit(s) landed since ${tag} — bump before tagging, or the ` +
+              'artifact ships self-identifying as its predecessor'
+          )
+        }
       }
     }
     const { out: lastClCommit } = await run(['git', 'log', '-1', '--format=%H', '--', 'CHANGELOG.md'])
