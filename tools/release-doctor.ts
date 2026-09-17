@@ -549,7 +549,33 @@ and a muted gate is worse than no gate.
             spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0]
           const undeclared = new Map<string, string[]>()
           const dynOnly = new Map<string, string[]>()
+          /*
+          --- every RELATIVE specifier in shipped code must name a packed file --
+          A per-file (tsc) emit passes `from './model'` through verbatim, and
+          Node's ESM resolver rejects it (ERR_MODULE_NOT_FOUND) while every
+          loop in this stack — bundlers, Bun, the doc site — resolves it, so
+          the one consumer that notices is the one nobody runs. releasing.md
+          "A per-file build must write `.js`" records three shipments of it
+          (tosijs-3d-ensemble ×3, tosijs-3d) and each repo grew its own guard
+          in a different shape; tosijs-virta was the fourth (found by review,
+          not by any build step). Resolution is checked the way Node does it:
+          the specifier, joined to the importing file's directory, must be a
+          packed path — so a missing `.js`, a directory import, and a typo all
+          fail the same way. — seen in: tosijs-virta (0d3e804..fad1acf)
+          */
+          const packedSet = new Set(files)
+          const unresolvable = new Map<string, string[]>()
+          const posix = await import('node:path/posix')
           const seen = (spec: string, file: string, dynamic: boolean) => {
+            if (spec.startsWith('.')) {
+              const target = posix.normalize(posix.join(posix.dirname(file), spec))
+              if (!packedSet.has(target)) {
+                const list = unresolvable.get(target) ?? []
+                if (!list.includes(file)) list.push(file)
+                unresolvable.set(target, list)
+              }
+              return
+            }
             // relative, absolute, builtin — and URL specifiers, which are
             // valid ESM in a browser and are never a package to declare. A
             // scaffolder that EMITS example code containing
@@ -632,6 +658,10 @@ and a muted gate is worse than no gate.
             [...m.entries()]
               .map(([p, fs]) => `${p} (${fs.slice(0, 3).join(', ')}${fs.length > 3 ? ', …' : ''})`)
               .join('\n')
+          if (unresolvable.size)
+            add('shipped relative specifiers resolve', 'FAIL',
+              `shipped code imports a relative path that is not a packed file — Node rejects this (ERR_MODULE_NOT_FOUND); a bundler or Bun hides it. Write the extension in the source, or ship a bundle:\n${fmt(unresolvable)}`)
+          else add('shipped relative specifiers resolve', 'PASS')
           if (undeclared.size)
             add('shipped imports declared', 'FAIL',
               `shipped code imports packages the manifest never declares — resolves only by hoisting luck:\n${fmt(undeclared)}`)

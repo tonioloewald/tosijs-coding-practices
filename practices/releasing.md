@@ -549,6 +549,15 @@ Two things make it stick:
   fails at authoring time instead of after a publish.
 - **Verify by installing the tarball into an empty directory and importing it under `node`.**
   Both projects found this only that way. Reading the build output does not surface it.
+- **Importing `./dist` from inside the repo is NOT that gate.** It proves the bundle resolves
+  its own chunks and nothing else: a typo in the `exports` map, a chunk emitted outside `dist`,
+  or a peer that fails to resolve when installed as a dependency all pass an in-repo import.
+  The tarball-in-an-empty-directory step is the one that exercises what a consumer resolves.
+  Tier 0 (`tools/release-doctor.ts`, "shipped relative specifiers resolve") now catches the
+  extensionless case mechanically by resolving every relative specifier in the packed JS
+  against the packed file list; it does not replace the install step. — seen in: tosijs-virta
+  (0d3e804..fad1acf: the review found a tsc-emitted `dist/core.js` Node could not load, and the
+  first remediation was exactly the in-repo shortcut)
 
 > **Resolving is not evaluating.** Once resolution is fixed, a browser library may still die on
 > `HTMLElement is not defined` because importing the barrel registers custom elements. If pure
