@@ -59,7 +59,8 @@ safe. The invariant *is* the permission.
 
 ## tosijs-virta — the task surface (design parked in the sibling repo)
 
-Name settled: **virta** (`tosijs-virta`, `<tosi-virta>`). Canonical design:
+Name settled: **virta** (`tosijs-virta`, `<tosi-virta>`); **front-end work started
+2026-09-16** while service-compris works through blockers. Canonical design:
 `~/tosijs-virta/DESIGN.md` (pointer: [designs/tosijs-virta.md](designs/tosijs-virta.md));
 platform prerequisites filed as tosijs-platform#5–9. Supersedes/absorbs the navigation-hub
 plan below: the scoreboard becomes a live surface — a board — rather than a generated
@@ -80,7 +81,8 @@ markdown table. Decision summary (canonical detail in DESIGN.md):
 - **Store: append-only events** under the hood, current state as a view — audit trail,
   agent-friendly diffs, and cycle-time instrumentation for free. **Stable short IDs**
   citable in commits (the `#38`-in-a-commit convention must survive migration).
-- **Backend: universal endpoint** — the first third-party consumer of tosijs-services
+- **Backend: universal endpoint** — the first third-party consumer of **service-compris**
+  (the settled name for tosijs-services; npm-staked 0.1.0, 2026-09-16)
   (adopters-before-abstraction satisfied by construction). Bonus: reachable from cloud
   agent sandboxes where GitHub's write API is not.
 - **Build order: agent API → boring-fast 2D board → whimsical 3D/VR task-world** (unified
