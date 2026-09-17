@@ -54,6 +54,7 @@ const PROJECTS: Project[] = [
   { key: '[lukko](', repo: 'tonioloewald/lukko' },
   { key: '[loewald-dot-com](', repo: 'tonioloewald/tosijs-platform' },
   { key: '[kith-email](', repo: 'tonioloewald/kith-email' },
+  { key: '[kilpi](', repo: 'tonioloewald/kilpi', npm: 'kilpi' },
 ]
 
 const check = process.argv.includes('--check')
