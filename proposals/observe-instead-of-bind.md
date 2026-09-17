@@ -50,10 +50,24 @@ only moment they have it.
 
 **Why that beats every comparison I drafted:**
 
-- **The ratio is refuted.** tosijs-ui, a large mature consumer, has **27
-  `observe` against 20 `bind`** — more observers than bindings in code that is
-  fine. Any absolute-ratio detector fires on it. Tested before shipping, which
-  is the cheapest time to find out.
+- **The ratio is refuted** — but ⚠️ **the numbers below were wrong, and were
+  relayed into a public RFC before anyone checked them.** This said tosijs-ui
+  has "27 `observe` against 20 `bind` — more observers than bindings in code
+  that is fine." Re-counted by reading every call site: **18 `observe` against
+  21 bind-ish**. The 27 counted `MutationObserver`/`ResizeObserver` calls,
+  `hash-state`'s own `observe` METHOD, and tests. Observers do **not** outnumber
+  bindings there.
+
+  The conclusion survives anyway — an absolute-ratio detector still fires on
+  legitimate code — but *"in code that is fine"* did **not** survive. Classified
+  against the rule that actually matters (below), only **2 of 18** are clearly
+  legitimate. See tosijs#44.
+
+  **The lesson is the relay, not the arithmetic:** a figure written here as
+  supporting colour was later cited as the load-bearing refutation of the
+  owner's premise, in three public issues, without anyone re-deriving it. A
+  number in a proposal is a claim, and it inherits no credibility from the
+  document it sits in.
 - **The delta-against-bindings needs a corpus nobody has.** tosijs's own
   history orders plausibly (`+1 observe/+8 bind` healthy, `+6/+4` less so) but
   its `src/` *implements* `bind` and uses `observe` for internal machinery —
@@ -73,6 +87,32 @@ knows:
 but *mostly decent code where an agent lost context and reverted to
 hand-writing DOM updates* — a burst of new observers in an otherwise bound
 codebase. A burst is visible without any comparison at all.
+
+## ⚠️ The rule this proposal was missing
+
+`bind(el, path, { toDOM })` accepts an **arbitrary** `toDOM` — the side effect
+may land on a completely different node — and the bound element is *still*
+registered with `BOUND_CLASS` and still appears in `describe()`. Verified by
+execution.
+
+So the line is not "observe vs bind by taste". It is:
+
+> **Using `observe` to persist a value is entirely legitimate. If you `observe`
+> and then shove something into the DOM, you are almost certainly adding code
+> and bugs for no good reason.** — owner
+
+`observe` is for reactions that touch **no DOM** (persist, sync, telemetry,
+process control, derived state). Anything that touches the DOM has an element
+to bind to, and `bind` gives agent-map registration away for free.
+
+**"Adding code" is literal:** `bind` applies on setup, `observe` does not, so
+every hand-rolled version carries a manual priming call — `live-theme.ts:356`
+and `hash-state.ts:28` both do. Forget it and the UI is stale until the first
+change.
+
+This also retires the taxonomy drafted for tosijs#44: `'structure'`,
+`'document'` and `'handoff'` were all DOM effects, and listing them as good
+reasons legitimised the exact conversions the proposal exists to cause.
 
 ## Why naming cannot fix this, though it is the right instinct
 
