@@ -223,6 +223,23 @@ helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was th
    after a publish lands but we can always move them if we have to."_ — seen in:
    tosijs-3d-ensemble 0.3.0 (2026-09-15), `8eb8461..630a24e`
 
+8a-note. **An agent cannot publish, and OTP is no longer an option.** npm one-time-password
+    publishing is no longer available, so a human running `npm publish` interactively and an
+    agent shelling out to it are both blocked — publishing requires a configured granular
+    access or automation token.
+
+    Two consequences for the flow, both learned the expensive way:
+
+    - **Hand the publish over explicitly, and ask for its output.** An agent that prepares a
+      release and then says "run `npm publish`" has handed off the one step that produces the
+      authoritative success signal. Ask for what npm printed; do not reconstruct it from the
+      registry (see "Ask what the publish COMMAND said", above).
+    - **Sequence dependent publishes deliberately.** When release A depends on release B at
+      `^x`, B must reach the registry *and propagate* before A can even `install`. Say the
+      order out loud in the handover rather than assuming it is obvious, and expect minutes
+      between them, not seconds. — seen in: tosijs-editor 0.4.5 depending on
+      tosijs-kilpi 1.0.0 (2026-09-18)
+
 8b. **Confirm the publish actually landed**, the same way step 3b confirms the CI runs did:
 
 ```bash
@@ -260,6 +277,25 @@ second needs a second observation a minute later, from more than one path — pa
 `/<pkg>/<version>` (404 vs 200), the abbreviated packument, an independent CDN like unpkg.
 The owner's one-line correction was _"check again, npmjs is frequently lagged"_, and it was
 the second time in the same project that a confident lag diagnosis had to be retracted.
+
+**Ask what the publish COMMAND said before diagnosing from the registry.** Third retraction,
+now in a third project. An agent that cannot run `npm publish` itself (OTP, see below) polled
+the registry, saw the old version from both `npm view` AND a direct packument fetch, and
+reported "the publish didn't land — this isn't cache staleness." It had landed. npm's own
+output had said so:
+
+```
+note: Your package is being processed and may take a few minutes to become available.
+
++ tosijs-kilpi@1.0.0
+```
+
+That line is **more authoritative than any registry read** — it is the registry telling the
+publisher it accepted the write and has not finished propagating it — and it costs one
+question. When someone else runs the publish, the first move on an unexpected registry answer
+is _"what did npm print?"_, not another fetch. Two independent paths agreeing means nothing
+here: both read the same propagating state, so they agree with each other and disagree with
+reality. — seen in: tosijs-editor / kilpi 1.0.0 (2026-09-18)
 Telling a maintainer their publish failed when it is merely in flight costs them a trip back
 to their desk. — seen in: tosijs-3d-ensemble 0.3.0 (2026-09-16)
 
