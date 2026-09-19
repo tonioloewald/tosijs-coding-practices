@@ -246,6 +246,46 @@ Integration and browser tests do **not** auto-start their dependency:
   sibling repos distinct defaults, or let the config pick a free port, and always honour an
   `E2E_PORT` override so a human can escape without editing config. — seen in: tosijs, tosijs-ui
 
+## A browser test that reads `dist/` tests what you COMMITTED, not what you built
+
+*(tosijs 1.10.3.)* A `.pw.ts` that serves a built bundle to the page —
+
+```ts
+const moduleSource = readFileSync(join(__dirname, '..', 'dist', 'module.js'), 'utf-8')
+await page.route('**/__test/module.js', (r) => r.fulfill({ body: moduleSource }))
+```
+
+— is reading whatever is on disk *when Playwright loads the test file*. And
+Playwright's `webServer` starts a dev server first. If that dev server's build
+wipes `dist/` and restores the **committed** artifacts for anything it does not
+itself rebuild (tosijs does exactly this, deliberately, so a dev run cannot
+leave the tree looking like someone deleted the bundles), then the bundle your
+test serves is the committed one.
+
+**Measured:** a tripwire written to FAIL the moment a new export landed
+**passed**. The working `dist/module.js` contained the symbol; the committed one
+had zero occurrences. A green lane against a bundle that predated the fix.
+
+> **Build → commit → browser lane.** And where the lane also deletes artifacts
+> it does not rebuild, you need a second build afterwards, so the full order is
+> **build → commit → browser lane → build again.**
+
+Two things make this nastier than ordinary staleness:
+
+- **It fails in the safe-looking direction.** A stale bundle usually lacks your
+  change, so a test of new behaviour goes red and you investigate. A *tripwire* —
+  a test asserting a defect still exists — goes **green**, and green is the
+  answer you were hoping for.
+- **Nothing in the run mentions it.** The dev server logs the restore; the
+  Playwright output does not, and the two scroll past in the same terminal.
+
+The general rule is the one already here — *assert on the artifact a consumer
+resolves* — with a timing clause attached: **make sure that artifact is the one
+you think it is at the moment the test reads it.** If in doubt, have the test
+assert a marker it knows should be present (a version string, a new export) and
+fail loudly if the bundle is older than the source.
+— seen in: tosijs
+
 ## Live browser testing with Haltija
 
 - **Two measurement traps will make you "fix" code that was never broken.** Both cost a
