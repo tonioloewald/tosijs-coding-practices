@@ -567,6 +567,23 @@ and a muted gate is worse than no gate.
           const unresolvable = new Map<string, string[]>()
           const posix = await import('node:path/posix')
           const seen = (spec: string, file: string, dynamic: boolean) => {
+            /*
+             * A TEMPLATE PLACEHOLDER IS NOT AN IMPORT. A static import
+             * specifier is a plain string literal and can never contain
+             * `${`, so anything that does is a specifier-shaped string
+             * INSIDE a template literal — most often a code generator
+             * emitting source for a project it is scaffolding.
+             *
+             * False-positived on tosijs `dist/cli.mjs`, which writes
+             * `import x from './components/${'$'}{tag}'` into the app it
+             * generates. That file is correct, the generated import is
+             * correct, and `cli.mjs` never imports it — but the gate
+             * reported a shipped unresolvable specifier and failed a
+             * release. A gate that fails on correct code is the failure
+             * mode testing.md calls "a gate that cannot go green": whoever
+             * meets it disables it.
+             */
+            if (spec.includes('${')) return
             if (spec.startsWith('.')) {
               const target = posix.normalize(posix.join(posix.dirname(file), spec))
               if (!packedSet.has(target)) {
