@@ -658,6 +658,36 @@ described.
 If more work lands, **amend or re-title**. A release commit is a claim that the
 tree is the release; make it once, last.
 
+## A write-up gate must terminate — the `[note]`-only last commit
+
+If your project derives release notes from commit annotations (tosijs-ui ships
+`tosijs-release-notes` for this: `[break]`/`[new]`/`[fix]`/`[change]` publish, `[note]` is
+withheld), the gate that checks every annotation is written up has a **non-termination shape**
+worth naming, because knowing about it is not enough to avoid it.
+
+Writing up commit N's annotations is itself commit N+1, which has annotations of its own. So
+the gate can be green when you start and red at `git tag`, and the commit that made it red is
+the one whose body says it is green.
+
+**Rule: the last commit before the tag carries only `[note]` bullets.** Fold the write-up into
+the CHANGELOG, then land it with internal-only annotations — which is exactly what `[note]` is
+for.
+
+Two corollaries that cost real time:
+
+- **Run the gate AFTER the release commit, not before.** The range is `<last tag>..HEAD`, so a
+  bullet written *in* the release commit is not in the range you checked a moment earlier.
+- **Tagging can turn the gate green without the bullet ever being written**, because the range
+  is exclusive of the since-commit. The annotation escapes in both directions.
+
+Recorded because documenting it did not stop it: tosijs-ui hit this at v1.11.0, then at
+v1.14.0, then again inside the 1.15.0 remediation commit — **three releases, one gate, same
+red**, with CLAUDE.md already stating the rule throughout. That is the evidence that the
+instruction needs a mechanical partner rather than more emphasis: have the checker detect the
+specific case (unwritten annotations whose only source commit has a CHANGELOG-only diff) and
+print the terminating instruction — *"amend these bullets to `[note]`"* — instead of the
+generic message.
+
 ## If the release renames anything, sweep the docs and demos
 
 A rename is only done when the corpus that teaches it is done too. At tosijs-3d
