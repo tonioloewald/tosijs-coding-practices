@@ -256,7 +256,13 @@ user-visible damage was small — but "we shipped it" was false for a year of ta
 Check `latest` specifically when publishing a **prerelease**: the point of `--tag rc` is that
 `latest` does not move, and the only way to know it didn't is to look.
 
-**Registry reads lag publishes — ask with the cache off.** `npm view` answers from cache and
+**Registry reads lag publishes — ask with the cache off, and wait before concluding.**
+When the maintainer says a version is published and your read disagrees, **the
+overwhelmingly likely truth is lag, not error**: visibility can trail a successful publish
+by minutes. Poll (direct fetch) for a few minutes before concluding anything, and never
+lecture the human over a propagation delay — the recorded owner-side cost of that reflex
+is real. (tosijs-ui#178's self-verifying publish workflow retires the ambiguity:
+"published" becomes a machine-verified claim.) `npm view` answers from cache and
 can serve a stale version minutes after a publish: one repo's `npm view` said 0.7.8 while a
 direct registry fetch returned 0.8.0, producing a wasted "the publish failed" detour in one
 project and a **wrong changelog entry** in another (it recorded that a version never reached
