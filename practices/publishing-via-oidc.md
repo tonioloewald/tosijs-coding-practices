@@ -1,5 +1,15 @@
 # Plan: publish via GitHub OIDC (npm Trusted Publishing)
 
+> **Status update 2026-09-21: owner-greenlit; build spec filed as
+> [tosijs-ui#178](https://github.com/tonioloewald/tosijs-ui/issues/178).** Two requirements
+> sharpened by lived friction since the draft: (1) the workflow **self-verifies before
+> reporting success** — polls the registry until the published tarball is actually served,
+> byte-compares it against the build, scratch-consumer smoke incl. `tsc --declaration` —
+> because registry visibility lags publishes and "is it published?" must be a machine
+> claim, not a race; (2) **prerelease dist-tags are automatic** (`-beta`/`-rc` → matching
+> tag, with an assertion that `latest` did not move). Cost: free — Actions is unlimited on
+> public repos; `workflow_dispatch` is the human GO, no paid environment protection needed.
+
 **Status: PLAN, not yet implemented.** Written 2026-07-30. Pilot target: `tosijs-ui`.
 Interim workaround in use: `bun publish --otp=<code>`.
 
