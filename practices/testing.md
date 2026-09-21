@@ -67,6 +67,39 @@ bun test src/               # unit tier only (when integration lives elsewhere)
   misunderstanding.** Four vacuous assertions in one haltija cycle were found by mutation testing
   and none by re-reading. If a regression test has never failed, it is unproven: break the fix on
   purpose and watch the test go red before you trust it. — seen in: haltija
+- **A regression test for a CONFIRMED bug can still fail to reproduce it — and that is a
+  different failure from a vacuous assertion.** The mutation rule above catches tests that
+  assert nothing. This catches tests that assert something true, about a precondition the
+  bug does not actually require. In one tosijs-styled-editor remediation, **four of nine**
+  regression tests — every one written against a bug that had been independently verified,
+  with a reproduction in the review report — passed against the unfixed code. Each had
+  reconstructed the wrong trigger:
+
+  | the bug (real, reproduced) | what the test set up instead |
+  | --- | --- |
+  | `insertBefore` throws when a mark's saved anchor is another, still-detached mark | two marks separated by a real space — which `normalize()` never collapses, so they never became adjacent |
+  | a stale `customError` survives a document replacement | asserted the *error list* was empty, which it is either way; the surviving state was on `internals`, unreachable in the unit lane |
+  | an unbounded LCS table is built from a remote response | inputs with no common tokens, so the capped and uncapped paths return the identical `[delete, insert]` |
+  | a rejected callback escapes the undo bookkeeping | asserted on state the partial work had already written, not on the bookkeeping that was skipped |
+
+  The pattern: **each test asserted a consequence the bug shares with correct behaviour.**
+  Reproducing a bug in a debugger and reproducing it in a test are different skills, and
+  confidence from the first does not transfer to the second. So the mutation check is not
+  only for tests you doubt — run it on the ones you are sure of, because certainty about
+  the *bug* is what makes you careless about the *test*. Cost here: four rewrites, caught
+  only because falsification was run as a habit rather than on suspicion.
+  — seen in: tosijs-styled-editor
+
+- **Assert the precondition the bug needs, in the test, before asserting the behaviour.**
+  The concrete fix for the above. If the bug requires two elements to be siblings, assert
+  they are siblings; if it requires a caret to split a text node, assert the node count
+  went up. A test that cannot state its own trigger has not established it.
+  ```js
+  expect(marks[0].nextSibling).toBe(marks[1])   // the precondition this test is ABOUT
+  expect(() => el.value).not.toThrow()          // the behaviour
+  ```
+  — seen in: tosijs-styled-editor
+
 - **A CHECK YOU HAVE NOT WATCHED FAIL IS NOT A CHECK.** The mutation rule above
   is stated for tests; it applies at least as hard to **gates** — build steps,
   publish hooks, CI lanes — because a gate is written once and then trusted

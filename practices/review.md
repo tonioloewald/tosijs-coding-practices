@@ -1079,6 +1079,24 @@ machine has not passed review.
 registering spawned servers into the developer's _real_ registry, where they out-ranked the
 developer's own dev server and hijacked their CLI)
 
+### A skipped Tier-0 check is a finding, not a neutral
+
+`release-doctor` prints skips as `⏭️` and says "skips are NOT passes" in its own summary.
+Treat each one as an open question with an owner, because the reason a check is skipped is
+usually that the thing it checks does not exist — which is the more interesting fact.
+
+Measured in tosijs-styled-editor 0.5.0: `⏭️ typecheck — no typecheck script` had been
+printing for three releases. The repo *did* have a `lint` script running exactly
+`tsc --noEmit`, so the skip looked like a naming quibble and was ignored each time.
+Renaming it and running it as part of the remediation immediately caught a filter written
+against a field that does not exist — `c.type === 'deletion'` where the interface declares
+`kind: 'insert' | 'delete'` — in code added *during that same remediation*, passing
+vacuously and about to ship. The skip was not a naming quibble; it was the reason nobody
+ran the typechecker on the way past.
+
+So: for each skip, answer in one line either "this project genuinely has no X" or "this is
+missing and here is the issue". Both are cheap. Neither is what a silent `⏭️` gets today.
+
 ### Cross-cutting checks — run alongside the nine
 
 Not lenses in their own right so much as questions each lens should ask. All four were

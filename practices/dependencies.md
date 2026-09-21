@@ -500,3 +500,30 @@ The cheapest supply-chain fix is the dependency you didn't add.
   plus an incremental install is enough to produce nine copies of one package; a
   clean reinstall (`rm -rf node_modules <lockfile> && install`) is the fix, and
   `find node_modules -path '*/<pkg>/package.json'` is how you see it.
+
+## A fix you asked for upstream and never installed is still an open problem in your repo
+
+Filing an issue feels like closing the loop. It isn't — the loop closes when the fix is
+**running in your build**, and nothing makes that happen by itself. A declared `^1.13.0`
+resolves to the latest minor only on a fresh install; a committed lockfile pins whatever
+was current when it was written, which is the point of a lockfile and also the trap.
+
+Measured in tosijs-styled-editor: this repo filed tosijs-ui #145 (a doc-system entry point
+that silently replaces rather than extends, so nothing registers and no error is raised),
+upstream **shipped a detector for it in 1.14.1**, and `bun.lock` stayed on 1.13.0 for
+three releases. So the repo carried a hand-rolled workaround for a trap it had itself
+reported, while its `CLAUDE.md` taught that trap as undetectable — a full release cycle
+after the net existed. Nobody was wrong at any step; nobody was responsible for the step
+between "closed" and "installed".
+
+Two habits that close it:
+
+- **Check the version when you check the issue.** A row in `UPSTREAM.md` gets a
+  status-checked date; checking status and not checking `bun.lock` is half the job.
+- **Treat "upstream fixed it" as a task, not an outcome.** Upgrade, delete the
+  workaround, and update whatever internal doc taught the workaround — the doc is the
+  part that gets missed, and it is the part that teaches the next person.
+
+Corollary for docs: an internal note that teaches a limitation should say *which version*
+it is a limitation of. "This is undetectable" ages badly; "undetectable before tosijs-ui
+1.14.1" tells the reader what to check.

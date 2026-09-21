@@ -175,6 +175,14 @@ So the budget isn't a hard ceiling on the total. What it actually governs:
   ```
   Wire it into the build (`zlib.gzipSync`) or the `prepublishOnly`/`pack` chain so numbers
   print unprompted. — seen in: tosijs-schema, tosijs-styled-editor, lukko, loewald-dot-com
+
+  **This entry cited `tosijs-styled-editor` as an exemplar while that repo printed nothing**
+  — both its `bun build` calls ended in `.quiet()`. It became true at 0.5.0, when a review
+  caught the citation. Worth knowing for its own sake: an exemplar list is a claim about
+  another repo, and it goes stale silently, because the repo that changed has no reason to
+  look here. Three separate committed size claims in that repo had drifted by the time
+  anyone measured. **A number nobody sees is a number that goes stale** — which is the
+  actual argument for printing it unprompted, stronger than "it's the regression gate".
 - **Mark framework/peer deps `external` in `Bun.build`; never bundle a second copy.** Ship
   ESM with `tosijs`/`tosijs-ui`/`react` external so consumers don't get duplicate framework
   copies. Provide a self-contained IIFE (deps inlined) only for zero-build `<script>` /
