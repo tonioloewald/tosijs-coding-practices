@@ -1,15 +1,13 @@
 # TODO — tosijs-coding-practices
 
-## Due ~2026-09-20: outcome review of the week-35 process batch
+## ~~Due ~2026-09-20~~ DONE 2026-09-21: week-35 outcome review
 
-Grade the 2026-09-05/06 changes good/bad/meh against the predictions in
-[`journal/2026-09-06-intention-vs-result.md`](journal/2026-09-06-intention-vs-result.md)
-(AARs exist · round count · Tier 1 actually run · scoreboard zero hand-edits ·
-release-doctor checks · cascade sharpness · prior-art rule · communication texture), plus
-the accretion-audit follow-ups: enforce the retirement quota on the batch (15.4:1 measured
-since the quota — it is not working), and measure whether meta-layer churn
-(README/review/releasing commits per week) fell after the AAR loop. Baselines in
-[`journal/2026-09-06-accretion-audit.md`](journal/2026-09-06-accretion-audit.md).
+Graded in [`reviews/2026-09-21-week-35-outcome-review.md`](reviews/2026-09-21-week-35-outcome-review.md).
+Headline: **structure transmitted, prose didn't** (tiers used and paying; the remediation
+norm ignored by the repo that inspired it while snowfox independently corroborated the diagnosis —
+rounds hit 12). Proposals await owner verdicts: AAR check into release-doctor (WARN);
+named-clearance-checks over more prose; one more season for unmeasured predictions;
+next batch = virta-M3 wiring, not more markdown machinery.
 
 ## Make the repo INVARIANT — history is what makes the carve-out safe
 
@@ -60,7 +58,10 @@ safe. The invariant *is* the permission.
 ## tosijs-virta — the task surface (design parked in the sibling repo)
 
 Name settled: **virta** (`tosijs-virta`, `<tosi-virta>`); **front-end work started
-2026-09-16** while service-compris works through blockers. Canonical design:
+2026-09-16**; back-end + GitHub ingestion wiring as of 09-21. **PRIVATE repo, possibly
+commercial (owner, 2026-09-21): no further design detail on public surfaces** — this
+summary and the parked history stay (append-only), but future design work happens in the
+private repo. Canonical design:
 `~/tosijs-virta/DESIGN.md` (pointer: [designs/tosijs-virta.md](designs/tosijs-virta.md));
 platform prerequisites filed as tosijs-platform#5–9. Supersedes/absorbs the navigation-hub
 plan below: the scoreboard becomes a live surface — a board — rather than a generated
