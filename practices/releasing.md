@@ -973,6 +973,28 @@ are" — complete the push, or stop cleanly at the tag if the repo is human-only
 Branching: commit/push only when asked; if on the default branch, branch first. Commit messages
 and PR bodies follow the harness's co-author/attribution footer conventions.
 
+## Publish-state and source-visibility are independent axes
+
+A repo's openness and its package's published-ness are **two axes, four quadrants** —
+and the tooling must key each check on the right one (owner, 2026-09-22; prompted by a
+closed-source project that may still publish a consumer library):
+
+- **Key on `package.json` (`private:`, `files:`), never on repo visibility.** A private
+  repo can publish a public package; a public repo can publish nothing. release-doctor and
+  the publish workflow (tosijs-ui#178) must work unchanged from private repos (OIDC does;
+  Actions minutes are the only cost and it is small).
+- **A tarball from a closed repo must be SELF-CONTAINED**: README, LICENSE, types, and
+  migration docs *in the tarball*, and no links that require repo access — the
+  dead-links-in-tarball class generalizes: for a closed source repo, every repo link a
+  consumer can't follow is dead by construction.
+- **The leak dimension**: a closed repo's tarball check gains a direction — nothing ships
+  that wasn't meant to (tight `files:` allowlist; no sourcemaps carrying sources unless
+  intended; the sweep's token scan applies to every published tarball already). The
+  packaged-exports check answers "is everything promised present"; this asks "is anything
+  present that wasn't promised."
+- Unpublished-by-design projects already SKIP publish checks via `private: true` — that
+  stays the signal; don't invent a second one.
+
 ## Bypassing the publish loop: where local tarballs live
 
 When a tagged release can't be published yet, the stopgap is `npm pack` + a `file:` dep.
