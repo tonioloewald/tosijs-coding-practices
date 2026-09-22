@@ -306,6 +306,15 @@ everything" checks nothing deeply. **Lens 0 once** per project, then the selecte
 lenses over the diff since the last release plus the code it touches (for a **major**,
 whole affected subsystems).
 
+**A sanitizer in the render path is a claim to verify on the consuming page, not in the
+abstract.** Ask what the page registers: a denylist sanitizer that keeps unknown custom
+elements (kilpi, by design) turns every registered element into a raw-HTML sink the moment a
+sanitized fragment is adopted — `<tosi-md>` upgraded and rendered its escaped text as markup
+on the project's own doc page. The security lens re-runs the render path against the hostile
+fixture *with the real pages' elements registered*; a fixture that registers nothing proves
+nothing. Seen in: tosijs-virta 0.5.0 (B1 in the review, B1 again in the re-review: the
+remediation of a security blocker was blocked by the same lens — the cycle flag).
+
 **Security-subsystem escalation (applies to _minor_ bumps too).** When a release's diff
 touches a security-critical subsystem — a sandbox/VM, capability or tool boundary, RBAC,
 a URL/SSRF guard, a regex/ReDoS or other untrusted-input path — escalate **that subsystem**

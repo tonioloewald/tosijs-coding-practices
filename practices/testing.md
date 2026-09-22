@@ -483,6 +483,26 @@ could file a GitHub issue on an onboarded repo, with a 90-day bearer in `localSt
 the payoff; the fix (marked → kilpi → http(s)-only links) took an hour, finding it took a
 review. The renderer's own docs should say its input is HTML (tosijs-ui#179).
 
+**The fixture must register what the consuming pages register, and assert on the DOM one
+frame after adoption — not on a handler firing.** The first fix above passed its own
+hostile-body test and was blocked again by the re-review: a `<tosi-md>` in the body survived
+kilpi (a denylist keeps unknown custom elements by design), and on the doc site's own page,
+which registers that element at module load, it upgraded on adoption and rendered its escaped
+text as raw HTML. The test document had registered nothing, so it could not see it; its
+`onerror`-fired assertion was inert under happy-dom anyway. Import the elements the real pages
+import, add `<x-anything>`, `<x-anything src=…>` and `is="…"` bodies, `await` a frame, and
+assert no element with `-` in its `localName`, no `[is]`, no `[style]`/`[class]`/`[id]`.
+A denylist sanitizer is not a sanitizer for stored content from untrusted authors; allowlist
+what the renderer emits and unwrap the rest. Seen in: tosijs-virta 0.5.0 re-review (B1,
+second time), kilpi#2.
+
+**A publish gate must run every shipped command, with a scratch HOME.** Every shipped
+command answers `--help` / `--version` before any file or network I/O, so the gate can run
+it on any machine — a command that reads `~/local-secrets` or opens a host session on
+`--help` fails the gate on the developer's machine and would have opened a live session
+there. Seen in: tosijs-virta 0.5.0 re-review (M4: the gate iterated `package.json#bin`,
+one of six bundled commands; `onboard --help` would have run the live onboard).
+
 - Behavior at the public API edge and the known-hard cases (async settling, id-path surgical
   updates, form-association, boxed/raw boundaries, sandbox/security paths) — not framework
   internals. A suite written at this edge is also what *survives a rewrite*: bun's Zig→Rust

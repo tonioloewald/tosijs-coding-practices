@@ -597,6 +597,20 @@ Two things make it stick:
   shipped `bin` from the extracted tarball in the pack smoke. **Closed-source builds must be
   possible** (owner, 2026-09-22): a tarball is `dist` plus the license, notice, changelog and
   `llms.txt` — never `src/`, never bin source — and the release automation is built to that.
+- **A sourcemap with `sourcesContent` IS the source.** `--sourcemap=linked` (bun's default
+  for many setups) writes `dist/*.map` carrying every `src/*.ts` verbatim, and a "no `src/`
+  in the tarball" check stays green. Build the published artifact with no sourcemaps (or
+  strip `sourcesContent`), exclude `*.map` from `files`, and have the pack gate fail on any
+  `.map` in the tarball or any `sourceMappingURL=data:` / `"sourcesContent"` inside a shipped
+  file. Seen in: tosijs-virta 0.5.0 re-review (M5: two maps, 440 KB, all twenty source
+  files, gate green).
+- **The pack gate runs every shipped command, from the build's own list, in a scratch HOME
+  with a production install.** Iterate the list the build bundles from (one module both
+  read), not `package.json#bin` (which may name one of them); run each with `HOME` /
+  `XDG_CACHE_HOME` pointed at a scratch directory and no host env, so `--help` on the
+  developer's machine can never read a token or open a live session; install with
+  `--production` so an accidental devDependency import fails there; assert nothing was
+  written to the scratch home. Seen in: tosijs-virta 0.5.0 re-review (M4).
 - **Verify by installing the tarball into an empty directory and importing it under `node`.**
   Both projects found this only that way. Reading the build output does not surface it.
 - **Importing `./dist` from inside the repo is NOT that gate.** It proves the bundle resolves
