@@ -67,6 +67,15 @@ platform prerequisites filed as tosijs-platform#5–9. Supersedes/absorbs the na
 plan below: the scoreboard becomes a live surface — a board — rather than a generated
 markdown table. Decision summary (canonical detail in DESIGN.md):
 
+- **0.5.0 review (2026-09-22, `4ab9cfb..fe2bade`):** two BLOCKs fixed (a stored-XSS sink in the
+  card body; the packed CLI could not load — bins are now bundled into `dist/bin` and a
+  `smoke:pack` gate runs the tarball). Owner dispositions recorded in that repo's CLAUDE.md:
+  **Apache 2.0** if it goes public or the tooling is published (was MIT); design-private —
+  `DESIGN.md` off the doc site, `llms.txt` and README. Two write-backs landed here from it
+  (doctor: `.ts` bins scanned, bins must be packed, review-freshness and size-baseline
+  WARNs; releasing/review/testing seen-ins). Pending here: export the project registry as
+  data (`tools/scoreboard.ts` PROJECTS or a generated `tools/projects.json`) so virta's
+  `bin/onboard.ts` stops regex-parsing this repo's source and README table.
 - **Authority: tasks live and die in the new system.** GitHub is an I/O **adapter** — the
   place external issues get raised and updated for external visibility — never a peer
   store. Internal stores (`TODO.md`, `UPSTREAM.md`, deferred-findings lists) migrate wholly

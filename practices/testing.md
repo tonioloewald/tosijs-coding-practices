@@ -473,6 +473,16 @@ Standing implications:
 
 ## What to test
 
+### Anything that renders text it did not write gets a hostile-content fixture
+
+A markdown or HTML renderer in the render path is a sink. Feed it `<img onerror>`,
+`<script>`, a `javascript:` link and a `data:text/html` link in the suite and assert none
+survive — and keep every other text path text-bound (`textContent`, `bindText`). Seen in:
+tosijs-virta 0.5.0, where a `<tosi-md>` body render was a stored XSS reachable by anyone who
+could file a GitHub issue on an onboarded repo, with a 90-day bearer in `localStorage` as
+the payoff; the fix (marked → kilpi → http(s)-only links) took an hour, finding it took a
+review. The renderer's own docs should say its input is HTML (tosijs-ui#179).
+
 - Behavior at the public API edge and the known-hard cases (async settling, id-path surgical
   updates, form-association, boxed/raw boundaries, sandbox/security paths) — not framework
   internals. A suite written at this edge is also what *survives a rewrite*: bun's Zig→Rust

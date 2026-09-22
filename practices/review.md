@@ -566,6 +566,10 @@ returned a confident wrong answer until the result was made to carry a warning �
 
 ### 2. Efficiency
 
+Print the suite's wall-clock per release beside the bundle size: fixed sleeps in tests
+compound invisibly otherwise (seen in: tosijs-virta 0.5.0, 0.9 s → 6 s, mostly 20 ms
+`settle()` sleeps and a real 1 s poll interval waited out in a test).
+
 **Cascade:**
 
 1. **Is the bundle-size delta printed?** (fact — if the build doesn't print it, *that* is the
@@ -864,6 +868,14 @@ gh issue list -R tonioloewald/<this-repo> --state open
 ago and left open, and a loosened `title` assertion routing around our own open #6)
 
 ### 8. Practices & process self-review — are _we_ still right?
+
+Evidence for the outcome review's proposal 2 (structure transmits, prose does not): a
+re-review trigger stated in a report's closing sentence did not fire — seen in: tosijs-virta
+0.5.0 (`4ab9cfb..cb074ed`; "sooner if the SyncLog adapter lands", the adapter landed, 53
+commits went unreviewed until the next scheduled pass). Write triggers as `TODO.md`
+checkboxes with their condition; the doctor's `review freshness` WARN is the backstop.
+Transcription after a review names all three destinations (`TODO.md`, `UPSTREAM.md`, the
+practices repo), and a practices-routed item is ticked only by a practices commit hash.
 
 The review reviews itself. Practices are living documents, and a release is when they get
 tested against reality.

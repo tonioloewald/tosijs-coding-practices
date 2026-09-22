@@ -589,6 +589,14 @@ Two things make it stick:
 
 - **Test the SOURCE, not the output** — assert no extensionless relative specifier exists, so it
   fails at authoring time instead of after a publish.
+- **Shipped code is every packed file a runtime executes — including `bin` scripts in a
+  source language.** A `#!/usr/bin/env bun` `.ts` bin that imports `../src/*` runs in the
+  repo and dies from the tarball, and the doctor's specifier scan opened only `.js`; seen
+  in: tosijs-virta 0.5.0 (B1, the second unloadable-artifact blocker in two cycles). Bundle
+  bins into `dist/` (self-contained, shebang first) and point `bin` at the bundle; run each
+  shipped `bin` from the extracted tarball in the pack smoke. **Closed-source builds must be
+  possible** (owner, 2026-09-22): a tarball is `dist` plus the license, notice, changelog and
+  `llms.txt` — never `src/`, never bin source — and the release automation is built to that.
 - **Verify by installing the tarball into an empty directory and importing it under `node`.**
   Both projects found this only that way. Reading the build output does not surface it.
 - **Importing `./dist` from inside the repo is NOT that gate.** It proves the bundle resolves
@@ -608,6 +616,11 @@ Two things make it stick:
 > — seen in: tosijs-3d (`tosijs-3d/light-settings`)
 
 ## Track bundle size on every release
+
+Seen in: tosijs-virta 0.5.0 — the library grew ×3.8 (12.5 → 45 KB gz) across a release with
+the build printing only absolute sizes, and the reviewer rebuilt the base by hand to learn it.
+The fix was a committed `dist-sizes.json` the build prints a per-file delta against, and a
+size line in the release's CHANGELOG entry; the doctor now WARNs when the baseline is missing.
 
 The whole selling point of these libraries is being small, so make size regressions visible:
 gzip the built entry and print the size as a build/pack step (`gzip -9 -k dist/index.js`, or

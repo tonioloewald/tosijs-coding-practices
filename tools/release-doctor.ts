@@ -243,6 +243,16 @@ const buildScript = scripts.build
       if (n > 15) add('changelog freshness', 'WARN', `${n} commits since CHANGELOG last touched`)
       else add('changelog freshness', 'PASS', `${n} commits since last touch`)
     }
+    // A re-review trigger stated in a report's prose does not fire (tosijs-virta
+    // 0.5.0: "sooner if the adapter lands" — the adapter landed, 53 commits and
+    // 14k lines went unreviewed). Count commits since the newest review instead.
+    const { out: newestReview } = await run(['git', 'log', '-1', '--format=%H', '--', 'reviews'])
+    if (newestReview.trim()) {
+      const { out: sinceReview } = await run(['git', 'rev-list', '--count', `${newestReview.trim()}..HEAD`])
+      const r = parseInt(sinceReview.trim() || '0', 10)
+      if (r > 15) add('review freshness', 'WARN', `${r} commits since reviews/ was last touched — run the review`)
+      else add('review freshness', 'PASS', `${r} commits since the newest review`)
+    }
   }
 }
 
@@ -421,6 +431,15 @@ and a muted gate is worse than no gate.
       `a declared peer is not what this repo builds and tests against — the shipped combination is untested:\n${untested.join('\n')}`)
   else add('peer/dev agreement', 'PASS')
 
+  // --- shipped-size baseline (releasing.md "track bundle size") ----------------
+  // The build must print the delta; it can only do that against a committed
+  // baseline. tosijs-virta 0.5.0 grew ×3.8 with nothing printed and no line in
+  // the CHANGELOG — the reviewer rebuilt the base by hand to find out.
+  if (existsSync(join(process.cwd(), 'dist')) || existsSync(join(process.cwd(), 'docs'))) {
+    if (existsSync(join(process.cwd(), 'dist-sizes.json'))) add('shipped-size baseline', 'PASS')
+    else add('shipped-size baseline', 'WARN', 'no dist-sizes.json: the build cannot print a size delta; record one at release')
+  }
+
   // --- bin shebangs (tosijs-ui#35 and #36 — the same bug, filed twice) -------
   const bins: Record<string, string> =
     typeof pkg.bin === 'string' ? { [pkg.name]: pkg.bin } : (pkg.bin ?? {})
@@ -537,7 +556,16 @@ and a muted gate is worse than no gate.
         */
         try {
           const { builtinModules } = await import('node:module')
-          const transpiler = new Bun.Transpiler({ loader: 'js' })
+          // Shipped code is every packed file a runtime executes — including a
+          // bin script in a source language (`#!/usr/bin/env bun` + .ts). This
+          // scan opened only .js/.mjs/.cjs, so it printed PASS over a tarball
+          // whose bin could not load (tosijs-virta 0.5.0, B1).
+          const transpilers = {
+            js: new Bun.Transpiler({ loader: 'js' }),
+            ts: new Bun.Transpiler({ loader: 'ts' }),
+          }
+          const transpilerFor = (file: string) =>
+            /\.(ts|mts|cts)$/.test(file) ? transpilers.ts : transpilers.js
           const builtin = new Set(builtinModules)
           const declared = new Set([
             ...Object.keys(pkg.dependencies ?? {}),
@@ -613,7 +641,8 @@ and a muted gate is worse than no gate.
             if (!list.includes(file)) list.push(file)
             map.set(p, list)
           }
-          for (const f of files.filter((x) => /\.(js|mjs|cjs)$/.test(x))) {
+          // .d.ts declarations resolve by TypeScript's rules (extensionless is correct there)
+          for (const f of files.filter((x) => /\.(js|mjs|cjs|ts|mts|cts)$/.test(x) && !x.endsWith('.d.ts'))) {
             const abs = join(process.cwd(), f)
             if (!existsSync(abs)) continue
             /*
@@ -651,7 +680,7 @@ and a muted gate is worse than no gate.
             const src = readFileSync(abs, 'utf8')
             let scanned = false
             try {
-              for (const imp of transpiler.scanImports(src)) {
+              for (const imp of transpilerFor(f).scanImports(src)) {
                 seen(imp.path, f, imp.kind === 'dynamic-import')
               }
               scanned = true
@@ -686,6 +715,15 @@ and a muted gate is worse than no gate.
             add('shipped imports declared', 'WARN',
               `dynamic import() of undeclared package(s) — deliberate optional-peer pattern, or a missing declaration?\n${fmt(dynOnly)}`)
           else add('shipped imports declared', 'PASS')
+          // every `bin` target must itself be in the tarball: a bin that
+          // points at a file `files` does not ship is a command nobody can run
+          const missingBins = Object.entries(bins)
+            .map(([name, target]) => [name, target.replace(/^\.\//, '')] as const)
+            .filter(([, target]) => !files.includes(target))
+          if (missingBins.length)
+            add('shipped bins packed', 'FAIL',
+              missingBins.map(([n, t]) => `${n} → ${t} is not in the tarball`).join('\n'))
+          else if (Object.keys(bins).length) add('shipped bins packed', 'PASS')
         } catch (e) {
           add('shipped imports declared', 'SKIP', `scan failed: ${String(e).slice(0, 120)}`)
         }
