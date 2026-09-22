@@ -778,9 +778,12 @@ and a muted gate is worse than no gate.
  * fix). Mechanics: parse the claims (a `Test: <name>` / `[x] … (test:
  * …)` convention in the remediation message), checkout the base commit in a
  * scratch worktree, run each named test there (expect red), run it at HEAD
- * (expect green). A claim that cannot name such a test is reported
- * UNVERIFIED, not PASS. Do not root-cause the cycles here — that is the
- * periodic AAR review's job.
+ * (expect green). The base must be the IMMEDIATELY PRECEDING source commit
+ * (the state just before the fix) — a base that predates the feature
+ * proves nothing (virta AAR cycle 8: "red two commits back" passed only
+ * because the tested branches were absent there). A claim that cannot name
+ * such a test is reported UNVERIFIED, not PASS. Do not root-cause the
+ * cycles here — that is the periodic AAR review's job.
  */
 
 // Report
