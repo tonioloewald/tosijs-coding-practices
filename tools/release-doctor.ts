@@ -787,7 +787,10 @@ and a muted gate is worse than no gate.
  * count of tests must match the diff, and the red must be BY ASSERTION —
  * a test file that fails to import on the base proves nothing (cycle 10:
  * two headline rows were red only because their modules were absent).
- * A claim that cannot name
+ * A practices write-back must NAME ITS COMMIT RANGE and postdate the last
+ * blocker-remediation wave it claims to cover (cycle 11's write-back
+ * landed minutes before that wave and named no range). A claim that
+ * cannot name
  * such a test is reported UNVERIFIED, not PASS. Do not root-cause the
  * cycles here — that is the periodic AAR review's job.
  */

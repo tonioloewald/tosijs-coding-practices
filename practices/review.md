@@ -347,6 +347,16 @@ credential guard lived on the element, so the first connect of any page life rep
 the previous principal's cached pages — twice, and the second time through a documented
 configuration the fix had left out).
 
+**Any value derived from mutable state during one operation — a credential, an
+identity, a name, a base — must come from a single snapshot taken at entry, and be
+re-checked after every await that can change it.** Three readings of one mutable field
+across two awaits is the failure shape: the bearer read lazily while the replica name
+snapshotted eagerly let a sign-in landing mid-connect write one account's rows into
+another's database. Seen in: tosijs-virta 0.5.0 (re-review 9 / AAR cycle (10)). The
+re-check after a drop must be against the credential (the principal-change test), not
+only the generation — a newer connect with the SAME credential is not a principal
+change.
+
 **Proposal (open, from virta AAR cycle 6; refined cycle 8):** make that a mechanical gate, not a prose
 lesson. The check that catches "the test exists" does not catch "the test passes for the wrong
 reason" — the very next remediation produced two more false records of the same
