@@ -330,6 +330,13 @@ refuses writes" landed without the sync that clears it for the one long-running 
 Seen in: tosijs-virta 0.5.0 (re-reviews 3 and 4; correctness blocked twice on the
 remediation of its own previous finding).
 
+**A remediation record that names a test is checked against `git diff --stat -- '*.test.ts'`
+before the finding is marked closed** — by the writer before writing it, and by the
+re-reviewer before accepting it. Seen in: tosijs-virta 0.5.0 (re-review 4: the record named
+two board tests that a failed edit script had never written; the reviewer that accepted the
+prior finding as closed had not checked, and the mechanism the tests would have covered —
+an in-flight sync resurrecting a deleted replica — was in fact broken).
+
 **Security-subsystem escalation (applies to _minor_ bumps too).** When a release's diff
 touches a security-critical subsystem — a sandbox/VM, capability or tool boundary, RBAC,
 a URL/SSRF guard, a regex/ReDoS or other untrusted-input path — escalate **that subsystem**

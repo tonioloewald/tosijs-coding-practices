@@ -509,6 +509,18 @@ from `process.env`.** A unit test that spawns the CLI with the developer's `HOME
 be `--help`. One `consumerEnv(scratchHome)` (scratch `HOME`/`USERPROFILE`/`XDG_*`, no host
 or token variables) shared by the pack gate and the CLI tests, and a step that asserts the
 scratch home is still empty afterwards. Seen in: tosijs-virta 0.5.0 (re-review 3, F2).
+State it as a mechanically checkable rule, not prose: a doctor step (or a repo test) that
+greps every `*.test.ts` and gate script for spawn sites and fails unless each passes `env`
+from the one helper — a rule that only prose enforces is green under every gate the day
+someone forgets it.
+
+**A component harness without the browser API the feature uses cannot test the feature.**
+happy-dom has no `indexedDB`, so a board whose replica teardown is `close()` +
+`deleteDatabase()` reduced to `this.replica = null` under test, and every teardown test
+passed with the mechanism untested — and, it turned out, broken under an in-flight sync.
+Wire the fake (fake-indexeddb, a fresh factory per test) into the component tests that
+exercise the branch, and assert on the store's own observable (`new IndexedDBLog(name).tail()
+=== 0`), not on the component's bookkeeping. Seen in: tosijs-virta 0.5.0 (re-review 4).
 
 - Behavior at the public API edge and the known-hard cases (async settling, id-path surgical
   updates, form-association, boxed/raw boundaries, sandbox/security paths) — not framework
