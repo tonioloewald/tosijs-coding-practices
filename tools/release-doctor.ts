@@ -783,8 +783,11 @@ and a muted gate is worse than no gate.
  * proves nothing (virta AAR cycle 8: "red two commits back" passed only
  * because the tested branches were absent there). The check is mechanical,
  * not a claim: the named base must equal `git rev-parse <commit>^` (cycle
- * 9's record named a hash that was not the parent), and the record's
- * count of tests must match the diff. A claim that cannot name
+ * 9's record named a hash that was not the parent), the record's
+ * count of tests must match the diff, and the red must be BY ASSERTION —
+ * a test file that fails to import on the base proves nothing (cycle 10:
+ * two headline rows were red only because their modules were absent).
+ * A claim that cannot name
  * such a test is reported UNVERIFIED, not PASS. Do not root-cause the
  * cycles here — that is the periodic AAR review's job.
  */

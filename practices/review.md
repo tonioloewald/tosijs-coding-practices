@@ -337,6 +337,16 @@ two board tests that a failed edit script had never written; the reviewer that a
 prior finding as closed had not checked, and the mechanism the tests would have covered —
 an in-flight sync resurrecting a deleted replica — was in fact broken).
 
+**An invariant guarded only by an in-memory field must be asked what a FRESH instance
+sees.** A reload, a second tab, a second board, a re-mount — if the guard is an element
+or process field, the persisted artifact is unguarded on every fresh page life, and the
+ordinary "switch account" flow is the trigger. Key the invariant on the persisted
+artifact itself (name it, stamp it, store the credential beside it), or state the
+fresh-instance behavior explicitly. Seen in: tosijs-virta 0.5.0 (re-reviews 8–9: the
+credential guard lived on the element, so the first connect of any page life replayed
+the previous principal's cached pages — twice, and the second time through a documented
+configuration the fix had left out).
+
 **Proposal (open, from virta AAR cycle 6; refined cycle 8):** make that a mechanical gate, not a prose
 lesson. The check that catches "the test exists" does not catch "the test passes for the wrong
 reason" — the very next remediation produced two more false records of the same
@@ -362,7 +372,12 @@ named `6489696` while its parent was `0bc19e9` ("immediately preceding" was asse
 checked). The doctor resolves `git rev-parse <commit>^` and fails the record when the
 named base differs; the record carries the resolved hash, and the count of tests it
 claims matches the diff (cycle 8's "six new tests" was two test bodies plus gate rows
-inside one function). Mirror this in the release-doctor Tier 0 check.
+inside one function). **The red must be by assertion, not by absence**: a test file that
+fails to import on the base (the helpers it names are missing there) proves nothing
+about the fix — cycle 9's two headline rows were red only because their modules did not
+exist. The claim must name a run where the test executes and fails on its assertion, or
+the diff must show the counterfactual (helpers kept, call site reverted). Mirror this in
+the release-doctor Tier 0 check.
 
 **Security-subsystem escalation (applies to _minor_ bumps too).** When a release's diff
 touches a security-critical subsystem — a sandbox/VM, capability or tool boundary, RBAC,
