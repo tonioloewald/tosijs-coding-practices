@@ -315,6 +315,21 @@ fixture *with the real pages' elements registered*; a fixture that registers not
 nothing. Seen in: tosijs-virta 0.5.0 (B1 in the review, B1 again in the re-review: the
 remediation of a security blocker was blocked by the same lens — the cycle flag).
 
+**Any lookup keyed by untrusted text is own-property only.** A string from a body, a URL,
+or the wire that indexes a plain object reaches `constructor`, `__proto__`, `hasOwnProperty`
+— truthy, not the row you meant. `Object.hasOwn` / a `Map` / a `Set`, never `table[name]`.
+Seen in: tosijs-virta 0.5.0 — the verb table (first review) and then, in the remediation
+of its own security blocker, the markdown tag allowlist (`<constructor style=…>` threw
+mid-render and the pane showed the previous task's body). The lens asks, for every new
+table in a diff: what indexes it, and can a body spell `constructor`?
+
+**A rule a diff adds needs a gate step for every path the rule names, and a refusal needs its
+recovery in the same diff.** "Every command answers `--help` before touching anything"
+was true for `virta login --help` and false for `virta --help login`; "a stale replica
+refuses writes" landed without the sync that clears it for the one long-running writer.
+Seen in: tosijs-virta 0.5.0 (re-reviews 3 and 4; correctness blocked twice on the
+remediation of its own previous finding).
+
 **Security-subsystem escalation (applies to _minor_ bumps too).** When a release's diff
 touches a security-critical subsystem — a sandbox/VM, capability or tool boundary, RBAC,
 a URL/SSRF guard, a regex/ReDoS or other untrusted-input path — escalate **that subsystem**

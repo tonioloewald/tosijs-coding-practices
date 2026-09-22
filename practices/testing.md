@@ -503,6 +503,13 @@ it on any machine — a command that reads `~/local-secrets` or opens a host ses
 there. Seen in: tosijs-virta 0.5.0 re-review (M4: the gate iterated `package.json#bin`,
 one of six bundled commands; `onboard --help` would have run the live onboard).
 
+**Anything that spawns a shipped command builds its environment from one helper, never
+from `process.env`.** A unit test that spawns the CLI with the developer's `HOME` hands it
+`~/local-secrets` and a real host; it stays harmless only while every argument happens to
+be `--help`. One `consumerEnv(scratchHome)` (scratch `HOME`/`USERPROFILE`/`XDG_*`, no host
+or token variables) shared by the pack gate and the CLI tests, and a step that asserts the
+scratch home is still empty afterwards. Seen in: tosijs-virta 0.5.0 (re-review 3, F2).
+
 - Behavior at the public API edge and the known-hard cases (async settling, id-path surgical
   updates, form-association, boxed/raw boundaries, sandbox/security paths) — not framework
   internals. A suite written at this edge is also what *survives a rewrite*: bun's Zig→Rust
