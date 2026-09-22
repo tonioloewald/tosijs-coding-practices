@@ -767,6 +767,22 @@ and a muted gate is worse than no gate.
   else add('dependency ranges', 'PASS')
 }
 
+/*
+ * PROPOSAL (open — review.md's "remediation record" lesson; virta AAR cycle 6):
+ * a gate over remediation-record claims. Every claim in the remediation
+ * commit message / CHANGELOG that names a test or a behaviour must point at
+ * a test that is RED on the base and GREEN on HEAD, and a discriminating one
+ * at that — "the test exists" does not catch "the test passes for the wrong
+ * reason" (a `settled()` that never waited, a cleanup whose exit hook never
+ * ran under the test runner: both claimed fixed, both green without the
+ * fix). Mechanics: parse the claims (a `Test: <name>` / `[x] … (test:
+ * …)` convention in the remediation message), checkout the base commit in a
+ * scratch worktree, run each named test there (expect red), run it at HEAD
+ * (expect green). A claim that cannot name such a test is reported
+ * UNVERIFIED, not PASS. Do not root-cause the cycles here — that is the
+ * periodic AAR review's job.
+ */
+
 // Report
 const icons = { PASS: '✅', FAIL: '❌', WARN: '⚠️ ', SKIP: '⏭️ ' } as const
 console.log(`\nrelease-doctor — ${pkg.name}@${version}\n`)

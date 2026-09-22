@@ -337,6 +337,21 @@ two board tests that a failed edit script had never written; the reviewer that a
 prior finding as closed had not checked, and the mechanism the tests would have covered —
 an in-flight sync resurrecting a deleted replica — was in fact broken).
 
+**Proposal (open, from virta AAR cycle 6):** make that a mechanical gate, not a prose
+lesson. The check that catches "the test exists" does not catch "the test passes for the
+wrong reason" — the very next remediation produced two more false records of the same
+class: a `settled()` that never waited, and a scratch-home cleanup whose exit hook never
+runs under `bun test`; both were claimed fixed, and the tests in the diff were green
+without the fix because they could not tell the difference. The proposed step: **every
+claim in a remediation commit message or CHANGELOG that names a test or a behaviour must
+point at a test that is red on the base and green on HEAD** — and a discriminating one at
+that (the virta straggler test probed the database mid-sign-out: red when the wait is
+removed, green when it is real; the MCP gate test asks a spawned `--read-only=true` server
+for its tools/list). `release-doctor` can run this mechanically: take the named tests,
+check them out over the base commit in a scratch worktree, and require them to fail there
+and pass at HEAD. A claim that cannot name such a test is recorded as unverified, the
+class the AAR cycle is about.
+
 **Security-subsystem escalation (applies to _minor_ bumps too).** When a release's diff
 touches a security-critical subsystem — a sandbox/VM, capability or tool boundary, RBAC,
 a URL/SSRF guard, a regex/ReDoS or other untrusted-input path — escalate **that subsystem**
