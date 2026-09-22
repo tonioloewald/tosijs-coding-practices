@@ -356,8 +356,13 @@ class the AAR cycle is about.
 fix), not an arbitrary earlier one: a base that predates the feature proves nothing about
 the fix — cycle 7 verified "red on `b1e73ab`", two source-commits back, where the tested
 branches were simply absent. Red on the immediate predecessor (with the test applied over
-it) is the only reading that discriminates. Mirror this in the release-doctor Tier 0
-check.
+it) is the only reading that discriminates. **And the check is mechanical, not a claim**:
+the named base must be the commit's *parent*, resolved and compared — cycle 8's record
+named `6489696` while its parent was `0bc19e9` ("immediately preceding" was asserted, not
+checked). The doctor resolves `git rev-parse <commit>^` and fails the record when the
+named base differs; the record carries the resolved hash, and the count of tests it
+claims matches the diff (cycle 8's "six new tests" was two test bodies plus gate rows
+inside one function). Mirror this in the release-doctor Tier 0 check.
 
 **Security-subsystem escalation (applies to _minor_ bumps too).** When a release's diff
 touches a security-critical subsystem — a sandbox/VM, capability or tool boundary, RBAC,

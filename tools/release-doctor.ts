@@ -781,7 +781,10 @@ and a muted gate is worse than no gate.
  * (expect green). The base must be the IMMEDIATELY PRECEDING source commit
  * (the state just before the fix) — a base that predates the feature
  * proves nothing (virta AAR cycle 8: "red two commits back" passed only
- * because the tested branches were absent there). A claim that cannot name
+ * because the tested branches were absent there). The check is mechanical,
+ * not a claim: the named base must equal `git rev-parse <commit>^` (cycle
+ * 9's record named a hash that was not the parent), and the record's
+ * count of tests must match the diff. A claim that cannot name
  * such a test is reported UNVERIFIED, not PASS. Do not root-cause the
  * cycles here — that is the periodic AAR review's job.
  */
