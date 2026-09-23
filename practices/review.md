@@ -24,6 +24,16 @@ unreachable from where a lens sits. State it in the lens preamble:
 > reading, so staleness in committed artifacts is expected between releases and
 > is a release-step concern, not a finding.
 
+**A claim that a value is LIVE must be asserted at the consumer.** Second
+recurrence of one class, one level deeper each time (tosijs-3d 0.8.2: a
+"live" attribute read only at material creation — the shader never saw the
+value; the fix then shipped without a test that reads the shader-side state,
+and the re-review found the same seam in three more places). A fix that
+wires a value to an element is not complete until a test asserts the value
+at the CONSUMER — the uniform, the plugin params, the shader-visible state —
+not merely that the writer wrote it. Release-doctor should flag any
+new/changed `initAttributes` entry whose consumer-side readout has no test.
+
 **The report pins the reviewed commit.** Third recurrence at tosijs-3d 0.8.2:
 the tree changed mid-gate (a rebuild plus two slug-page deletions), so the
 report's own tree-state section no longer described HEAD by the time it was
