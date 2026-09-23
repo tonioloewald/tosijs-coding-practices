@@ -24,6 +24,13 @@ unreachable from where a lens sits. State it in the lens preamble:
 > reading, so staleness in committed artifacts is expected between releases and
 > is a release-step concern, not a finding.
 
+**The report pins the reviewed commit.** Third recurrence at tosijs-3d 0.8.2:
+the tree changed mid-gate (a rebuild plus two slug-page deletions), so the
+report's own tree-state section no longer described HEAD by the time it was
+read. The report must carry `git rev-parse HEAD` at gate time, and the tagging
+step must assert HEAD still equals it — a tag over a commit the gate did not
+see is a gate that did not run.
+
 **And state the basis.** If the review runs against committed HEAD while work
 sits uncommitted, the lenses review the wrong thing — one recorded run reviewed
 a 13-line diff while the entire release sat unstaged. Print the basis
