@@ -765,6 +765,21 @@ would have shipped JS with no types. Found by the consumer, not by us. For any
 library whose public API includes a mixin or generic factory, that is the check.
 — seen in: tosijs (#38, reported by tosijs-ui)
 
+## A paired surface is driven from ONE cases table — and a release note claims only what it asserts
+
+When a feature exists twice — a library implementation and an emitted/inlined copy, a server
+and a client validator, a JS VM and a native one — the two are exercised by **one shared table
+of cases**, and a form added to the table must pass on both sides. The release note may claim
+parity only for what that table asserts.
+
+Three violations in one release (tjs-lang v0.13.13..fd2ea35): runtime types became callable in the library while the
+emitted stubs for three of five forms stayed plain objects; the library gained `toJSON` while
+the emitted copy silently serialised to `undefined`; and the guard written to prevent the first
+drove a shared table that listed only the two forms that already worked. **A shared table that
+omits the cases in question is a separate table with extra steps.** Widening it to all five
+found a fourth divergence (emitted names) on the first run. The CHANGELOG had asserted parity
+for all of it.
+
 ## Checkpoint tags — a tree worth returning to, that is not a release
 
 Sometimes a body of work is worth being able to come back to, and the person who

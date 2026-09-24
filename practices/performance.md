@@ -212,6 +212,15 @@ So the budget isn't a hard ceiling on the total. What it actually governs:
   (load it, assert no export is `undefined`) and fail the build otherwise. Any packaging
   change — `sideEffects`, export maps, format changes, a new entry — must be gated on
   executing the thing you're about to publish. — seen in: tosijs 1.8.0
+- **A `sideEffects` array must be DERIVED, not reviewed by eye.** Everything it omits is
+  asserted pure, so adding a module-scope side effect without re-deriving the list is a
+  silent packaging change. Keep a test that scans every module for module-scope call
+  statements — over a literal-MASKED view, or code held in template strings reads as effects
+  — and requires each to be listed (plus its built bundle, when it is an entry), or exempt
+  with a written reason; flag stale entries and stale exemptions both ways. In tjs-lang
+  (tjs-lang v0.13.13..fd2ea35) a review found three modules missing from a one-entry list; deriving it found a
+  **fourth** the review missed — a plugin entry whose documented usage is a bare
+  `import 'pkg/plugin'`, the exact import an allowlist lets a bundler drop. — seen in: tjs-lang
 - **Lazy-load heavy deps and defer global injection to first use.** Dynamic-import bulky
   editors/engines (e.g. CodeMirror) rather than eagerly bundling them; inject shared
   styles/listeners on first use (`ensureMenu`/`ensureTooltipStyles`/`ensureFloatListeners`),

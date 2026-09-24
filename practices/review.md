@@ -820,6 +820,24 @@ Detail:
    `releasing.md`) A check nobody has seen fail is not a check.
 5. **Any skip-guard or early-return that can never un-skip?** (fact: read the guard) Green ≠
    ran.
+6. **Does each guard for a consumer-facing promise reach it the way a consumer does?** (fact:
+   read its imports) A guard that imports the INTERNAL module can see what no consumer can.
+   And where the published artifact is built per-entry, source is not the artifact — assert
+   against the built output, in the runtime a consumer uses (a Bun test resolving a `bun`
+   export condition re-tests source).
+7. **Does each guard for an invariant sweep EVERY producer (or consumer) of the guarded thing,
+   failing by name when a new one appears?** (fact: enumerate them) A guard over one of two
+   producers passes while the other breaks the invariant, and a hand-listed set is missed by
+   the next addition exactly as the first was. Carry an apparatus check so the sweep cannot
+   pass by finding nothing.
+
+   _Both from one review (tjs-lang v0.13.13..fd2ea35):_ every blocker and major was invisible to a green suite for
+   one of these two reasons. A brand the CHANGELOG told consumers to import was exported from
+   nowhere, and its guard imported `../types/Type`. An AST version gate lived behind one of
+   three doors; a version stamp lived in one of two producers. A test pinned the stamp against
+   `transpile()` only — and even its assertion was the wrong one, since an absent field read
+   back as the legacy default, which equalled the current version. Each fix was a sweep that
+   fails by name, and **two of the sweeps immediately found something the review had not.**
 
 Detail:
 
