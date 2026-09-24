@@ -35,6 +35,13 @@ bun test src/foo.test.ts    # one file
 bun test src/               # unit tier only (when integration lives elsewhere)
 ```
 
+- **Judge a run by its exit code or its `N fail` line — never by its last line.** `bun test`'s
+  last line is `Ran N tests across M files`, printed identically whether 0 or 20 failed, so
+  `bun test | tail -1` reads a red suite as green. Use `bun test && …`, or
+  `bun test 2>&1 | grep -E '^ *[0-9]+ (pass|fail)'` when you want the summary. In tosijs-3d
+  0.8.3 a schema drift gate caught two new attributes and two commits landed red because the
+  check was `tail -1`; nobody saw it until the release build. — seen in: tosijs-3d
+  (`v0.8.2..3d35a29c`)
 - **Never scope the unit lane with a `*.test.ts` glob** (`bun test src/*.test.ts`). A glob matches
   only the top-level files and silently skips every test in a subdirectory — no error, exit 0, a
   green run that never ran. A bare directory (`bun test src/`) or bare `bun test` **recurses**; use
