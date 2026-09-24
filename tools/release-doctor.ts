@@ -36,13 +36,31 @@ const isPrivate = pkg.private === true
 const scripts: Record<string, string> = pkg.scripts ?? {}
 
 async function run(cmd: string[]): Promise<{ ok: boolean; out: string }> {
+  const r = await runSplit(cmd)
+  return { ok: r.ok, out: r.stdout + r.stderr }
+}
+
+/**
+ * stdout and stderr SEPARATELY — for any command whose stdout is machine-readable.
+ *
+ * `run()` concatenates the two, which is fine for grepping and wrong for parsing: a package
+ * with a `prepare` script prints `> pkg@x prepare …` to STDERR during `npm pack`, which then
+ * lands AFTER the JSON and makes `JSON.parse` throw. The packaged-exports block caught that
+ * and reported SKIP — hiding four checks at once (exports resolve, relative specifiers
+ * resolve, imports declared, bins packed) on every repo with a `prepare` script. Found on
+ * tjs-lang 0.14.0-rc.0, 2026-09-24.
+ */
+async function runSplit(
+  cmd: string[]
+): Promise<{ ok: boolean; stdout: string; stderr: string }> {
   try {
     const proc = Bun.spawn(cmd, { stdout: 'pipe', stderr: 'pipe' })
-    const out = (await new Response(proc.stdout).text()) + (await new Response(proc.stderr).text())
+    const stdout = await new Response(proc.stdout).text()
+    const stderr = await new Response(proc.stderr).text()
     const code = await proc.exited
-    return { ok: code === 0, out }
+    return { ok: code === 0, stdout, stderr }
   } catch (e) {
-    return { ok: false, out: String(e) }
+    return { ok: false, stdout: '', stderr: String(e) }
   }
 }
 
@@ -466,7 +484,9 @@ and a muted gate is worse than no gate.
   */
   if (isPrivate) add('packaged exports', 'SKIP', 'private package')
   else {
-    const packed = await run(['npm', 'pack', '--dry-run', '--json'])
+    const packedRaw = await runSplit(['npm', 'pack', '--dry-run', '--json'])
+    // Parse STDOUT only — see runSplit. `out` stays combined for any message that quotes it.
+    const packed = { ok: packedRaw.ok, out: packedRaw.stdout }
     if (!packed.ok) add('packaged exports', 'SKIP', 'npm pack --dry-run failed')
     else {
       try {
