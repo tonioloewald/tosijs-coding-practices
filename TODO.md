@@ -1,5 +1,10 @@
 # TODO — tosijs-coding-practices
 
+> **FROZEN 2026-09-24 — Stage 0 pilot: this repo's task traffic runs in the task system**
+> (tracked there as #2898). This file is read-only during the pilot: existing content
+> stays for reference and reverting costs nothing if the pilot fails, but new tasks are
+> filed on the board, not here. If the pilot passes, this file is deleted (M3).
+
 ## ~~Due ~2026-09-20~~ DONE 2026-09-21: week-35 outcome review
 
 Graded in [`reviews/2026-09-21-week-35-outcome-review.md`](reviews/2026-09-21-week-35-outcome-review.md).
