@@ -629,6 +629,37 @@ Two things make it stick:
 > reachable — otherwise the only door is the barrel, and the split bought nothing.
 > — seen in: tosijs-3d (`tosijs-3d/light-settings`)
 
+## `npm pack` ships the WORKING TREE, not the commit
+
+`files` is an allowlist of **paths**, so a directory entry like `"dist"` publishes whatever
+happens to be sitting in that directory at publish time — including files nobody put there
+on purpose. The tarball is therefore a function of one machine's working tree rather than of
+the tag, and the difference is invisible to every other gate: tests, typecheck, build and
+`git status` all pass, because build output is normally gitignored and **an ignored file is
+not a change**.
+
+Seen in tosijs-styled-editor 0.5.0: the pending tarball carried
+`dist/.metadata_never_index`, a zero-byte macOS Spotlight artifact. Untracked, so absent
+from a clean checkout, from CI, and from `git archive v0.5.0` — it would have shipped from
+the maintainer's laptop and from nowhere else. Harmless in itself; the same hole ships a
+`.DS_Store`, an editor swap file, a half-written build from an interrupted run, or a stray
+`.env` someone dropped in an output directory.
+
+**Do not check "is every packed file tracked?"** — that was the first attempt and it flags
+the entire tarball, because `dist/` is gitignored in most projects. Dotfiles are the tight
+version of the same question: essentially nothing means to publish a dotfile inside its own
+build output, and the accidents are all dotfiles. The doctor now FAILs on any packed dotfile
+other than `.npmrc`/`.npmignore`; the fix in the package is a negation beside the directory
+entry:
+
+```json
+"files": ["dist", "!dist/*.tsbuildinfo", "!dist/.*", "README.md", "LICENSE"]
+```
+
+The general form, worth applying beyond dotfiles: **inspect the artifact, not the source.**
+`npm pack --dry-run --json` is the only view of what a consumer actually receives, and it is
+cheap enough to read before every publish. — seen in: tosijs-styled-editor
+
 ## Track bundle size on every release
 
 Seen in: tosijs-virta 0.5.0 — the library grew ×3.8 (12.5 → 45 KB gz) across a release with

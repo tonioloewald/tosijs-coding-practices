@@ -751,6 +751,52 @@ and a muted gate is worse than no gate.
     }
   }
 
+  // --- npm packs the WORKING TREE, not the commit ----------------------------
+  /*
+  `files` is an allowlist of PATHS, so a directory entry like "dist" ships
+  whatever is sitting in that directory — including files nobody put there on
+  purpose. The tarball becomes a function of one machine's working tree rather
+  than of the tag, and the difference is invisible to every other gate: tests,
+  typecheck, build and `git status` all pass, because build output is usually
+  gitignored and an ignored file is not a change.
+
+  Checking "is it tracked?" does NOT work — build output is gitignored in most
+  projects, so that flags the entire tarball. Dotfiles are the tight version of
+  the same question: essentially no package means to publish one inside its
+  build output, and the accidents are all dotfiles — `.DS_Store`,
+  `.metadata_never_index`, editor swap files, a stray `.env` dropped in an
+  output directory.
+
+  Caught in tosijs-styled-editor 0.5.0: the pending tarball carried
+  `dist/.metadata_never_index`, a zero-byte macOS Spotlight artifact that would
+  have shipped from the maintainer's laptop and from nowhere else. Harmless
+  itself; the hole is not.
+  */
+  const DELIBERATE_DOTFILES = new Set(['.npmrc', '.npmignore'])
+  if (!isPrivate) {
+    const packed = await run(['npm', 'pack', '--dry-run', '--json'])
+    if (packed.ok) {
+      try {
+        const entries: string[] = (JSON.parse(packed.out)[0]?.files ?? []).map(
+          (f: { path: string }) => f.path
+        )
+        const dotfiles = entries.filter((f) => {
+          const base = f.split('/').pop() ?? ''
+          return base.startsWith('.') && !DELIBERATE_DOTFILES.has(base)
+        })
+        if (dotfiles.length)
+          add(
+            'no stray dotfiles in the tarball',
+            'FAIL',
+            `npm packs the working tree, so these ship from whichever machine publishes:\n${dotfiles.join('\n')}\nExclude them in package.json "files" (e.g. "!dist/.*").`
+          )
+        else add('no stray dotfiles in the tarball', 'PASS')
+      } catch {
+        add('no stray dotfiles in the tarball', 'SKIP', 'could not parse npm pack output')
+      }
+    } else add('no stray dotfiles in the tarball', 'SKIP', 'npm pack unavailable')
+  } else add('no stray dotfiles in the tarball', 'SKIP', 'private package')
+
   // --- declared peers vs what a consumer would actually install --------------
   // Network-dependent, so it SKIPs offline rather than failing. A newer MAJOR
   // outside the range is a legitimate "not supported yet" and only WARNs; a
