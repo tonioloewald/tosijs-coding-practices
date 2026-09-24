@@ -748,6 +748,36 @@ dangerous direction**. Those three no-op mutations produced, in order: "this new
 All three were wrong, all three would have justified *deleting* a load-bearing guard, and all three
 looked exactly like a careful negative result. — seen in: tosijs
 
+### A fix does not inherit coverage from a skipped reproduction
+
+The companion failure to the one above, and it is easier to commit because it *feels* like
+diligence. You write the reproduction while the bug is live, mark it `test.fixme` /
+`it.skip` with an honest comment explaining what is broken, fix the bug — and leave the
+flag on. The commit message says the bug is fixed. The TODO says the test covers it. The
+suite is green. Nothing has watched the repaired code once.
+
+Two costs, and the second is the one that bites:
+
+- **A fixed bug behind a `fixme` is indistinguishable from a broken one.** The suite
+  reports the same thing either way, so a regression the next day is silent.
+- **The skipped test has been rotting the whole time.** It was written against the broken
+  behaviour and never run against the fixed behaviour, so its assertions were only ever
+  checked against a failure. In tosijs-3d-ensemble the id-field rename test had been
+  `fixme` for four days after the fix landed; un-skipping it went red on *its own
+  assertion* rather than on the editor. The typed character lands at the **caret**, so `X`
+  into `flagship` produces `flagXship` — and the test demanded an id that still
+  `includes('flagship')`, which no successful rename can satisfy. It would have been red on
+  the day the fix shipped, for the opposite reason, and been read as "still broken".
+
+> **A fix is not covered until the test covering it has run green once.** Clearing the skip
+> flag is part of the fix, not follow-up work — and if clearing it is not the last step of
+> the same change, the claim "covered by X" must not be written down yet.
+
+The mechanical check is cheap: after any fix that had a skipped reproduction, run the lane
+and read the *skipped* count, not just the failures. A lane that reports `7 passed, 1
+skipped` where the 1 is the thing you just fixed is telling you the work is not finished.
+— seen in: tosijs-3d-ensemble
+
 ### And if the FIX breaks no tests, the suite has a hole
 
 One step earlier than the above. When you change behaviour and the whole suite stays green, that is
