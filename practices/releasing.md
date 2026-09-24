@@ -1020,7 +1020,11 @@ closed-source project that may still publish a consumer library):
   packaged-exports check answers "is everything promised present"; this asks "is anything
   present that wasn't promised."
 - Unpublished-by-design projects already SKIP publish checks via `private: true` — that
-  stays the signal; don't invent a second one.
+  stays the signal; don't invent a second one. **And in that quadrant, deploys are the
+  distribution** (owner, 2026-09-23): registry-facing rules (tag-at-publish, land-the-plane
+  reconciliation) are dormant — tags are local markers — and activate the day the repo
+  opens or a consumer library ships. Don't run registry ceremony against a registry that
+  isn't the channel.
 
 ## Bypassing the publish loop: where local tarballs live
 
