@@ -50,6 +50,24 @@ async function run(cmd: string[]): Promise<{ ok: boolean; out: string }> {
  * resolve, imports declared, bins packed) on every repo with a `prepare` script. Found on
  * tjs-lang 0.14.0-rc.0, 2026-09-24.
  */
+/**
+ * Every DIST-TAG's version, not just `latest`. `npm view <pkg> version` answers with `latest`
+ * only, and a prerelease on `rc`/`next`/`beta` never becomes `latest` — so a check built on it is
+ * blind to every prerelease. Found in tjs-lang at 0.14.0-rc.0: its own prepublish-check called a
+ * published rc "unclaimed" and "previous release tagged" while the rc sat untagged. `null` means
+ * the registry could not be read — unknown, never empty.
+ */
+async function distTags(name: string): Promise<Record<string, string> | null> {
+  const r = await runSplit(['npm', 'view', '--prefer-online', name, 'dist-tags', '--json'])
+  if (!r.ok) return null
+  try {
+    const t = JSON.parse(r.stdout)
+    return t && typeof t === 'object' && Object.keys(t).length ? t : null
+  } catch {
+    return null
+  }
+}
+
 async function runSplit(
   cmd: string[]
 ): Promise<{ ok: boolean; stdout: string; stderr: string }> {
@@ -113,14 +131,34 @@ const cannotRun = (out: string): string | undefined => {
       add('tests (bun test)', r.ok ? 'PASS' : 'FAIL', r.ok ? '' : r.out.split('\n').slice(-8).join('\n'))
     } else add('tests', 'SKIP', 'no test script and no *.test.* under src/ — if this project verifies by demo, that is the intended workflow (testing.md)')
   } else {
+    /*
+     * ADVISORY lanes, declared by the repo with a reason:
+     *   package.json → "releaseDoctor": { "advisoryLanes": { "test:grok": "<why it never blocks>" } }
+     * An advisory lane still RUNS and its result is still shown — a failure becomes WARN, not
+     * FAIL. Some lanes measure something that is not the code: tjs-lang's `test:grok` samples a
+     * small live model's success rate, a documented "never blocks a release" lane, and failing
+     * Tier 0 on a model's bad day teaches people to stop reading Tier 0. A declaration without a
+     * reason is itself a FAIL: an unexplained exemption is a silent hole.
+     */
+    const advisory: Record<string, unknown> = pkg.releaseDoctor?.advisoryLanes ?? {}
     for (const lane of lanes) {
+      const isAdvisory = Object.prototype.hasOwnProperty.call(advisory, lane)
+      const reason = isAdvisory ? String(advisory[lane] ?? '').trim() : ''
+      if (isAdvisory && !reason) {
+        add(`tests (${lane})`, 'FAIL', 'declared advisory with no reason — give one in releaseDoctor.advisoryLanes')
+        continue
+      }
       const r = await run(['bun', 'run', lane])
       const blocked = r.ok ? undefined : cannotRun(r.out)
       if (blocked) {
         add(`tests (${lane})`, 'SKIP', `could not run: ${blocked}`)
         continue
       }
-      add(`tests (${lane})`, r.ok ? 'PASS' : 'FAIL', r.ok ? '' : r.out.split('\n').slice(-8).join('\n'))
+      if (!r.ok && isAdvisory) {
+        add(`tests (${lane})`, 'WARN', `ADVISORY lane failed (${reason}):\n${r.out.split('\n').slice(-8).join('\n')}`)
+        continue
+      }
+      add(`tests (${lane})`, r.ok ? 'PASS' : 'FAIL', r.ok ? (isAdvisory ? 'advisory' : '') : r.out.split('\n').slice(-8).join('\n'))
     }
   }
 }
@@ -195,8 +233,15 @@ const buildScript = scripts.build
       // --prefer-online on every registry read: npm view answers from cache and
       // has served a version minutes stale right after a publish, turning this
       // check into a confident wrong answer (releasing.md step 8b).
-      const { ok, out } = await run(['npm', 'view', '--prefer-online', pkg.name, 'version'])
-      const published = ok ? out.trim() : ''
+      // `published` is THIS version if any dist-tag names it (an rc on `rc` counts), else
+      // `latest`. Asking for `version` alone saw only `latest`, so an already-published
+      // prerelease read as "not yet published" — see distTags().
+      const tagsNow = await distTags(pkg.name)
+      const published = !tagsNow
+        ? ''
+        : Object.values(tagsNow).includes(version)
+          ? version
+          : (tagsNow.latest ?? '')
       if (published === '') {
         add('release identity', 'SKIP', 'could not reach the registry')
       } else if (published !== version) {
@@ -356,12 +401,19 @@ const buildScript = scripts.build
   if (isPrivate) add('tag/publish reconciliation', 'SKIP', 'private package')
   else {
     const name = pkg.name
-    const { ok, out } = await run(['npm', 'view', '--prefer-online', name, 'version'])
-    if (!ok) add('tag/publish reconciliation', 'SKIP', `npm view failed (${out.trim().split('\n')[0]}) — could not check; do not read this as clean`)
+    const allTags = await distTags(name)
+    if (!allTags?.latest) add('tag/publish reconciliation', 'SKIP', 'could not read dist-tags — could not check; do not read this as clean')
     else {
-      const npmVersion = out.trim()
+      const npmVersion = allTags.latest
       const { out: tags } = await run(['git', 'tag', '--list', 'v*'])
       const tagList = tags.trim().split('\n').filter(Boolean)
+      // Every OTHER channel too: a published prerelease with no git tag is the same "published
+      // release not identifiable in the repo" as an untagged `latest`, and was invisible here.
+      const untaggedChannels = Object.entries(allTags)
+        .filter(([ch, v]) => ch !== 'latest' && !tagList.includes(`v${v}`))
+        .map(([ch, v]) => `${v} (\`${ch}\`)`)
+      if (untaggedChannels.length)
+        add('prerelease tags', 'WARN', `published but never tagged: ${untaggedChannels.join(', ')} — tag the commit it was published FROM, not HEAD`)
       const tagForNpm = tagList.includes(`v${npmVersion}`)
       const unpublishedTags = tagList.filter((t) => {
         const v = t.slice(1)
@@ -774,7 +826,11 @@ and a muted gate is worse than no gate.
   */
   const DELIBERATE_DOTFILES = new Set(['.npmrc', '.npmignore'])
   if (!isPrivate) {
-    const packed = await run(['npm', 'pack', '--dry-run', '--json'])
+    // STDOUT only — see runSplit. This block had the same merged-stderr bug as the packaged-
+    // exports block after that one was fixed, and it hid a real FAIL: tjs-lang's
+    // 0.14.0-rc.0 tarball carried the very `.metadata_never_index` this check exists for.
+    const packedRaw = await runSplit(['npm', 'pack', '--dry-run', '--json'])
+    const packed = { ok: packedRaw.ok, out: packedRaw.stdout }
     if (packed.ok) {
       try {
         const entries: string[] = (JSON.parse(packed.out)[0]?.files ?? []).map(

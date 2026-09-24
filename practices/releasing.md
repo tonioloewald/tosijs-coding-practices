@@ -796,6 +796,29 @@ would have shipped JS with no types. Found by the consumer, not by us. For any
 library whose public API includes a mixin or generic factory, that is the check.
 — seen in: tosijs (#38, reported by tosijs-ui)
 
+## A 0.x caret peer range expires at every minor — check downstream BEFORE publishing one
+
+`^0.13.1` admits `0.13.x` and nothing else, so a first-party library that peers on a 0.x package
+**breaks at every minor of it**. And the break is hidden from its authors: an optional peer is
+optional only when ABSENT, so a present-but-out-of-range one hard-fails every npm 7+ consumer with
+`ERESOLVE`, while `bun install` resolves it cleanly — so neither repo's own workflow ever shows it.
+
+It shipped twice between the same two repos (tosijs-ui#98 at tjs-lang 0.13.0, tosijs-ui#182 at
+0.14.0), each filed after the fact. The rule:
+
+- **The upstream gates its own publish on it.** Before a FINAL release, read each first-party
+  downstream's published `peerDependencies` range for you and refuse if it excludes the version.
+  Prereleases are exempt — semver skips them, and an rc is exactly how the downstream verifies.
+  Reference implementation: tjs-lang `scripts/prepublish-check.ts` (`DOWNSTREAM_PEERS`).
+- **Only PEER ranges belong in that list.** A downstream that pins you in `devDependencies`, or an
+  app, merely lags until bumped — worth a nudge, never an install failure. Measure which is which
+  across the sibling repos rather than assuming (in tjs-lang's case, one of eight).
+- **The downstream widens first**, verifying against an rc: publish `X.Y.0-rc.N` on a
+  non-`latest` tag, the downstream pins it EXACTLY (`^X.Y.0` does not admit the rc) and widens its
+  range to `^old || ^X.Y.0` once it passes.
+
+— seen in: tjs-lang / tosijs-ui (v0.13.13..fbe84aa)
+
 ## A paired surface is driven from ONE cases table — and a release note claims only what it asserts
 
 When a feature exists twice — a library implementation and an emitted/inlined copy, a server
