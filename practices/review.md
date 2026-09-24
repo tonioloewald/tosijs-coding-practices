@@ -34,6 +34,15 @@ at the CONSUMER — the uniform, the plugin params, the shader-visible state —
 not merely that the writer wrote it. Release-doctor should flag any
 new/changed `initAttributes` entry whose consumer-side readout has no test.
 
+**…and asserted again after a lifecycle event.** Third recurrence, one level
+deeper again (tosijs-3d 0.8.3, `v0.8.2..631cf8ec`): three new "live" attributes
+reached the consumer on first mount and were silently lost on a re-parent,
+because the sync memo that suppresses redundant writes was reset for two
+dials and not the third, and the fresh consumer (a new plugin at its
+defaults) never heard. The consumer readout must be repeated after
+dispose → re-attach. The class fix is structural, not a test: keep every such
+memo in ONE object reset in ONE statement, so a new dial cannot be missed.
+
 **The report pins the reviewed commit.** Third recurrence at tosijs-3d 0.8.2:
 the tree changed mid-gate (a rebuild plus two slug-page deletions), so the
 report's own tree-state section no longer described HEAD by the time it was
