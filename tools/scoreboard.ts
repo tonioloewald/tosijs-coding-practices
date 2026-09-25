@@ -83,12 +83,25 @@ async function npmLatest(pkg: string): Promise<string | null | 'unpublished'> {
   }
 }
 
-/** package.json version on the default branch, via gh (works for private repos too). */
+/**
+ * package.json version on the default branch. `gh` first (it reaches private repos); where `gh`
+ * is absent — CI runners, cloud agent containers, the weekly sweep — fall back to the anonymous
+ * API, which covers every public row. Without the fallback the tool reported EVERY row
+ * "unreachable" anywhere gh isn't installed, so the fact cells silently stopped being refreshed.
+ */
 async function repoVersion(repo: string): Promise<string | null> {
-  const out = await sh(['gh', 'api', `repos/${repo}/contents/package.json`, '-q', '.content'])
-  if (!out) return null
+  const viaGh = await sh(['gh', 'api', `repos/${repo}/contents/package.json`, '-q', '.content'])
+  if (viaGh) {
+    try {
+      return JSON.parse(atob(viaGh.trim().replace(/\n/g, ''))).version ?? null
+    } catch {
+      return null
+    }
+  }
   try {
-    return JSON.parse(atob(out.trim().replace(/\n/g, ''))).version ?? null
+    const res = await fetch(`https://raw.githubusercontent.com/${repo}/HEAD/package.json`)
+    if (!res.ok) return null
+    return ((await res.json()) as any).version ?? null
   } catch {
     return null
   }
@@ -129,6 +142,7 @@ const readme = readFileSync(readmePath, 'utf8')
 const lines = readme.split('\n')
 const problems: string[] = []
 const changes: string[] = []
+let verified = 0
 
 for (const p of PROJECTS) {
   if (!p.repo) continue // local-only: hand-maintained by design
@@ -137,7 +151,10 @@ for (const p of PROJECTS) {
     problems.push(`no scoreboard row found for ${p.key} — README and tool metadata have drifted`)
     continue
   }
-  const cells = lines[i].split('|')
+  // Split on UNESCAPED pipes only: an Activity cell legitimately contains `\|\|` (a peer range
+  // like `^0.13.1 || ^0.14.0`), and a naive split counted those as cell boundaries — the row then
+  // read as 8 cells and the tool refused to touch it, so its facts quietly went stale.
+  const cells = lines[i].split(/(?<!\\)\|/)
   if (cells.length !== 8) {
     problems.push(`row for ${p.key} has ${cells.length - 2} cells, expected 6 — not touching it`)
     continue
@@ -152,6 +169,7 @@ for (const p of PROJECTS) {
     problems.push(`${p.key} could not be verified (repo/registry unreachable) — row left as-is, "As of" NOT advanced`)
     continue
   }
+  verified++
   const oldVersion = cells[3].trim()
   const oldAsOf = cells[6].trim()
   if (oldVersion !== cell) changes.push(`${p.repo}:\n    was: ${oldVersion}\n    now: ${cell}`)
@@ -168,8 +186,11 @@ if (problems.length) {
 if (changes.length) {
   console.log(`scoreboard: ${changes.length} fact cell(s) ${check ? 'STALE' : 'updated'} —`)
   for (const c of changes) console.log(`  ${c}`)
+} else if (verified === 0) {
+  // "no changes" over an empty set is not a clean bill of health — dependencies.md §1.
+  console.log('scoreboard: NOTHING VERIFIED — 0 rows reached; no row was checked, none is confirmed accurate')
 } else {
-  console.log('scoreboard: all verified rows already accurate')
+  console.log(`scoreboard: ${verified} verified row(s) already accurate`)
 }
 
 if (!check) writeFileSync(readmePath, lines.join('\n'))
