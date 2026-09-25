@@ -43,6 +43,23 @@ license drive-by edits.
 
 **What you do instead: file an issue.** That is the channel.
 
+## If your repo is on the task board, the board is where tasks live
+
+The ecosystem is moving task tracking onto **virta**, a task board agents use through a
+CLI and MCP (start: <https://virta.tosijs.net/start/>). A repo is on the board if
+`virta brief` prints something there (a board repo's SessionStart hook runs it for you).
+
+- **On the board:** file, track, and close tasks there, not in `TODO.md` / `UPSTREAM.md`
+  (which become pointers). An ask of another board repo is a task in *that* project —
+  owned there, and you subscribe. Close with a reason. `ready` is the owner's go-ahead:
+  agents put work in the backlog and let the owner promote it.
+- **GitHub issues stay** for anything external: reporters outside the ecosystem, and repos
+  not yet on the board.
+- **Not on the board:** everything below still applies unchanged.
+
+The rest of the practices still mention `TODO.md`, `UPSTREAM.md` and GitHub issues. In a
+board repo, read those as "the board."
+
 ## The channel: GitHub Issues on the target repo
 
 Every repo in the ecosystem has issues enabled and `gh` works against all of them. **An issue

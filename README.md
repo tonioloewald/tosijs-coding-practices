@@ -133,6 +133,7 @@ or **Cloudflare Pages / R2** as appropriate. Full detail: [`practices/00-stack.m
 | About to trust an instinct (React/web-components/bundler lore) | **[`practices/model-priors.md`](practices/model-priors.md)** — what you will get wrong here |
 | About to blame a dependency for a bug | **[`practices/model-priors.md#9`](practices/model-priors.md)** — trust sets how *long* you look, not *whether* you read what it says |
 | Hitting a problem that belongs to *another* repo | **[`practices/cross-project.md`](practices/cross-project.md)** — file, don't fix |
+| Filing or tracking a task (your repo may be on the virta board) | [`practices/cross-project.md`](practices/cross-project.md) "If your repo is on the task board" — if `virta brief` prints something here, tasks live on the board |
 | Setting up or working in a project day-to-day | [`practices/development.md`](practices/development.md) |
 | Writing or debugging tests | [`practices/testing.md`](practices/testing.md) |
 | Linting, formatting, type-safety, naming | [`practices/code-quality.md`](practices/code-quality.md) |
