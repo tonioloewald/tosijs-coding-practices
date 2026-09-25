@@ -430,9 +430,20 @@ const buildScript = scripts.build
       if (untaggedChannels.length)
         add('prerelease tags', 'WARN', `published but never tagged: ${untaggedChannels.join(', ')} — tag the commit it was published FROM, not HEAD`)
       const tagForNpm = tagList.includes(`v${npmVersion}`)
+      /*
+      A publish workflow runs this at the tag it is about to publish, which is by definition ahead
+      of npm — so the check could never pass there. RELEASE_DOCTOR_PUBLISHING=v<version> exempts
+      exactly that tag, and only when it is THIS tree's own version, so it cannot excuse some
+      other unpublished tag (seen in tosijs-ui's first staged-publish run, #178).
+      */
+      const publishing = process.env.RELEASE_DOCTOR_PUBLISHING
+      const landing = publishing === `v${pkg.version}` ? publishing : undefined
+      if (publishing && !landing)
+        add('tag/publish reconciliation', 'FAIL',
+          `RELEASE_DOCTOR_PUBLISHING=${publishing} does not match this tree's version v${pkg.version}`)
       const unpublishedTags = tagList.filter((t) => {
         const v = t.slice(1)
-        return v.localeCompare(npmVersion, undefined, { numeric: true }) > 0 && !v.includes('-')
+        return t !== landing && v.localeCompare(npmVersion, undefined, { numeric: true }) > 0 && !v.includes('-')
       })
       if (unpublishedTags.length > 0)
         add('tag/publish reconciliation', 'FAIL',
