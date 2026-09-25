@@ -120,6 +120,21 @@ const cannotRun = (out: string): string | undefined => {
   else add('clean tree', 'PASS')
 }
 
+/**
+ * The failure detail for a test lane: the NAMES of the failing tests, then the summary tail.
+ *
+ * It used to be the last 8 lines only — the pass/fail counts — and bun prints `(fail) <name>`
+ * lines far above that. So a lane could report FAIL with no way to tell WHICH test: tjs-lang's
+ * 0.14.0 Tier 0 showed `test:dogfood — 1 fail` and the name was simply gone; the failure never
+ * reproduced, and without the name it could not even be looked up. Keep up to 10 names.
+ */
+function laneFailureDetail(out: string): string {
+  const lines = out.split('\n')
+  const failed = lines.filter((l) => /^\(fail\)/.test(l.trim())).slice(0, 10)
+  const tail = lines.slice(-8).join('\n')
+  return failed.length ? `${failed.join('\n')}\n${tail}` : tail
+}
+
 // 2. Tests — name every lane you can find, run each (releasing.md step 3: the build does NOT run them)
 {
   const lanes = Object.keys(scripts).filter((s) => s === 'test' || s.startsWith('test:'))
@@ -128,7 +143,7 @@ const cannotRun = (out: string): string | undefined => {
       readdirSync(join(process.cwd(), 'src')).some((f) => f.includes('.test.'))
     if (hasTests) {
       const r = await run(['bun', 'test'])
-      add('tests (bun test)', r.ok ? 'PASS' : 'FAIL', r.ok ? '' : r.out.split('\n').slice(-8).join('\n'))
+      add('tests (bun test)', r.ok ? 'PASS' : 'FAIL', r.ok ? '' : laneFailureDetail(r.out))
     } else add('tests', 'SKIP', 'no test script and no *.test.* under src/ — if this project verifies by demo, that is the intended workflow (testing.md)')
   } else {
     /*
@@ -155,10 +170,10 @@ const cannotRun = (out: string): string | undefined => {
         continue
       }
       if (!r.ok && isAdvisory) {
-        add(`tests (${lane})`, 'WARN', `ADVISORY lane failed (${reason}):\n${r.out.split('\n').slice(-8).join('\n')}`)
+        add(`tests (${lane})`, 'WARN', `ADVISORY lane failed (${reason}):\n${laneFailureDetail(r.out)}`)
         continue
       }
-      add(`tests (${lane})`, r.ok ? 'PASS' : 'FAIL', r.ok ? (isAdvisory ? 'advisory' : '') : r.out.split('\n').slice(-8).join('\n'))
+      add(`tests (${lane})`, r.ok ? 'PASS' : 'FAIL', r.ok ? (isAdvisory ? 'advisory' : '') : laneFailureDetail(r.out))
     }
   }
 }
@@ -840,6 +855,28 @@ and a muted gate is worse than no gate.
           const base = f.split('/').pop() ?? ''
           return base.startsWith('.') && !DELIBERATE_DOTFILES.has(base)
         })
+        /*
+        The GENERAL rule, of which stray dotfiles are one case: the tarball must be the
+        committed tree plus declared build output. npm packs the WORKING tree, so any gitignored
+        file that happens to sit on the publishing machine ships from that machine only.
+        tjs-lang's 0.14.0-rc.0 carried six — one dotfile (which the check below caught) and five
+        it could not see: stale examples/modules/dist/* and a stray src/lang/keywords.d.ts.
+        Build-output dirs come from package.json `releaseDoctor.buildOutputs` (default ["dist"]).
+        Reference implementation: tjs-lang scripts/prepublish-check.ts.
+        */
+        const outputs: string[] = pkg.releaseDoctor?.buildOutputs ?? ['dist']
+        const { out: lsOut, ok: lsOk } = await run(['git', 'ls-files'])
+        if (!lsOk) add('tarball = committed tree + build output', 'SKIP', 'git ls-files failed — could not check; do not read this as clean')
+        else {
+          const tracked = new Set(lsOut.split('\n'))
+          const untracked = entries.filter(
+            (f) => !tracked.has(f) && f !== 'package.json' && !outputs.some((d) => f === d || f.startsWith(`${d.replace(/\/$/, '')}/`))
+          )
+          if (untracked.length)
+            add('tarball = committed tree + build output', 'FAIL',
+              `npm would ship ${untracked.length} file(s) no commit contains — they exist only on this machine:\n${untracked.join('\n')}\nDelete them, or exclude them in package.json "files". Build-output dirs: ${outputs.join(', ')} (releaseDoctor.buildOutputs).`)
+          else add('tarball = committed tree + build output', 'PASS')
+        }
         if (dotfiles.length)
           add(
             'no stray dotfiles in the tarball',
