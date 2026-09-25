@@ -25,6 +25,16 @@
   commit, and don't fix-and-reformat files you aren't otherwise touching.
 - Respect `.prettierignore`. Some files are hand-laid-out on purpose (e.g. tosijs
   `xin-types.ts`) — reformatting them is a regression. — seen in: tosijs
+- **Prettier never formats markdown: `*.md` goes in `.prettierignore`.** Markdown is
+  authored prose and, across the stack, the product (doc sites, `llms.txt`, ePub). With
+  `proseWrap: preserve`, all prettier does to a `.md` file is escape literal characters
+  (`a * b` → `a \* b`), pad table cells, and rewrite bullets and emphasis (`*n*` → `_n_`).
+  Those are edits to content, not layout. It also fights the doc system's toc writer
+  (tosijs-ui#165). Agreed at the tosijs-ui level, but it did not propagate: tosijs-3d's
+  `bun format` rewrote every `.md` until 2026-09-25, and tosijs-3d-ensemble and tjs-lang
+  still format markdown. Also never pass `.md` files to `prettier --write` by hand (an
+  agent doing so is how the tosijs-3d gap was noticed). Proposed as a shipped default
+  so nobody has to rediscover it: tosijs-ui#187. — seen in: tosijs, tosijs-ui, tosijs-3d
 - **In markdown prose, never let a wrapped line begin with `+`, `-`, `*`, or `1.`.** Per
   CommonMark that starts a list, so the marker is swallowed and vanishes from the rendered
   output: `JSON-Schema\n  + $predicate` renders as a nested bullet reading "`$predicate`
