@@ -28,6 +28,12 @@ own docs are the reference.
   When an observer keeps sprouting edge cases, the fix isn't a better shared helper one level
   up in your code; it's to stop writing the observer. — seen in: owner-observed agent
   sessions, repeatedly
+- **`observe` requires a reason** ([tosijs#44](https://github.com/tonioloewald/tosijs/issues/44),
+  decided; landing — check your tosijs version before relying on it): a third argument,
+  one of an enumerated set of legitimate reasons (derived from a survey of nine repos) or
+  `{ specificReason }`. Omitting it warns loudly (with a stack trace to the call site) and
+  will throw in a future major. If you can't name the reason, you probably want `bind`.
+  The library enforcing this is what makes it stick; this entry is only the pointer.
 - **`bind(element, bindings)`** — connect DOM to state (`toDOM` state→UI, `fromDOM` UI→state).
 - **`touch(path)`** — force notification (batched via setTimeout).
 
