@@ -116,6 +116,14 @@ This is standing rollout 2 in [`rollouts.md`](rollouts.md): agents adopt it with
 2. Commit `bun.lock`; use `--frozen-lockfile` in CI.
 3. If build output is committed: add `.bun-version`, rebuild with that Bun, commit.
 4. Copy `templates/publish.yml` to `.github/workflows/publish.yml`.
+   - **If the package is not your main build**, declare it: `"releaseDoctor": { "build":
+     "build:lib" }`. The template and release-doctor both use it ahead of
+     `build`/`make`/`build:all`. tosijs-platform's `build` is a site bundle that needs a
+     gitignored config, so its dry run failed until it could say so.
+   - **If a second package tree needs installing** (an npm-managed `functions/`), name the
+     script: `"releaseDoctor": { "install": "install:ci" }`, run after `bun install
+     --frozen-lockfile`.
+   - Add `/.practices/` to `.gitignore`: the workflow checks the practices repo out there.
 5. Owner adds the Trusted Publisher entry (table above).
 6. Nothing non-reproducible may SHIP: no `tsconfig.tsbuildinfo` in `dist/` (tosijs-ui's
    `emitLibrary` shipped one; incremental builds into a wiped `dist/` also emit NOTHING the

@@ -220,17 +220,25 @@ function laneFailureDetail(out: string): string {
  * than a missing check — it reads as coverage, and this tool's own summary line ("skips are
  * NOT passes") is aimed at a reader who will believe it anyway.
  */
-const buildScript = scripts.build
-  ? 'build'
-  : scripts.make
-    ? 'make'
-    : scripts['build:all']
-      ? 'build:all'
-      : null
+// A repo whose PACKAGE is not its main build declares it (`releaseDoctor.build`):
+// tosijs-platform's `build` is a site bundle needing a gitignored config, and its package is
+// `build:lib`. Declared wins; a declaration naming no script is a FAIL below, never a guess.
+const declaredBuild: string | undefined = pkg.releaseDoctor?.build
+const buildScript = declaredBuild
+  ? declaredBuild
+  : scripts.build
+    ? 'build'
+    : scripts.make
+      ? 'make'
+      : scripts['build:all']
+        ? 'build:all'
+        : null
 
 // 4. Build (build or make — never assume it ran tests)
 {
-  if (buildScript) {
+  if (declaredBuild && !scripts[declaredBuild]) {
+    add(`build (${declaredBuild})`, 'FAIL', `releaseDoctor.build names "${declaredBuild}", which is not a script`)
+  } else if (buildScript) {
     const r = await run(['bun', 'run', buildScript])
     add(`build (${buildScript})`, r.ok ? 'PASS' : 'FAIL', r.ok ? '' : r.out.split('\n').slice(-6).join('\n'))
   } else add('build', 'SKIP', 'no build/make script')
