@@ -613,7 +613,16 @@ and a muted gate is worse than no gate.
           const abs = join(process.cwd(), f)
           if (!existsSync(abs)) { unreadable.push(f); continue }
           const dir = f.includes('/') ? f.slice(0, f.lastIndexOf('/')) : ''
-          for (const m of readFileSync(abs, 'utf8').matchAll(/from\s+['"](\.[^'"]+)['"]/g)) {
+          /*
+          Comments stripped first: a doc comment QUOTING an import (`export * from './model'`)
+          is not a re-export, and it survives into the emitted .d.ts — it failed tosijs-ui
+          1.15.4's dry run with a phantom dist/.../model.d.ts. Not Bun's parser here: it drops
+          type-only imports, and in a .d.ts those are exactly the re-exports to follow.
+          */
+          const declSource = readFileSync(abs, 'utf8')
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/^[ \t]*\/\/.*$/gm, '')
+          for (const m of declSource.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) {
             const rel = m[1].replace(/^\.\//, '')
             const base = (dir ? dir + '/' : '') + rel
             /*
