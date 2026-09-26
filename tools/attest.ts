@@ -4,6 +4,8 @@
  *
  *   bun <practices>/tools/attest.ts            # run the attested lanes, write release-attestation.json
  *   bun <practices>/tools/attest.ts --verify   # check HEAD carries a valid attestation (exit 0/1)
+ *   bun <practices>/tools/attest.ts --verify-shipped   # after a build: the files it would ship
+ *                                                      # are byte-identical to the attested ones
  *
  * Some suites cannot run in CI — tjs-lang's need live LLMs. The publish workflow still has to
  * know they passed. The repo declares them:
@@ -42,11 +44,51 @@ export interface Attestation {
   commit: string
   bun: string
   lanes: Record<string, LaneResult>
+  /**
+   * sha256 of every file `npm pack` would ship, taken after the lanes on the clean tree —
+   * the BUILD that was tested and signed off, not just the source it came from. CI rebuilds
+   * and must reproduce it exactly (`--verify-shipped`), so what npm ships is byte-for-byte
+   * what the local suite vouched for, and the suite never has to run in GitHub. Per FILE,
+   * not the tarball's integrity: tar metadata (file modes) differs between macOS and Linux
+   * while the contents do not.
+   */
+  shipped?: Record<string, string>
 }
 
 async function git(args: string[], cwd: string): Promise<string> {
   const r = await $`git ${args}`.cwd(cwd).nothrow().quiet()
   return r.exitCode === 0 ? r.stdout.toString().trim() : ''
+}
+
+/** sha256 of every file `npm pack` would ship from `cwd`, keyed by its path in the package. */
+export async function shippedManifest(cwd: string): Promise<Record<string, string>> {
+  const r = await $`npm pack --dry-run --json --ignore-scripts`.cwd(cwd).nothrow().quiet()
+  if (r.exitCode !== 0) throw new Error(`npm pack --dry-run failed: ${r.stderr.toString().trim()}`)
+  const files: Array<{ path: string }> = JSON.parse(r.stdout.toString())[0].files
+  const out: Record<string, string> = {}
+  for (const { path } of files.sort((a, b) => (a.path < b.path ? -1 : 1))) {
+    const h = new Bun.CryptoHasher('sha256')
+    h.update(readFileSync(join(cwd, path)))
+    out[path] = h.digest('hex')
+  }
+  return out
+}
+
+/** Does the build in `cwd` ship exactly the files the attestation recorded? Reason, or null. */
+export async function verifyShipped(cwd: string): Promise<string | null> {
+  const file = join(cwd, ATTESTATION_FILE)
+  if (!existsSync(file)) return `no ${ATTESTATION_FILE}`
+  const att: Attestation = JSON.parse(readFileSync(file, 'utf8'))
+  if (!att.shipped) return `${ATTESTATION_FILE} records no shipped-file manifest — re-attest with a current attest.ts`
+  const now = await shippedManifest(cwd)
+  const diffs: string[] = []
+  for (const [p, h] of Object.entries(att.shipped)) {
+    if (!(p in now)) diffs.push(`missing: ${p}`)
+    else if (now[p] !== h) diffs.push(`differs: ${p}`)
+  }
+  for (const p of Object.keys(now)) if (!(p in att.shipped)) diffs.push(`extra:   ${p}`)
+  if (!diffs.length) return null
+  return `this build does not reproduce the attested one (${diffs.length} file(s)):\n  ${diffs.slice(0, 40).join('\n  ')}${diffs.length > 40 ? '\n  …' : ''}`
 }
 
 export function attestedLanes(cwd: string): string[] {
@@ -137,15 +179,23 @@ async function attest(cwd: string) {
     commit: await git(['rev-parse', 'HEAD'], cwd),
     bun: Bun.version,
     lanes: results,
+    shipped: await shippedManifest(cwd),
   }
   writeFileSync(join(cwd, ATTESTATION_FILE), JSON.stringify(att, null, 2) + '\n')
-  console.log(`✅ attested ${lanes.join(', ')} for ${pkg.version} on tree ${att.tree.slice(0, 12)}`)
+  console.log(`✅ attested ${lanes.join(', ')} for ${pkg.version} on tree ${att.tree.slice(0, 12)}, and the ${Object.keys(att.shipped!).length} files it ships`)
   console.log(`   Now: git add ${ATTESTATION_FILE} && git commit -m "attest: v${pkg.version}" — ALONE — then tag that commit.`)
 }
 
 if (import.meta.main) {
   const cwd = process.cwd()
-  if (process.argv.includes('--verify')) {
+  if (process.argv.includes('--verify-shipped')) {
+    const error = await verifyShipped(cwd)
+    if (error) {
+      console.error(`❌ ${error}`)
+      process.exit(1)
+    }
+    console.log('✅ this build ships exactly the files the attestation vouches for')
+  } else if (process.argv.includes('--verify')) {
     const { error } = await verifyAttestation(cwd, attestedLanes(cwd))
     if (error) {
       console.error(`❌ attestation: ${error}`)

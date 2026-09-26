@@ -86,11 +86,17 @@ authentication and disallow tokens"**.
 - [`templates/publish.yml`](../templates/publish.yml): copy it as `.github/workflows/publish.yml`.
 - [`tools/publish-smoke.ts`](../tools/publish-smoke.ts): a generic consumer smoke test for repos
   without their own. A repo's own `test-consumer` script takes precedence.
-- [`tools/attest.ts`](../tools/attest.ts): **local test attestation** for suites CI cannot run
-  (tjs-lang's LLM-backed tests). After the release commit, run it on a clean tree: it runs the
-  repo's declared lanes and writes `release-attestation.json` with the tree hash and results.
-  Commit **only** that file and tag it. CI checks that the tagged commit changes only that file
-  and that its parent's tree equals the attested tree, then skips re-running those lanes.
+- [`tools/attest.ts`](../tools/attest.ts): **local test attestation** for suites that should
+  not run in CI (tjs-lang's are LLM-backed and heavy). After the release commit and the build,
+  run it on a clean tree. It runs the repo's declared lanes, then writes
+  `release-attestation.json` recording three things: the tree hash, the lane results, and
+  the **sha256 of every file the package ships**. Commit **only** that file and tag it. CI
+  checks that the tagged commit changes only that file and that its parent's tree equals the
+  attested tree, then skips those lanes. It rebuilds and must **reproduce the attested
+  build file for file** (`--verify-shipped`), so what npm ships is byte-for-byte what the
+  local suite vouched for. Hashes are per file, not per tarball, because tar metadata (file
+  modes) differs between macOS and Linux while the contents do not. This depends on a
+  deterministic build; tjs-lang's was measured byte-identical across rebuilds.
   **Honest limit:** it is a record, not a proof. Anyone who can push could write a false one,
   but they could already change the code; the 2FA approval stays the gate.
 
