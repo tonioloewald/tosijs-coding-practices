@@ -64,6 +64,11 @@ entries ever retired — and found that the owner's own assertions entered as la
 
 **Short form: automatic beats recommended.** (Latest case: tosijs's `observe` now demands a
 reason at runtime, which catches misuse where a practices rule and a review lens only asked.)
+**But automatic must never mean surprising** (owner, 2026-09-26, after manta and the owner
+hit it independently with virta). A tool should be where you *find* the process — visible,
+checkable, one place to look — not something that acts for you unannounced. Automatic
+checks and reports: always welcome. Automatic actions: only ones the person asked for,
+can see coming, and can undo.
 
 We do things to accomplish goals, and the corpus records the doing — but **intention ≠
 result**, and an entry's existence is an intention. The evidence hierarchy, strongest first:
