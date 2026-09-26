@@ -18,10 +18,14 @@ adopted it yet keep the manual path in [releasing.md](./releasing.md).
 
 ## The flow
 
+0. Agent, **before tagging**: run the workflow with `dry_run` on the branch
+   (`gh workflow run publish.yml -f tag=main -f dry_run=true`). Every check up to staging, no
+   tag, so a failure never means moving a tag. (The pilot moved its tag five times.)
 1. Agent: release commit, tag, push the tag (as before).
 2. Agent or maintainer: **Actions → Publish → Run workflow** with the tag, or
    `gh workflow run publish.yml -f tag=vX.Y.Z`.
-3. The run checks: tag == `package.json` version, packs the **committed** build, smoke-tests
+3. The run checks: tag == `package.json` version, builds and requires every tracked file **that
+   ships** to be unchanged (so a committed build must reproduce), packs, smoke-tests
    that tarball, runs `release-doctor` (including its rebuild-reproduces check), then stages.
    **Nothing touches the registry before every check passes**: a staged version burns its
    number exactly as a publish does.
@@ -97,7 +101,13 @@ authentication and disallow tokens"**.
 3. If build output is committed: add `.bun-version`, rebuild with that Bun, commit.
 4. Copy `templates/publish.yml` to `.github/workflows/publish.yml`.
 5. Owner adds the Trusted Publisher entry (table above).
-6. Dry run on the next release: tag, run the workflow, and read it through to staging.
+6. Nothing non-reproducible may SHIP: no `tsconfig.tsbuildinfo` in `dist/` (tosijs-ui's
+   `emitLibrary` shipped one; incremental builds into a wiped `dist/` also emit NOTHING the
+   second time — measured, 883 files gone), no absolute paths in sourcemaps.
+7. If some test lanes cannot run in CI: declare them in `releaseDoctor.attestedLanes` and use
+   `tools/attest.ts` at release time.
+8. Before the first real release: `dry_run` on the branch, and read it through to the stop
+   before staging.
 
 ## History
 
