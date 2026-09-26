@@ -1,206 +1,107 @@
-# Plan: publish via GitHub OIDC (npm Trusted Publishing)
+# Publishing via GitHub OIDC + npm staged publishing
 
-> **Status update 2026-09-21: owner-greenlit; build spec filed as
-> [tosijs-ui#178](https://github.com/tonioloewald/tosijs-ui/issues/178).** Two requirements
-> sharpened by lived friction since the draft: (1) the workflow **self-verifies before
-> reporting success** — polls the registry until the published tarball is actually served,
-> byte-compares it against the build, scratch-consumer smoke incl. `tsc --declaration` —
-> because registry visibility lags publishes and "is it published?" must be a machine
-> claim, not a race; (2) **prerelease dist-tags are automatic** (`-beta`/`-rc` → matching
-> tag, with an assertion that `latest` did not move). Cost: free — Actions is unlimited on
-> public repos; `workflow_dispatch` is the human GO, no paid environment protection needed.
+**Adopted practice.** Piloted on tosijs-ui 1.15.3 (2026-09-26,
+[tosijs-ui#178](https://github.com/tonioloewald/tosijs-ui/issues/178)). Repos that have not
+adopted it yet keep the manual path in [releasing.md](./releasing.md).
 
-**Status: PLAN, not yet implemented.** Written 2026-07-30. Pilot target: `tosijs-ui`.
-Interim workaround in use: `bun publish --otp=<code>`.
+## The model
 
----
+- **The workflow can only _stage_.** OIDC trusted publishing gives `publish.yml` a short-lived
+  credential, and the Trusted Publisher entry has direct `npm publish` **unchecked**, so the only
+  thing CI can do is `npm stage publish`. No stored token exists anywhere.
+- **The maintainer's 2FA approval is the human GO.** npmjs.com → the package → **Staged
+  Packages** → Approve. It works from a phone, hours later. This replaces the old argument for a
+  manual trigger as the gate; `workflow_dispatch` is still the trigger, but the approval is what
+  publishes.
+- **A green run is the canonical "published and verified" statement.** Agents read the run;
+  they do not re-derive publication by polling npm.
 
-## Why
+## The flow
 
-npm is restricting tokens that bypass 2FA for direct publishing
-(<https://gh.io/npm-gat-bypass2fa-deprecation>). A token created specifically to avoid
-the 2FA prompt now can't even read its own account profile (`npm profile get` → 403),
-and publishing needs an OTP again.
+1. Agent: release commit, tag, push the tag (as before).
+2. Agent or maintainer: **Actions → Publish → Run workflow** with the tag, or
+   `gh workflow run publish.yml -f tag=vX.Y.Z`.
+3. The run checks: tag == `package.json` version, packs the **committed** build, smoke-tests
+   that tarball, runs `release-doctor` (including its rebuild-reproduces check), then stages.
+   **Nothing touches the registry before every check passes**: a staged version burns its
+   number exactly as a publish does.
+4. Maintainer approves with 2FA.
+5. The run verifies: published `integrity` equals the staged tarball's, dist-tags are right, a
+   prerelease is never `latest`, and the consumer smoke test runs on the **registry's** copy.
 
-Trusted Publishing replaces the long-lived credential with a short-lived OIDC token
-minted per workflow run. Two wins, in order of importance:
+**Approved after the run's 60-minute wait?** Run it again with `verify_only` ticked. A re-run of
+the failed job starts over and stops at "already published". Verify-only re-packs the tag, which
+works because `npm pack` is deterministic: re-packing v1.15.3 reproduced the published shasum
+`eb3c854c…` exactly.
 
-1. **No publish credential lives on a laptop.** The single most valuable thing an
-   attacker can steal from a package maintainer is the ability to publish — a fresh
-   release is exactly how a hijacked package ships. Removing the credential removes
-   that class of compromise, and no amount of dependency auditing downstream helps if
-   the maintainer's own token leaks.
-2. **No OTP dance**, which is what prompted this.
+## Owner setup, once per package
 
-It also gets **provenance attestations** for free, so consumers can verify a tarball
-was built from the commit it claims.
+npmjs.com → package → **Settings → Trusted Publisher → GitHub Actions**:
 
-**The trade-off, stated honestly:** setup is per package *and* per repo. There is no
-account-level switch. For a maintainer with six-plus published packages that's six web
-forms and six workflow files, so this is worth piloting on the high-traffic packages
-first rather than migrating everything at once. `--otp` remains a perfectly reasonable
-permanent answer for the long tail.
-
-## What has to be true
-
-| Where | What |
+| Field | Value |
 | --- | --- |
-| npmjs.com, **per package** | Trusted Publisher entry: GitHub owner, repo, **exact workflow filename**, optional environment |
-| The repo | A workflow at exactly that path, with `permissions: id-token: write` |
-| The workflow | A recent npm CLI (OIDC support); `npm publish`, not `bun publish` (see gotcha 6) |
+| Organization or user | `tonioloewald` |
+| Repository | the repo name |
+| Workflow filename | `publish.yml` (filename only) |
+| Environment | blank |
+| Allow `npm publish` | **unchecked** (npm itself labels it "not recommended"; staging is always allowed) |
 
-The binding to one exact workflow path *is* the security property — that's why it can't
-be shared across repos.
+After the first verified publish, optionally set **Publishing access → "Require two-factor
+authentication and disallow tokens"**.
 
-> Verify field names against npm's current docs when implementing. This area moved
-> recently (that deprecation notice is days old), so treat the shape below as the
-> intent rather than a transcription.
+## Requirements, each learned the hard way
 
-## Design constraint from lived evidence: keep the human GO
+- **npm ≥ 11.15.0** for `npm stage` and **Node ≥ 22.14**. The runner's bundled npm is older;
+  the workflow upgrades it.
+- **`permissions: id-token: write`**, or no OIDC token is minted.
+- **Private repos work, without provenance.** Trusted publishing works from a private repo
+  publishing a public package, but npm generates provenance only for public repos. Key checks on
+  `package.json` (`private`, `files`), never on repo visibility (see [releasing.md](./releasing.md)).
+- **`package.json` `repository.url` must name the actual repo.** Provenance rejected tosijs-ui
+  with E422 because it still named the pre-rename `xinjs-ui`; GitHub's redirect hid that
+  everywhere else.
+- **Commit `bun.lock`; install with `--frozen-lockfile`.** Without it, a fresh clone of
+  tosijs-ui bundled newer CodeMirror and `marked` 18: not the build that was tested.
+- **Pin Bun in `.bun-version` in any repo that commits build output.** Bun 1.4.0 and 1.4.2
+  built different `dist/iife.js` from one lockfile. Make the local build refuse a mismatch, so
+  it fails at your desk rather than at publish time.
+- **Sourcemaps must not encode absolute paths.** tosijs-ui's doc-site maps named
+  `/Users/<name>/…` because the bundle was built in the OS temp dir; that leaks the builder's
+  layout and makes output differ between machines.
+- **The dist-tag is fixed at staging and immutable**, so it is derived from the version:
+  `-beta.N` → `beta`, `-rc.N` → `rc`, `-alpha.N` → `alpha`, otherwise `latest`. Any other
+  prerelease id refuses rather than guessing.
+- **One `publish.yml` per repo; shared logic in scripts.** npm validates the *calling*
+  workflow's filename and recommends against reusable workflows (`workflow_call`).
+- **`RELEASE_DOCTOR_PUBLISHING=<tag>`** exempts the tag being published from `release-doctor`'s
+  tag/publish reconciliation, which could otherwise never pass while publishing. It exempts
+  only the tree's own version.
 
-**Fully-automated publishing has been tried in this ecosystem and made things worse.**
-During a brief window (~48h) when npm still allowed stored keys, releases were fully
-automated — and that window produced **more problematic releases than the entire manual
-history**, including actively broken builds shipped. The manual gate's failure mode is
-*unavailability* (a tagged release nobody can install — bookkeeping at our consumer
-scale); automation's failure mode is *integrity* (broken builds published to the world).
-Those are not symmetric. The human GO is the mechanism that converts the second kind of
-failure into the first.
+## The template and shared scripts
 
-Consequences for this plan:
+- [`templates/publish.yml`](../templates/publish.yml): copy it as `.github/workflows/publish.yml`.
+- [`tools/publish-smoke.ts`](../tools/publish-smoke.ts): a generic consumer smoke test for repos
+  without their own. A repo's own `test-consumer` script takes precedence.
+- [`tools/attest.ts`](../tools/attest.ts): **local test attestation** for suites CI cannot run
+  (tjs-lang's LLM-backed tests). After the release commit, run it on a clean tree: it runs the
+  repo's declared lanes and writes `release-attestation.json` with the tree hash and results.
+  Commit **only** that file and tag it. CI checks that the tagged commit changes only that file
+  and that its parent's tree equals the attested tree, then skips re-running those lanes.
+  **Honest limit:** it is a record, not a proof. Anyone who can push could write a false one,
+  but they could already change the code; the 2FA approval stays the gate.
 
-- **Do not use a bare tag-trigger** (`on: push: tags`) as drafted below — that recreates
-  the stored-key window. Use `workflow_dispatch` (human presses the button), or gate the
-  tag-triggered job behind a protected environment requiring manual approval. What OIDC
-  should remove is the *credential on the laptop* and the *OTP dance* — never the human
-  decision.
-- **The observed publish-integrity failures were reconciliation failures, not trigger
-  failures** — a publish from an unpushed tree, tags without publishes — and no trigger
-  design fixes those. The missing mechanism is divergence detection: confirm-the-publish
-  after (releasing.md), the weekly sweep's registry-vs-tag check (7-day latency), and
-  ideally a zero-latency check at tag time ("a tag exists whose version isn't on the
-  registry → say so before any new version work" — land-the-plane, enforced by a check
-  instead of prose).
+## Adopting it in a repo
 
-— seen in: the ecosystem's stored-key automation window (owner account, 2026); the
-tagged-never-published incidents in the weekly sweeps
+1. Fix `repository.url` to the real repo.
+2. Commit `bun.lock`; use `--frozen-lockfile` in CI.
+3. If build output is committed: add `.bun-version`, rebuild with that Bun, commit.
+4. Copy `templates/publish.yml` to `.github/workflows/publish.yml`.
+5. Owner adds the Trusted Publisher entry (table above).
+6. Dry run on the next release: tag, run the workflow, and read it through to staging.
 
-## The workflow (draft)
+## History
 
-```yaml
-name: Publish
-
-# Tag-triggered: the existing release ritual already ends in `git push --tags`.
-on:
-  push:
-    tags: ['v*']
-
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write        # REQUIRED — mints the OIDC token
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v1
-        with: { bun-version: latest }
-
-      # npm CLI does the OIDC publish; bun does everything else.
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org
-
-      - run: bun install
-
-      # ── Gate 1: the tag must match package.json ──────────────────────────────
-      # Cheap, and catches the classic "tagged v1.8.0, forgot the bump" mistake
-      # before anything is published.
-      - name: Tag matches package.json version
-        run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          PKG=$(node -p "require('./package.json').version")
-          [ "$TAG" = "$PKG" ] || {
-            echo "::error::tag v$TAG != package.json $PKG"; exit 1; }
-
-      - run: bunx tsc --noEmit
-      - run: bun test
-
-      # The dev server refuses to start without a cert; CI uses a throwaway
-      # (tests already set ignoreHTTPSErrors). Mirrors ci.yml.
-      - name: Throwaway dev TLS cert
-        run: |
-          mkdir -p tls
-          openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
-            -keyout tls/key.pem -out tls/certificate.pem \
-            -subj "/CN=localhost" \
-            -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
-
-      - run: bunx playwright install --with-deps chromium
-      - run: bunx playwright test --project=chromium
-
-      # ── Gate 2: committed build output must match a fresh build ──────────────
-      # This repo COMMITS dist/ and docs/. Without this check a tag can publish
-      # artifacts that don't correspond to the source at that commit — the exact
-      # thing provenance is supposed to promise. See gotcha 1.
-      - name: Committed build output is current
-        run: |
-          bun run build
-          if ! git diff --quiet -- dist; then
-            echo "::error::dist/ differs from a fresh build — rebuild and re-tag"
-            git diff --stat -- dist
-            exit 1
-          fi
-
-      - run: npm publish --provenance --access public
-```
-
-## Gotchas (the reason this is a plan and not a paste)
-
-1. **Generated files are committed.** `dist/`, `docs/`, `demo/docs.json`, `llms.txt`,
-   `src/version.ts` are build outputs *and* tracked. A tag-triggered publish must
-   verify the committed `dist/` matches a fresh build, or you can ship artifacts that
-   don't match the tagged source. Gate 2 above. **Expect this to be noisy first:**
-   `docs/*.epub` is not byte-reproducible between builds (it has been showing up as a
-   spurious `M` all session), so scope the check to `dist` — or make the ePub
-   deterministic, which is the better fix.
-2. **The dependency-audit gate now runs in CI** and is not downgraded there. That is
-   deliberate — but it means a *new advisory published against an unchanged lockfile*
-   can fail a release for a tag that was green yesterday. That's the gate working. The
-   escape hatch is a time-boxed `audit.allow` entry, not `TOSIJS_AUDIT=off` in the
-   workflow. Never put the off-switch in CI; that's how the gate dies quietly.
-3. **The haltija lane can't run in CI** (it drives a real Electron). Chromium
-   Playwright covers the doc-test tier via `tests/doc-tests.pw.ts`. Run
-   `bun run test-browser` locally before tagging; the workflow can't.
-4. **`--provenance` requires the repo to be public** and the workflow to be the
-   registered one. It fails closed if either is untrue, which is correct.
-5. **Environments add a manual approval gate** if you want a human "yes" between tag
-   and publish. Worth it for a package with real downstream users; skip it while
-   piloting.
-6. **Use `npm publish`, not `bun publish`, in the workflow.** OIDC support lives in the
-   npm CLI. Bun is still the right tool for install/test/build in the same job.
-7. **A failed publish leaves a pushed tag behind.** Decide whether to delete-and-retag
-   or bump a patch. Deleting a pushed tag is fine *only* while nothing consumed it —
-   the same reasoning that made moving an unpublished `v1.8.0` acceptable.
-
-## Rollout
-
-1. **Pilot on `tosijs-ui`** — most-published, and the one whose release ritual is best
-   documented (`CLAUDE.md` → Publishing).
-2. Run one release end-to-end. Confirm the tarball matches what a local
-   `npm pack` produces, and that provenance shows up on npmjs.com.
-3. If it feels good, **promote this file's workflow to the canonical template** and
-   copy it into each repo as you touch that repo — not as a big-bang migration. One
-   known-good file beats six drifting near-copies.
-4. Keep `--otp` documented as the fallback. It is not a failure to use it.
-
-## Interim
-
-```bash
-bun publish --otp=123456
-```
-
-`bun publish` does accept `--otp` (and `--auth-type`), so this needs no second browser
-tab. Fine to stay here indefinitely for low-traffic packages.
+- **2026-09-26, tosijs-ui 1.15.3 (pilot).** The first run found four defects before anything
+  reached npm: Bun version drift, the reconciliation check, the sourcemap path leak, and the
+  stale `repository.url`. None of the four local lanes could have found any of them. Approval
+  came from a phone about four hours after staging, which is how `verify_only` came to exist.

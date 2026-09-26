@@ -1,13 +1,20 @@
 # Releasing
 
-Every library in this ecosystem releases **locally** — there is no CI publish workflow in
-any repo. That means the local build + your discipline _are_ the release gate, and built
-artifacts are committed to git so they must be regenerated, never hand-edited.
+Libraries in this ecosystem build and test **locally**, and built artifacts are committed to git,
+so they must be regenerated, never hand-edited. **Publishing** now goes through a CI workflow in
+repos that have adopted [publishing-via-oidc.md](./publishing-via-oidc.md) (tosijs-ui first,
+2026-09-26); the rest still publish by hand as described below.
 — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, tjs-lang, tosijs-schema, haltija, tosijs-editor
 
 For where the built site goes (GitHub Pages / Firebase / Cloudflare), see
 [deployment](./deployment.md). This doc is about **packaging, versioning, tagging, and publishing**.
 
+> **Repos with `.github/workflows/publish.yml`:** the agent tags, pushes and triggers the
+> Publish workflow; the maintainer approves the staged version with 2FA (npmjs.com → Staged
+> Packages, works from a phone); the agent reads the run, or runs it again with `verify_only` if
+> approval came after the wait. The rest of this note applies to repos that have not adopted
+> it. See [publishing-via-oidc.md](./publishing-via-oidc.md).
+>
 > **The maintainer publishes, not the agent — npm requires an interactive
 > biometric 2FA confirmation** (observed on tosijs 1.10.0, 2026-09-04). There is
 > no flag for it and no code to pass through; it is a hardware prompt on the
@@ -29,10 +36,10 @@ For where the built site goes (GitHub Pages / Firebase / Cloudflare), see
 >
 > The underlying situation does move — npm has been tightening tokens that bypass 2FA — so if
 > publishing ever demands a one-time code again, **fix this note in the same commit** instead
-> of working around it locally. The planned replacement, publishing from a tag via GitHub
-> OIDC (which also removes the long-lived credential from the maintainer's laptop), is
-> drafted in [publishing-via-oidc.md](./publishing-via-oidc.md). **Not yet implemented**;
-> `tosijs-ui` is the intended pilot.
+> of working around it locally. The replacement, publishing from a tag via GitHub OIDC with
+> npm staged publishing (no long-lived credential anywhere), is **adopted**: see
+> [publishing-via-oidc.md](./publishing-via-oidc.md). Move a repo onto it rather than
+> repairing the manual path.
 
 ## Generate the release-total size delta — don't remember it
 
@@ -206,6 +213,12 @@ helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was th
 6. **Push commits** — `git push`. Not tags yet.
 7. **Publish** the npm package: `npm publish` (the `files` field controls the tarball — usually
    just `dist/`, `LICENSE`, `README.md`).
+
+   **In a repo with `publish.yml`, steps 7 and 8 swap:** tag and push the tag first, because the
+   workflow checks out the tag. That is safe here: a run that fails before staging burns nothing,
+   and a tag that was never published may be moved (it happened five times during the
+   tosijs-ui 1.15.3 pilot). Then trigger the workflow, have the maintainer approve, and treat
+   the green run as the success signal. See [publishing-via-oidc.md](./publishing-via-oidc.md).
 8. **Tag only once the publish has LANDED**, then push the tag:
    `git tag -a vX.Y.Z -m "…" && git push --tags` (see [Tagging](#tagging)).
 
@@ -921,6 +934,11 @@ otherwise follow the existing tag style in that repo, don't mix.
 For npm **pre-releases**, `npm publish --tag beta` is mandatory — without the dist-tag npm marks
 the beta as `latest` and a bare `npm install <pkg>` pulls it. Pair it with
 `gh release create --prerelease`. — seen in: haltija
+
+**In a repo with `publish.yml` this is automatic:** the workflow derives the dist-tag from the
+version (`beta`/`rc`/`alpha`, else `latest`), refuses any other prerelease id, and verifies after
+publishing that a prerelease is not `latest`. The `prepublishOnly` guard below is for repos that
+still publish by hand.
 
 **Enforce it, because this paragraph did not.** The rule above was here, correct and
 unambiguous, when tosijs published `1.8.0-rc.2` without the flag — `latest` moved to a release

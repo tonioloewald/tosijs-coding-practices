@@ -143,7 +143,7 @@ or **Cloudflare Pages / R2** as appropriate. Full detail: [`practices/00-stack.m
 | Writing docs, or fighting doc drift | [`practices/development.md`](practices/development.md) "Agent-facing docs travel with the code" — deeper, **experimental** proposals in [`practices/documentation-surface.md`](practices/documentation-surface.md) (evidenced parts being promoted per `reviews/2026-09-practices-audit.md` D7) |
 | Cutting a release / publishing | [`practices/releasing.md`](practices/releasing.md) |
 | Packing a tarball because you can't publish (`file:` deps, stopgap builds) | [`practices/releasing.md#bypassing-the-publish-loop-where-local-tarballs-live`](practices/releasing.md) — one agreed directory, never a session scratchpad |
-| Hitting npm's 2FA prompt on publish, or moving publishing to CI | [`practices/publishing-via-oidc.md`](practices/publishing-via-oidc.md) — **plan**, not yet implemented |
+| Publishing a release, or moving a repo's publishing to CI | [`practices/publishing-via-oidc.md`](practices/publishing-via-oidc.md): **adopted** (OIDC + staged publishing, maintainer approves with 2FA; piloted on tosijs-ui 1.15.3) |
 | Shipping to a host | [`practices/deployment.md`](practices/deployment.md) |
 | Managing state or schemas | [`practices/state-and-schema.md`](practices/state-and-schema.md) |
 | Building web components | [`practices/web-components.md`](practices/web-components.md) |
