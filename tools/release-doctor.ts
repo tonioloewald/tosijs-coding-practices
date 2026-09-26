@@ -760,7 +760,22 @@ and a muted gate is worse than no gate.
             if (spec.includes('${')) return
             if (spec.startsWith('.')) {
               const target = posix.normalize(posix.join(posix.dirname(file), spec))
-              if (!packedSet.has(target)) {
+              /*
+              A shipped `.ts` SOURCE is resolved by TypeScript's and Bun's rules, not Node's:
+              extensionless and directory specifiers are the TS convention, and that is how a
+              package's `bun` export condition (or a `#!/usr/bin/env bun` bin) loads it. The
+              Node rule stays for `.js`/`.mjs`/`.cjs` — the per-file-emit defect this check
+              exists for. Measured on tjs-lang 0.14.0-rc.1, which ships `src/` for its `bun`
+              condition: 84 findings, every one resolving under TS rules, zero reaching Node.
+              CAVEAT, not checked here: Node's own type stripping (22.6+) DOES require explicit
+              extensions, so a `.ts` file exported under a NON-bun condition is still at risk.
+              */
+              const tsResolves =
+                /\.(ts|mts|cts)$/.test(file) &&
+                ['.ts', '.tsx', '.mts', '.cts', '.d.ts', '.js', '/index.ts', '/index.js'].some(
+                  (ext) => packedSet.has(target + ext)
+                )
+              if (!packedSet.has(target) && !tsResolves) {
                 const list = unresolvable.get(target) ?? []
                 if (!list.includes(file)) list.push(file)
                 unresolvable.set(target, list)
