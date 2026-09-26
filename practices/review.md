@@ -291,7 +291,12 @@ while instance fixes are one edit per address, each with its own review round. T
 redaction series ended the same way, with one `ContentGuard` replacing per-site checks. If
 there's no shared guard to fix, that is itself the finding: create the funnel
 ([code-quality.md](code-quality.md) "Change the funnel, not the consumer"), or, if the class
-can't be funnelled, it's a design question (the third rung).
+can't be funnelled, it's a design question (the third rung). **Look for the guard at the
+earliest possible point, not one level up** (owner): the shared guard often already exists
+in the library underneath, and the patches are symptoms of going around it. Searching
+upward through your own code for a common fix builds a second funnel beside the real one.
+Live case: an agent hand-rolling `observe` hit edge case after edge case and kept looking
+one level up for a shared fix, when the fix was to use `bind`, which already handles them.
 It's the decision the incomplete-fix waves never made: tosijs 1.11.0 went twelve rounds
 patching instances. — seen in: tjs-lang (worked), tosijs 1.11.0 (the counterexample)
 

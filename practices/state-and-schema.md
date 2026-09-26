@@ -22,7 +22,12 @@ own docs are the reference.
 - **`tosi({ key: value })`** (alias `xinProxy`) — register state and get a typed boxed
   proxy back. The consistent idiom is `tosi({ app: initialState })`. This is the preferred
   entry point. — seen in: tosijs, lukko, tosijs-ui
-- **`observe(path, cb)`** — react to changes.
+- **`observe(path, cb)`** — react to changes. **If the reaction updates the DOM, use
+  `bind` instead.** Hand-written `observe` → DOM code re-solves, one edge case at a time,
+  what `bind` already handles (initial value, list changes, element teardown, boxed vs raw).
+  When an observer keeps sprouting edge cases, the fix isn't a better shared helper one level
+  up in your code; it's to stop writing the observer. — seen in: owner-observed agent
+  sessions, repeatedly
 - **`bind(element, bindings)`** — connect DOM to state (`toDOM` state→UI, `fromDOM` UI→state).
 - **`touch(path)`** — force notification (batched via setTimeout).
 
