@@ -698,6 +698,21 @@ and a muted gate is worse than no gate.
           ])
           const pkgOf = (spec: string) =>
             spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0]
+          /*
+          RUNTIME-PROVIDED modules, declared by the repo with a reason:
+            package.json → "releaseDoctor": { "runtimeModules": { "electron": "<why>" } }
+          `require('electron')` inside an Electron process resolves to the RUNTIME's built-in
+          module, never node_modules: the same standing as `node:fs`, but from a runtime this
+          scan cannot know about. No manifest entry declares it honestly. A dependency installs a
+          100 MB binary nobody's code loads, and an optional peer claims a resolution path that
+          never happens, so a repo shipping an Electron app's main/preload scripts could only go
+          green by lying in package.json. Same shape as advisoryLanes: a declaration without a
+          reason does not exempt, because an unexplained exemption is a silent hole.
+          — seen in: haltija
+          */
+          const runtimeModules: Record<string, unknown> = pkg.releaseDoctor?.runtimeModules ?? {}
+          for (const [name, why] of Object.entries(runtimeModules))
+            if (String(why ?? '').trim()) builtin.add(name)
           const undeclared = new Map<string, string[]>()
           const dynOnly = new Map<string, string[]>()
           /*
