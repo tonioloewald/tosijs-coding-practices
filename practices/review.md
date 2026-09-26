@@ -324,6 +324,22 @@ security or efficiency lens reviewing an entry path must check that question by 
 its test must assert that a refusal is **cheap** (time or fuel), not only that it happens.
 — seen in: tjs-lang 0.14.0 (`92115ea..2021d4c`)
 
+**A guard must read the same view as the work it bounds — so match, don't count.** In
+tjs-lang 0.14.0 the pre-budget class blocked seven times. Four of those blocks were the same
+mistake in different clothes: a guard that COUNTED something the work then saw differently.
+A parenthesis-depth pre-scan over a literal-masked view went blind inside a template `${…}`
+and treated a `/` after `}` as a regex where the transform divided. A depth check inside the
+recursion was blind to an unmatched `(`, which never recurses. The fix that held stopped
+counting: record each bracket's partner (or "never closes") as a scan proves it, in the
+scan's own rules, and hold that memo equal to a fresh scan at every bracket of a real corpus.
+The owner's version: "the parenthesis counting sounds like a regex that should be a parser
+problem". Standing question for a security or efficiency lens, asked by name: **does any
+guard read a different view (masked, lexed, pre-scanned) than the pass it bounds?** Test
+hostile shapes with a GENERATOR (every token repeated to the cap, balanced and not), not a
+hand-written list. A list catches only what it names, and this one twice missed shapes a
+reviewer then measured quadratic.
+— seen in: tjs-lang 0.14.0 (`ff331e9..HEAD`, final re-reviews 5-6)
+
 **A narrow re-review names every commit in its basis.** The basis is a commit range, and a
 brief that describes only the remediation leaves every other commit in that range reviewed
 by nobody, while the report reads as if the range was covered. Either brief each commit, or
