@@ -17,6 +17,8 @@
  *     dependencies, which bun resolves and npm refuses (tosijs-ui#182).
  *  2. every non-wildcard `exports` target exists in the installed package.
  *  3. a type-only import of every entry point with types, compiled with skipLibCheck OFF —
+ *     with the package's declared OPTIONAL peers installed (a consumer of an entry that
+ *     integrates with one has it) —
  *     catches .d.ts files that do not compile for a consumer, and types that name modules the
  *     consumer cannot resolve.
  * It does not IMPORT at runtime: most of these libraries need a DOM to load at all. A repo that
@@ -80,6 +82,23 @@ try {
     const typed = entries.filter((e) => e.types)
     console.log(`✓ ${entries.length} entry point(s) resolved; typechecking ${typed.length}`)
     if (typed.length) {
+      // OPTIONAL peers are installed before typechecking. npm 7+ installs required peers with
+      // the package, but not optional ones — and an entry point that exists to integrate with
+      // an optional peer (tjs-lang's `editors/codemirror` → `@codemirror/*`) is only ever
+      // imported by a consumer who has it. Without this, every such entry fails as "Cannot
+      // find module" (tjs-lang 0.14.0-rc.1 dry run). A module the package imports WITHOUT
+      // declaring it is still not installed, so that failure — the one this check is for —
+      // still fires.
+      const meta = pkg.peerDependenciesMeta ?? {}
+      const optionalPeers = Object.entries(pkg.peerDependencies ?? {})
+        .filter(([name]) => meta[name]?.optional)
+        .map(([name, range]) => `${name}@${range}`)
+      if (optionalPeers.length) {
+        console.log(`▶ installing optional peers for the typecheck: ${optionalPeers.join(' ')}`)
+        const peers = await $`npm install --no-audit --no-fund ${optionalPeers}`.cwd(work).nothrow().quiet()
+        if (peers.exitCode !== 0)
+          failures.push(`installing the declared optional peers failed:\n${peers.stderr.toString().trim()}`)
+      }
       await $`npm install --no-audit --no-fund typescript@5`.cwd(work).nothrow().quiet()
       writeFileSync(
         join(work, 'smoke.ts'),
