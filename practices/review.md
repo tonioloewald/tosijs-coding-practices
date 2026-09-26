@@ -285,7 +285,13 @@ the general, underlying problem. Plan a proper, robust fix. If it's tractable, d
 not, it's a separate issue: file it with the plan, and don't keep patching. The trigger
 is a fact (a re-review found a blocker in your remediation), so this needs no judgement to
 start. **And it's faster, not slower:** in tjs-lang the planned fix landed sooner than the
-four quick patches before it, which had all failed. Stopping feels like a delay and isn't.
+four quick patches before it, which had all failed. Stopping feels like a delay and isn't. **Why it's cheaper** (owner): good code funnels
+a class of problem through a shared guard, so the general fix is one edit at the funnel,
+while instance fixes are one edit per address, each with its own review round. The
+redaction series ended the same way, with one `ContentGuard` replacing per-site checks. If
+there's no shared guard to fix, that is itself the finding: create the funnel
+([code-quality.md](code-quality.md) "Change the funnel, not the consumer"), or, if the class
+can't be funnelled, it's a design question (the third rung).
 It's the decision the incomplete-fix waves never made: tosijs 1.11.0 went twelve rounds
 patching instances. — seen in: tjs-lang (worked), tosijs 1.11.0 (the counterexample)
 
