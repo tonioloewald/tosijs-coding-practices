@@ -1003,7 +1003,10 @@ tjs-lang (test-lane + `audit-exemptions.ts`)
   keys, while `table[op]` reaches inherited keys, non-enumerable ones and getters, at READ
   time. Validate `Reflect.ownKeys` data properties of a plain object, then have the runtime
   read a frozen null-prototype SNAPSHOT of what was checked (or check at the read, for a
-  table that is shared and written) — seen in: tjs-lang 0.14.0 (`804e721..`, final
+  table that is shared and written). Snapshot the CONTAINER too — an options object validated and then read
+  again lets a getter answer the check one way and the run another; read each option once
+  into a frozen record and have the code read only that (re-reviews 13→14→15 moved the same
+  defect up one level each time) — seen in: tjs-lang 0.14.0 (`804e721..`, final
   re-reviews 10-14, where a quota switched off five different ways). Boolean schemas are legal JSON Schema
   and ignoring them fails open on `properties: {k: false}`. And a documented `true | Error`
   surface means internal throws (e.g. `new RegExp(userPattern)`) are contract bugs — fail

@@ -368,7 +368,9 @@ re-reviews 10-12)
 brief that describes only the remediation leaves every other commit in that range reviewed
 by nobody, while the report reads as if the range was covered. Either brief each commit, or
 narrow the range. In tjs-lang 0.14.0 a remediation re-review's range silently included the
-adoption of a new publish pipeline, and no lens looked at it. — seen in: tjs-lang 0.14.0
+adoption of a new publish pipeline, and no lens looked at it. — seen in: tjs-lang 0.14.0 Build the brief's commit list from `git log <base>..HEAD`, never from a hand-stated range:
+in tjs-lang 0.14.0 re-review 15 a brief said "one commit" while two were in range, and the
+security-critical one went unreviewed. — seen in: tjs-lang 0.14.0 (re-review 15)
 
 **The blocker→fix→blocker cycle illustrates the split.** The trigger is deterministic — a
 re-review finds a blocker *in the remediation of a prior blocker*, or the same lens blocks
