@@ -841,7 +841,13 @@ and a muted gate is worse than no gate.
             const src = readFileSync(abs, 'utf8')
             let scanned = false
             try {
-              for (const imp of transpilerFor(f).scanImports(src)) {
+              // A leading `#!` line makes `scanImports` THROW ("Unexpected #!/usr/bin/env bun"),
+              // which dropped every shebang bin to the regex fallback below — and that reads
+              // import-shaped TEXT inside template literals as imports (tjs-lang's
+              // create-app.ts, which writes a starter project, failed the gate on the file it
+              // generates). Blank the line, keeping offsets, and parse.
+              const parseable = src.startsWith('#!') ? src.replace(/^#![^\n]*/, (l) => ' '.repeat(l.length)) : src
+              for (const imp of transpilerFor(f).scanImports(parseable)) {
                 seen(imp.path, f, imp.kind === 'dynamic-import')
               }
               scanned = true
