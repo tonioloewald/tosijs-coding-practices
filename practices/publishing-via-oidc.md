@@ -117,6 +117,11 @@ This is standing rollout 2 in [`rollouts.md`](rollouts.md): agents adopt it with
    `package-ecosystem: npm`, change it to `bun`**: the npm updater cannot run against a committed
    `bun.lock` and fails every run ("could not run Bun … configuration error", tosijs-ui 2026-09-26).
    The `bun` ecosystem does version updates but not security-fix PRs; Dependabot alerts still fire.
+   Two things seen on its first run (tosijs-ui): group only `update-types: [minor, patch]`, so each
+   major is its own PR (a group mixing majors with patches fails on the first major and blocks the
+   rest); and its lockfile edit can leave **nested duplicates** of a package it raised (old
+   `@codemirror/view` copies under each CodeMirror package). CI's typecheck caught it;
+   `bun update <pkg>` collapses them. Matters for any single-instance dependency.
 3. If build output is committed: add `.bun-version`, rebuild with that Bun, commit.
 4. Copy `templates/publish.yml` to `.github/workflows/publish.yml`.
    - **If the package is not your main build**, declare it: `"releaseDoctor": { "build":
