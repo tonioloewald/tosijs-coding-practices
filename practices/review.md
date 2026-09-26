@@ -340,6 +340,15 @@ hand-written list. A list catches only what it names, and this one twice missed 
 reviewer then measured quadratic.
 — seen in: tjs-lang 0.14.0 (`ff331e9..HEAD`, final re-reviews 5-6)
 
+**A cache is not a bound.** If linearity depends on a memo, the memo must live in the call
+frame of the work it serves. A size-bounded, process-global cache is only a bound until the
+adversary produces more distinct keys than it holds. In tjs-lang 0.14.0 a colon pass was
+linear only while a 16-entry global memo held the source. More than 16 nested distinct
+substrings evicted it, and the pass went quadratic again (1.7s at the cap, before fuel). The
+same memo also retained guest sources across runs and tenants. Standing question for the
+security and efficiency lenses: **does linearity rest on a global cache, and can the input
+out-key it?** — seen in: tjs-lang 0.14.0 (final re-review 7)
+
 **A narrow re-review names every commit in its basis.** The basis is a commit range, and a
 brief that describes only the remediation leaves every other commit in that range reviewed
 by nobody, while the report reads as if the range was covered. Either brief each commit, or
