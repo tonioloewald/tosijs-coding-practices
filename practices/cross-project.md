@@ -59,13 +59,12 @@ CLI and MCP (start: <https://virta.tosijs.net/start/>). A repo is on the board i
   says whether it is on the board. Filing an issue on GitHub for a board repo and then
   mirroring it by hand makes a duplicate: import dedupes by deterministic event id, not by
   the `github:<n>` tag. An ecosystem agent files on the board directly.
-- **⚠️ Never file a board task for a repo that is NOT on the board — it enrolls it.**
-  Owner: *"no repo should be surprised to find itself onboarded. Self enrollment."* Today
-  "on the board" is derived from "has tasks", so one foreign task flips a repo onto the
-  board (measured: `onBoard` false → true after a single `create` from an unrelated caller)
-  and its own agents will then move their tracking there. Asks of an un-enrolled repo go on
-  its GitHub. A repo enrolls itself by running `virta onboard` in its own session.
-  (tosijs-virta#1121 proposes making enrollment explicit so this cannot happen by accident.)
+- **Asks of a repo that isn't enrolled go on its GitHub.** Enrollment is self-service:
+  owner, *"no repo should be surprised to find itself onboarded"*. A repo enrolls only by
+  running `virta onboard` in its own checkout, and `brief` speaks only for enrolled
+  projects — so a task filed on the board for an un-enrolled repo enrolls nothing, and its
+  agents will never see it either. (Until tosijs-virta#1121, one foreign task silently
+  enrolled a repo; that path is closed.)
 - **Write as `<machine> × <repo>`**, e.g. `virta --identity "Tosi × manta-recon" …` — never
   under the owner's name. (Specified in tosijs-virta's `DESIGN.md`; recorded here because
   this is the page agents read first.)
