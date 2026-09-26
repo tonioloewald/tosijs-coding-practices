@@ -161,7 +161,17 @@ bun test src/               # unit tier only (when integration lives elsewhere)
 ## DOM testing with Happy DOM
 
 Web-component and DOM tests run under **Happy DOM**, registered via a `bunfig.toml` `[test]`
-preload (`happydom.ts` / `test-setup.ts`). — seen in: tosijs, tosijs-ui, tosijs-product, tosijs-editor
+preload. **Use the published one** (tosijs-ui 1.15.5+; needs `happy-dom` installed):
+
+```toml
+[test]
+preload = ["tosijs-ui/test-setup"]
+```
+
+Don't copy a `test-setup.ts` from another repo: the copies drifted three ways (tosijs-virta's was
+a copy of tosijs-editor's, itself behind tosijs-ui's), and a fix to one reached none of the
+others (tosijs-ui#170). If a global you need is missing, add it upstream. — seen in: tosijs,
+tosijs-ui, tosijs-product, tosijs-editor, tosijs-virta
 
 Known limitations to design around (each one is a recurring, non-obvious time-sink):
 
@@ -174,7 +184,7 @@ Known limitations to design around (each one is a recurring, non-obvious time-si
   `Window`, patch missing error constructors (`SyntaxError`/`TypeError`/`RangeError`), and
   copy an explicit allow-list of DOM globals (`HTMLElement`, `customElements`,
   `MutationObserver`, …) onto `globalThis`, binding window methods (`getComputedStyle`,
-  `requestAnimationFrame`, `fetch`). tosijs-editor's `test-setup.ts` is directly copyable.
+  `requestAnimationFrame`, `fetch`). `tosijs-ui/test-setup` does all of this.
   — seen in: tosijs-editor, tosijs
 
 ## Async state settling
