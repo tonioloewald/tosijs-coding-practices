@@ -55,7 +55,11 @@ const PROJECTS: Project[] = [
   { key: '[loewald-dot-com](', repo: 'tonioloewald/tosijs-platform' },
   { key: '[kith-email](', repo: 'tonioloewald/kith-email' },
   { key: '[kilpi](', repo: 'tonioloewald/kilpi', npm: 'tosijs-kilpi' },
+  { key: 'tosijs-virta', repo: 'tonioloewald/tosijs-virta' }, // private; deploys are its distribution
 ]
+
+// On the board but deliberately not a scoreboard row.
+const NOT_A_ROW = new Set(['tonioloewald/tosijs-coding-practices'])
 
 const check = process.argv.includes('--check')
 const readmePath = join(import.meta.dir, '..', 'README.md')
@@ -143,6 +147,38 @@ const lines = readme.split('\n')
 const problems: string[] = []
 const changes: string[] = []
 let verified = 0
+
+/*
+ * Project metadata from the task board (virta), where the project is on it.
+ * The board is the source of truth for a project's repo and package; the list above
+ * remains only for projects not yet onboarded, and is the fallback when the board is
+ * unreachable (no `virta` on PATH, no login) — that is reported, never fatal.
+ */
+async function boardProjects(): Promise<{ repo?: string; package?: string; name: string }[] | null> {
+  const out = await sh(['virta', '--json', 'projects'])
+  if (!out) return null
+  try {
+    return JSON.parse(out)
+  } catch {
+    return null
+  }
+}
+const board = await boardProjects()
+if (!board) problems.push('task board unreachable (virta not installed or not logged in) — using the built-in project list for every row')
+else {
+  for (const p of PROJECTS) {
+    const b = board.find((x) => x.repo && p.repo && x.repo === p.repo)
+    if (!b) continue
+    if (b.package && b.package !== p.npm) {
+      problems.push(`${p.key}: board says npm package "${b.package}", built-in list says "${p.npm ?? '(none)'}" — using the board's`)
+      p.npm = b.package
+    }
+  }
+  for (const b of board) {
+    if (b.repo && !NOT_A_ROW.has(b.repo) && !PROJECTS.some((p) => p.repo === b.repo))
+      problems.push(`${b.name} (${b.repo}) is on the board but has no scoreboard row`)
+  }
+}
 
 for (const p of PROJECTS) {
   if (!p.repo) continue // local-only: hand-maintained by design
