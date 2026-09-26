@@ -310,6 +310,26 @@ one level up for a shared fix, when the fix was to use `bind`, which already han
 It's the decision the incomplete-fix waves never made: tosijs 1.11.0 went twelve rounds
 patching instances. — seen in: tjs-lang (worked), tosijs 1.11.0 (the counterexample)
 
+**Pre-budget work proportional to caller data is one class, however many doors it has.**
+A sandbox, a request handler or an evaluator has a budget (fuel, a timeout, a size cap),
+and everything it does before the budget applies is unmetered. In tjs-lang 0.14.0 the same
+security lens blocked three times in one cycle on three different doors to that one room:
+`Eval`'s spliced context keys (unmeasured by its size cap), then the fix's name scan (run
+before the cap), then the fix's argument membrane (an unbudgeted walk before fuel). Each fix
+was correct about its own door and added a new step in the unbudgeted entry phase. The
+funnel is **admission**: every caller-sized input passes one budgeted step, bounded by the
+run's own budget and charged to it, before any other work. When you add *anything* to an
+entry path, ask whether it is proportional to caller data and runs before the budget. A
+security or efficiency lens reviewing an entry path must check that question by name, and
+its test must assert that a refusal is **cheap** (time or fuel), not only that it happens.
+— seen in: tjs-lang 0.14.0 (`92115ea..2021d4c`)
+
+**A narrow re-review names every commit in its basis.** The basis is a commit range, and a
+brief that describes only the remediation leaves every other commit in that range reviewed
+by nobody, while the report reads as if the range was covered. Either brief each commit, or
+narrow the range. In tjs-lang 0.14.0 a remediation re-review's range silently included the
+adoption of a new publish pipeline, and no lens looked at it. — seen in: tjs-lang 0.14.0
+
 **The blocker→fix→blocker cycle illustrates the split.** The trigger is deterministic — a
 re-review finds a blocker *in the remediation of a prior blocker*, or the same lens blocks
 twice in one release cycle (both observable in `reviews/`). The **in-review action is one

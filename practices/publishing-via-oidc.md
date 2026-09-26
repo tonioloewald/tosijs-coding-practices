@@ -108,7 +108,10 @@ This is standing rollout 2 in [`rollouts.md`](rollouts.md): agents adopt it with
    `emitLibrary` shipped one; incremental builds into a wiped `dist/` also emit NOTHING the
    second time — measured, 883 files gone), no absolute paths in sourcemaps.
 7. If some test lanes cannot run in CI: declare them in `releaseDoctor.attestedLanes` and use
-   `tools/attest.ts` at release time.
+   `tools/attest.ts` at release time. It runs from a **sibling checkout** of this repo
+   (`bun ../tosijs-coding-practices/tools/attest.ts`, which is how tjs-lang's `release:ready`
+   calls it), so the release machine needs that checkout, pulled. CI fetches its own copy.
+   A release script that assumes the sibling should say so when it's missing.
 8. Before the first real release: `dry_run` on the branch, and read it through to the stop
    before staging.
 
