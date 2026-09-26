@@ -336,6 +336,34 @@ assert a marker it knows should be present (a version string, a new export) and
 fail loudly if the bundle is older than the source.
 — seen in: tosijs
 
+## Browser lanes run locally and are attested — not in CI
+
+**Owner's rule:** _"You can just do the tests locally and attest to the checksummed tarball.
+This is becoming a pattern and running tests of user facing code in CI is a black hole."_
+
+Tests of user-facing code (Playwright, anything rendering WebGL) do **not** go in CI. They run on
+the developer's machine while working, and at release they are declared
+`releaseDoctor.attestedLanes` and run by [`tools/attest.ts`](../tools/attest.ts), which records
+the sha256 of every file the package ships. `publish.yml` stages only a tarball whose files match.
+CI keeps what means the same thing on a runner as on a laptop: unit tests, typecheck, build
+reproducibility, format, drift guards.
+
+Why it is a black hole, measured in tosijs-3d-ensemble on one day (2026-09-26): a runner's WebGL is
+SwiftShader on 4 vCPUs, and SwiftShader scales with cores (18 on the laptop). A sample scene could
+not render ONE frame for a screenshot in six minutes; a test taking 17 s locally took 90 s and
+passed or failed on runner variance; the re-parent lane called trips "dead" that the laptop
+measured as slow. The day went on CI time budgets, CI-only skips and a four-commit bisect, and
+none of it changed the product. It also produced a false conclusion — a "10x regression" that was
+a comparison against a run in which the test had been skipped.
+
+- **When a browser test fails only on CI, do not tune it for CI.** Run it locally; that is the
+  environment the claim is about (a real GPU and a real user are closer to the laptop).
+- **Green CI says nothing about a scene.** Before claiming one works, run the browser lanes.
+- **A lane without a runner still needs an owner and a gate**, or it rots, which was the original
+  argument for CI. The attestation is that gate, at the only point where it matters.
+
+— seen in: tosijs-3d-ensemble
+
 ## Live browser testing with Haltija
 
 - **Two measurement traps will make you "fix" code that was never broken.** Both cost a
