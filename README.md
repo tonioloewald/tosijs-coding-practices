@@ -10,6 +10,11 @@ task.
 
 > One index (this file) → a small set of focused practice docs. Nothing else to discover.
 
+> **Every session: check your repo against [`practices/rollouts.md`](practices/rollouts.md)** —
+> ecosystem-wide changes every repo adopts (currently: the virta task board, and publishing
+> through the shared workflow). Adopt what is missing without being asked; ask the owner only
+> for the steps marked Owner.
+
 ## The organizing idea: negative blast radius
 
 Everything here — the tools, the practices, this repo — is trying to have **negative blast
@@ -143,6 +148,7 @@ or **Cloudflare Pages / R2** as appropriate. Full detail: [`practices/00-stack.m
 | Writing docs, or fighting doc drift | [`practices/development.md`](practices/development.md) "Agent-facing docs travel with the code" — deeper, **experimental** proposals in [`practices/documentation-surface.md`](practices/documentation-surface.md) (evidenced parts being promoted per `reviews/2026-09-practices-audit.md` D7) |
 | Cutting a release / publishing | [`practices/releasing.md`](practices/releasing.md) |
 | Packing a tarball because you can't publish (`file:` deps, stopgap builds) | [`practices/releasing.md#bypassing-the-publish-loop-where-local-tarballs-live`](practices/releasing.md) — one agreed directory, never a session scratchpad |
+| Checking whether your repo is missing an ecosystem-wide change | **[`practices/rollouts.md`](practices/rollouts.md)** — the standing list; adopt what is missing |
 | Publishing a release, or moving a repo's publishing to CI | [`practices/publishing-via-oidc.md`](practices/publishing-via-oidc.md): **adopted** (OIDC + staged publishing, maintainer approves with 2FA; piloted on tosijs-ui 1.15.3) |
 | Shipping to a host | [`practices/deployment.md`](practices/deployment.md) |
 | Managing state or schemas | [`practices/state-and-schema.md`](practices/state-and-schema.md) |

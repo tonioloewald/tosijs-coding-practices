@@ -96,6 +96,9 @@ authentication and disallow tokens"**.
 
 ## Adopting it in a repo
 
+This is standing rollout 2 in [`rollouts.md`](rollouts.md): agents adopt it without being asked.
+
+
 1. Fix `repository.url` to the real repo.
 2. Commit `bun.lock`; use `--frozen-lockfile` in CI.
 3. If build output is committed: add `.bun-version`, rebuild with that Bun, commit.
