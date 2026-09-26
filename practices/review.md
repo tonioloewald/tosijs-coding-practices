@@ -349,6 +349,21 @@ same memo also retained guest sources across runs and tenants. Standing question
 security and efficiency lenses: **does linearity rest on a global cache, and can the input
 out-key it?** — seen in: tjs-lang 0.14.0 (final re-review 7)
 
+**When a blocker is one budget option read unvalidated, sweep every budget option — and make
+a test do the sweeping.** Every comparison with `NaN` is false, so a `NaN` budget is not a
+small or large budget but none: `--fuel < 0` never trips, `bytes > NaN` never refuses. In
+tjs-lang 0.14.0 three consecutive re-reviews blocked on exactly this, each fix correct and
+each next site one directory over (Eval's cap, then `transpile`'s, then predicate fuel). The
+funnel existed the whole time; nothing made a new read use it. What held: one exported
+validator (`budgetOption`) and a test that PARSES the source and fails on any budget-named
+option read that does not reach it. A regex will not do: the read that mattered was a
+destructured `{ fuel = 1000 } = options`. On its first run the scan found a site the review
+had missed. Standing question for the security and correctness lenses: **when a finding is
+one budget option, grep every budget-shaped option (`fuel`, `*Bytes`, `timeoutMs`, quotas,
+override tables) across the whole repo, not the diff's directories — and is there a scan
+that would have found it?** — seen in: tjs-lang 0.14.0 (`df08e2b..f7c600e`, final
+re-reviews 10-12)
+
 **A narrow re-review names every commit in its basis.** The basis is a commit range, and a
 brief that describes only the remediation leaves every other commit in that range reviewed
 by nobody, while the report reads as if the range was covered. Either brief each commit, or
