@@ -127,6 +127,16 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   separate agents (27% duplicate rate; DX never originated a blocker). **Re-reviews cover
   the remediation diff only** — four runs found blockers introduced by the previous wave's
   own fixes; re-reading the whole span is where review waves came from.
+  **A remediation that touches a security surface (untrusted input, a sandbox, a size or
+  budget cap) brings the security lens into its re-review**, and **a security review
+  recorded as "deferred, run before tagging" BLOCKS the next review that finds it still
+  pending.** "Remediation diff only" is right for scope and wrong as a reason to leave a lens
+  out. In tjs-lang 0.14.0 the security lens was deferred through four consecutive re-reviews
+  of the recursive-type work, while one remediation changed how `Eval` builds its source from
+  caller input. When it finally ran it found a blocker: context keys were spliced into
+  transpiled source that no size cap measured, and 80k keys took 76 seconds to transpile
+  before fuel or timeout applied.
+  — seen in: tjs-lang 0.14.0 (`4c6bcb4..a3cc78e`)
 - **The `dx` tier — dx + docs + coverage + dryness, run on a WHOLE RELEASE, not a
   remediation diff.** These four sat in the lens pool and in no tier, so they ran
   only if asked for by name. Over tosijs 1.11.0 they went **seven rounds without
