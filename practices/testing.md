@@ -996,7 +996,15 @@ tjs-lang (test-lane + `audit-exemptions.ts`)
   genuinely enforced with a passing AND failing case (src/schema.test.ts's ENFORCED_KEYWORDS
   table is the copyable template). Prototype-named keys (`constructor`, `toString`,
   `__proto__`) belong in every gate's refused-input tests — key membership must use
-  `Object.hasOwn`, since `in` walks the prototype chain. Boolean schemas are legal JSON Schema
+  `Object.hasOwn`, since `in` walks the prototype chain. Stronger still where the language allows it: key the
+  allowlist by the options TYPE (`{ [K in keyof Required<Opts>]: Kind }`), so a member added
+  without a classification fails to compile — a runtime test cannot do that. And **the set a
+  check walks must equal the set the read resolves**: `Object.entries` walks own enumerable
+  keys, while `table[op]` reaches inherited keys, non-enumerable ones and getters, at READ
+  time. Validate `Reflect.ownKeys` data properties of a plain object, then have the runtime
+  read a frozen null-prototype SNAPSHOT of what was checked (or check at the read, for a
+  table that is shared and written) — seen in: tjs-lang 0.14.0 (`804e721..`, final
+  re-reviews 10-14, where a quota switched off five different ways). Boolean schemas are legal JSON Schema
   and ignoring them fails open on `properties: {k: false}`. And a documented `true | Error`
   surface means internal throws (e.g. `new RegExp(userPattern)`) are contract bugs — fail
   closed. — seen in: tosijs-schema v1.5.0 waves 3-5.
