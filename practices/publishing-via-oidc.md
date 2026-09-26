@@ -92,11 +92,14 @@ authentication and disallow tokens"**.
   `release-attestation.json` recording three things: the tree hash, the lane results, and
   the **sha256 of every file the package ships**. Commit **only** that file and tag it. CI
   checks that the tagged commit changes only that file and that its parent's tree equals the
-  attested tree, then skips those lanes. It rebuilds and must **reproduce the attested
-  build file for file** (`--verify-shipped`), so what npm ships is byte-for-byte what the
-  local suite vouched for. Hashes are per file, not per tarball, because tar metadata (file
-  modes) differs between macOS and Linux while the contents do not. This depends on a
-  deterministic build; tjs-lang's was measured byte-identical across rebuilds.
+  attested tree, then skips those lanes. It rebuilds, packs, and the **tarball it is about to
+  stage must contain exactly the attested files** (`--verify-shipped <tgz>`), so what npm
+  ships is byte-for-byte what the local suite vouched for. Both sides are real `npm pack`
+  tarballs' entries, hashed per file rather than per tarball, because tar metadata (file
+  modes) differs between macOS and Linux while contents do not. A stale attestation (a
+  version or tree it does not cover) is reported as stale, and only warns in a `dry_run`.
+  This depends on a deterministic build; tjs-lang's was measured byte-identical across
+  rebuilds, and the first real `dry_run` is what proves it across OSes.
   **Honest limit:** it is a record, not a proof. Anyone who can push could write a false one,
   but they could already change the code; the 2FA approval stays the gate.
 

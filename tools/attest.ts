@@ -4,8 +4,8 @@
  *
  *   bun <practices>/tools/attest.ts            # run the attested lanes, write release-attestation.json
  *   bun <practices>/tools/attest.ts --verify   # check HEAD carries a valid attestation (exit 0/1)
- *   bun <practices>/tools/attest.ts --verify-shipped   # after a build: the files it would ship
- *                                                      # are byte-identical to the attested ones
+ *   bun <practices>/tools/attest.ts --verify-shipped <tgz>   # the tarball CI packed contains
+ *                                                            # exactly the attested files
  *
  * Some suites cannot run in CI — tjs-lang's need live LLMs. The publish workflow still has to
  * know they passed. The repo declares them:
@@ -24,7 +24,8 @@
  */
 
 import { $ } from 'bun'
-import { existsSync, readFileSync, writeFileSync } from 'fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
+import { tmpdir } from 'os'
 import { join } from 'path'
 
 export const ATTESTATION_FILE = 'release-attestation.json'
@@ -60,35 +61,82 @@ async function git(args: string[], cwd: string): Promise<string> {
   return r.exitCode === 0 ? r.stdout.toString().trim() : ''
 }
 
-/** sha256 of every file `npm pack` would ship from `cwd`, keyed by its path in the package. */
-export async function shippedManifest(cwd: string): Promise<Record<string, string>> {
-  const r = await $`npm pack --dry-run --json --ignore-scripts`.cwd(cwd).nothrow().quiet()
-  if (r.exitCode !== 0) throw new Error(`npm pack --dry-run failed: ${r.stderr.toString().trim()}`)
-  const files: Array<{ path: string }> = JSON.parse(r.stdout.toString())[0].files
-  const out: Record<string, string> = {}
-  for (const { path } of files.sort((a, b) => (a.path < b.path ? -1 : 1))) {
-    const h = new Bun.CryptoHasher('sha256')
-    h.update(readFileSync(join(cwd, path)))
-    out[path] = h.digest('hex')
+/** sha256 of every entry in a packed tarball, keyed by its path in the package. */
+export async function tarballManifest(tarball: string): Promise<Record<string, string>> {
+  const dir = mkdtempSync(join(tmpdir(), 'attest-'))
+  try {
+    const r = await $`tar -xzf ${tarball} -C ${dir}`.nothrow().quiet()
+    if (r.exitCode !== 0) throw new Error(`could not unpack ${tarball}: ${r.stderr.toString().trim()}`)
+    const root = join(dir, 'package')
+    const out: Record<string, string> = {}
+    const walk = (rel: string) => {
+      for (const e of readdirSync(join(root, rel), { withFileTypes: true })) {
+        const p = rel ? `${rel}/${e.name}` : e.name
+        if (e.isDirectory()) walk(p)
+        else {
+          const h = new Bun.CryptoHasher('sha256')
+          h.update(readFileSync(join(root, p)))
+          out[p] = h.digest('hex')
+        }
+      }
+    }
+    walk('')
+    return Object.fromEntries(Object.entries(out).sort(([a], [b]) => (a < b ? -1 : 1)))
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
   }
-  return out
 }
 
-/** Does the build in `cwd` ship exactly the files the attestation recorded? Reason, or null. */
-export async function verifyShipped(cwd: string): Promise<string | null> {
-  const file = join(cwd, ATTESTATION_FILE)
-  if (!existsSync(file)) return `no ${ATTESTATION_FILE}`
-  const att: Attestation = JSON.parse(readFileSync(file, 'utf8'))
-  if (!att.shipped) return `${ATTESTATION_FILE} records no shipped-file manifest — re-attest with a current attest.ts`
-  const now = await shippedManifest(cwd)
-  const diffs: string[] = []
-  for (const [p, h] of Object.entries(att.shipped)) {
-    if (!(p in now)) diffs.push(`missing: ${p}`)
-    else if (now[p] !== h) diffs.push(`differs: ${p}`)
+/**
+ * The manifest of what `cwd` SHIPS: packed exactly as the publish workflow packs it
+ * (`npm pack`, lifecycle scripts included), then hashed entry by entry. Both sides of the
+ * comparison are real tarballs' contents, so npm's own normalisation (package.json, file
+ * selection) is on both sides rather than hidden between them.
+ */
+export async function shippedManifest(cwd: string): Promise<Record<string, string>> {
+  const dir = mkdtempSync(join(tmpdir(), 'attest-pack-'))
+  try {
+    const r = await $`npm pack --json --pack-destination ${dir}`.cwd(cwd).nothrow().quiet()
+    if (r.exitCode !== 0) throw new Error(`npm pack failed: ${r.stderr.toString().trim()}`)
+    const file = JSON.parse(r.stdout.toString())[0].filename
+    return await tarballManifest(join(dir, file))
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
   }
-  for (const p of Object.keys(now)) if (!(p in att.shipped)) diffs.push(`extra:   ${p}`)
+}
+
+/**
+ * Does `tarball` (what CI packed and is about to stage) contain exactly the files the
+ * attestation recorded? The reason it does not, or null.
+ *
+ * Staleness is checked FIRST and named as staleness. Comparing hashes against an attestation
+ * for another version or tree reported "this build does not reproduce the attested one" —
+ * pointing at the build, when the cause was a release commit made without re-attesting.
+ */
+export async function verifyShipped(cwd: string, tarball: string): Promise<string | null> {
+  const { error, attestation } = await verifyAttestation(cwd, [])
+  if (error) {
+    const stale = `the attestation does not cover this tree, so its build cannot be checked: ${error}`
+    // A REHEARSAL on a branch that has moved on since the last release is not a release: say
+    // so and carry on. A real publish (no DRY_RUN) refuses.
+    if (process.env.DRY_RUN === 'true') {
+      console.warn(`⚠️  ${stale} (dry run: not failing)`)
+      return null
+    }
+    return stale
+  }
+  if (!attestation!.shipped)
+    return `${ATTESTATION_FILE} records no shipped-file manifest — re-attest with a current attest.ts`
+  const want = attestation!.shipped
+  const got = await tarballManifest(tarball)
+  const diffs: string[] = []
+  for (const [p, h] of Object.entries(want)) {
+    if (!(p in got)) diffs.push(`missing: ${p}`)
+    else if (got[p] !== h) diffs.push(`differs: ${p}`)
+  }
+  for (const p of Object.keys(got)) if (!(p in want)) diffs.push(`extra:   ${p}`)
   if (!diffs.length) return null
-  return `this build does not reproduce the attested one (${diffs.length} file(s)):\n  ${diffs.slice(0, 40).join('\n  ')}${diffs.length > 40 ? '\n  …' : ''}`
+  return `the tarball CI built is not the attested build (${diffs.length} file(s)):\n  ${diffs.slice(0, 40).join('\n  ')}${diffs.length > 40 ? '\n  …' : ''}`
 }
 
 export function attestedLanes(cwd: string): string[] {
@@ -189,12 +237,17 @@ async function attest(cwd: string) {
 if (import.meta.main) {
   const cwd = process.cwd()
   if (process.argv.includes('--verify-shipped')) {
-    const error = await verifyShipped(cwd)
+    const tarball = process.argv[process.argv.indexOf('--verify-shipped') + 1]
+    if (!tarball || tarball.startsWith('--')) {
+      console.error('usage: attest.ts --verify-shipped <tarball>')
+      process.exit(1)
+    }
+    const error = await verifyShipped(cwd, tarball)
     if (error) {
       console.error(`❌ ${error}`)
       process.exit(1)
     }
-    console.log('✅ this build ships exactly the files the attestation vouches for')
+    console.log('✅ the tarball CI built contains exactly the files the attestation vouches for')
   } else if (process.argv.includes('--verify')) {
     const { error } = await verifyAttestation(cwd, attestedLanes(cwd))
     if (error) {
