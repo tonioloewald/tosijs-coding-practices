@@ -592,6 +592,18 @@ matter how deliberately the divergence was noted (tosijs-schema's enum-vs-null n
 observed in wave 5, waved off as documented `.optional` semantics, and confirmed a gate
 bypass in wave 7). At a gate, enforce or refuse at construction — never merely document.
 
+A second proof case, from a reviewer who had just read this paragraph: tosijs-3d-ensemble 0.4.0's
+https rule for fetched urls. The first review found three fail-open members (whitespace
+bypasses, no runtime enforcement, docs overclaiming); remediation fixed those three and the
+re-review BLOCKED on two more of the same class: a fetched field holding an ARRAY skipped every
+check (the check was keyed on `typeof === 'string'`, and the element `String()`ed the array back
+into a url and fetched it), and a built-in field that lacked the marker the rule keys on was never
+checked at all. The sweep that would have found both in one sitting is two questions, asked of any
+gate keyed on a type or a marker: **what does it do with a value of the WRONG TYPE, and with a
+field that is NOT MARKED?** If the answer is "skips it", it fails open. The fix is one shared
+predicate that refuses what it does not recognise, plus a completeness test that fails on an
+unmarked field of the kind the gate guards. — seen in: tosijs-3d-ensemble (0.4.0)
+
 **The signature is measurable mid-flight: plot findings per round, and read the curve, not the
 count.** Class-fixing decays — each sweep removes a population, so later rounds find less.
 Instance-fixing stays flat, because every round samples the same undrained pool. Flat yield by
