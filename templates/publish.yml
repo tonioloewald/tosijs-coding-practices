@@ -140,8 +140,14 @@ jobs:
       - name: Build
         run: |
           set -euo pipefail
-          if node -e "process.exit(require('./package.json').scripts?.build ? 0 : 1)"; then
-            bun run build
+          # The full build is not always called `build`: tjs-lang's is `make`, because `bun build`
+          # is a Bun BUILTIN and a `build` script makes `bun build` and `bun run build` diverge.
+          # Resolved exactly as release-doctor resolves it (build, make, build:all), so the two
+          # can never build different things.
+          BUILD=$(node -p "const s=require('./package.json').scripts||{}; s.build?'build':s.make?'make':s['build:all']?'build:all':''")
+          if [ -n "$BUILD" ]; then
+            echo "building with: bun run $BUILD"
+            bun run "$BUILD"
           fi
           npm pack --dry-run --json 2>/dev/null > "$RUNNER_TEMP/files.json"
           git diff --name-only > "$RUNNER_TEMP/changed.txt"
