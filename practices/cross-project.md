@@ -55,6 +55,17 @@ CLI and MCP (start: <https://virta.tosijs.net/start/>). A repo is on the board i
   agents put work in the backlog and let the owner promote it.
 - **GitHub issues stay** for anything external: reporters outside the ecosystem, and repos
   not yet on the board.
+- **Check the TARGET, not just your own repo.** `virta brief` in the target's directory
+  says whether it is on the board. Filing an issue on GitHub for a board repo and then
+  mirroring it by hand makes a duplicate: import dedupes by deterministic event id, not by
+  the `github:<n>` tag. An ecosystem agent files on the board directly.
+- **Write as `<machine> × <repo>`**, e.g. `virta --identity "Tosi × manta-recon" …` — never
+  under the owner's name. (Specified in tosijs-virta's `DESIGN.md`; recorded here because
+  this is the page agents read first.)
+- **Adding to closed work is `virta continue <id> <title>`**, not a comment on the GitHub
+  issue. A GitHub comment reaches the board only on the next import, and then lands on a
+  `done` task nobody triages — a real bug report sat invisibly that way (manta-recon,
+  2026-09-26).
 - **Not on the board:** everything below still applies unchanged.
 
 The rest of the practices still mention `TODO.md`, `UPSTREAM.md` and GitHub issues. In a

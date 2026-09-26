@@ -51,7 +51,8 @@ npmjs.com → package → **Settings → Trusted Publisher → GitHub Actions**:
 | Allow `npm publish` | **unchecked** (npm itself labels it "not recommended"; staging is always allowed) |
 
 After the first verified publish, optionally set **Publishing access → "Require two-factor
-authentication and disallow tokens"**.
+authentication and disallow tokens"** — redundant if the *account* already disallows tokens,
+which this one does, so read it as already satisfied rather than as outstanding work.
 
 ## Requirements, each learned the hard way
 
