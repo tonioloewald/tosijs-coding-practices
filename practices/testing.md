@@ -974,6 +974,24 @@ So add lanes that reproduce the adopter's context. They're cheap, and each one m
 The bar is not "more tests"; it is **one lane per assumption the clean room silently makes**.
 — seen in: haltija (issues #1/#7/#8/#11), tosijs-ui (four packaging regressions, four blind lanes)
 
+### The publish runner is a different OS, too
+
+The first dry run of a repo moving to the shared publish workflow is often the first time its
+suite runs on Linux under `setup-node`. tosijs had two tests that had only ever passed on macOS:
+
+- **A gate asserted a tool's output was EMPTY, and ran it through `npx`.** npx routes through
+  npm, and `setup-node`'s `.npmrc` makes npm 11 print `Unknown user config "always-auth"` into
+  that output: three compile-clean gates failed on an npm notice. Call
+  `node_modules/.bin/<tool>` when you assert on what a tool prints.
+- **A once-per-process latch** (a warn-once flag) was spent by an earlier test *file* on Linux,
+  where Bun orders files differently. The test asserting the warning fires passed on macOS by
+  file order alone. Give every process-wide latch a test reset seam, and use it in the test that
+  asserts on it — the same contamination as "Append-only global state" above, across files.
+
+Both were invisible to local runs and to review; both surfaced in the dry run, before anything
+was tagged, which is what the dry run is for.
+— seen in: tosijs v1.10.3..87a4388 (publish dry runs, 2026-09-26)
+
 ## Dependency-audit gate: fail on high+, exempt with a clock
 
 > This section is the **test-lane** shape of the gate. For the wider supply-chain
