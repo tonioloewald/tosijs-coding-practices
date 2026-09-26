@@ -284,8 +284,10 @@ turned when applied). If your blocker fix leads to another blocker: **stop.** Th
 the general, underlying problem. Plan a proper, robust fix. If it's tractable, do it. If
 not, it's a separate issue: file it with the plan, and don't keep patching. The trigger
 is a fact (a re-review found a blocker in your remediation), so this needs no judgement to
-start. It's the decision the incomplete-fix waves never made: tosijs 1.11.0 went twelve
-rounds patching instances. — seen in: tjs-lang (worked), tosijs 1.11.0 (the counterexample)
+start. **And it's faster, not slower:** in tjs-lang the planned fix landed sooner than the
+four quick patches before it, which had all failed. Stopping feels like a delay and isn't.
+It's the decision the incomplete-fix waves never made: tosijs 1.11.0 went twelve rounds
+patching instances. — seen in: tjs-lang (worked), tosijs 1.11.0 (the counterexample)
 
 **The blocker→fix→blocker cycle illustrates the split.** The trigger is deterministic — a
 re-review finds a blocker *in the remediation of a prior blocker*, or the same lens blocks
