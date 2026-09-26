@@ -121,8 +121,9 @@ This is standing rollout 2 in [`rollouts.md`](rollouts.md): agents adopt it with
      `build`/`make`/`build:all`. tosijs-platform's `build` is a site bundle that needs a
      gitignored config, so its dry run failed until it could say so.
    - **If a second package tree needs installing** (an npm-managed `functions/`), name the
-     script: `"releaseDoctor": { "install": "install:ci" }`, run after `bun install
-     --frozen-lockfile`.
+     script: `"releaseDoctor": { "install": "install:ci" }`. It runs **after Pack**, so the
+     tarball is sealed before it, but still inside the job holding `id-token: write`: make it
+     `--ignore-scripts`, and treat it as publish-adjacent code.
    - Add `/.practices/` to `.gitignore`: the workflow checks the practices repo out there.
 5. Owner adds the Trusted Publisher entry (table above).
 6. Nothing non-reproducible may SHIP: no `tsconfig.tsbuildinfo` in `dist/` (tosijs-ui's
