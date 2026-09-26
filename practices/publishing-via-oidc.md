@@ -29,7 +29,10 @@ adopted it yet keep the manual path in [releasing.md](./releasing.md).
    that tarball, runs `release-doctor` (including its rebuild-reproduces check), then stages.
    **Nothing touches the registry before every check passes**: a staged version burns its
    number exactly as a publish does.
-4. Maintainer approves with 2FA.
+4. Maintainer approves with 2FA. **npm validates a staged package before it can be approved**, and
+   the Staged Packages page says so while it runs. That, not the workflow, is where the
+   stage-to-publish lag comes from. haltija 1.13.0-beta.1 went from staged to served in 17
+   minutes, validation and approval included.
 5. The run verifies: published `integrity` equals the staged tarball's, dist-tags are right, a
    prerelease is never `latest`, and the consumer smoke test runs on the **registry's** copy.
 
@@ -131,3 +134,8 @@ This is standing rollout 2 in [`rollouts.md`](rollouts.md): agents adopt it with
   reached npm: Bun version drift, the reconciliation check, the sourcemap path leak, and the
   stale `repository.url`. None of the four local lanes could have found any of them. Approval
   came from a phone about four hours after staging, which is how `verify_only` came to exist.
+- **2026-09-26, haltija 1.13.0-beta.1.** The first release to use `tools/attest.ts`
+  (four Playwright/live-server lanes). The first publish run refused to stage: the locally attested
+  tarball held a `dist/` file whose source had been deleted weeks earlier, and CI's clean build did
+  not. The build did not clear `dist/`; it does now. The consumer smoke test, in the dry run,
+  found `.d.ts` output that would not compile without `@types/bun`. Staged to served: 17 minutes.
