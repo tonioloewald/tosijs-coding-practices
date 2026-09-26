@@ -378,7 +378,7 @@ tosijs-3d-ensemble ("this project's own loop is Bun and a bundler, and so is the
 and so was the first consumer") 9. **Update your row in the shared scoreboard** — the "Project scoreboard" table in the
 practices repo's `README.md`. **The fact cells are machine-written**: run
 `bun tools/scoreboard.ts` (in that repo) to refresh Version and "As of" from the registry
-and GitHub; write the Activity cell yourself — **2–5 short highlights, newest first,
+and GitHub; write the Activity cell yourself (skip it if the project is on the task board — the board is its scoreboard) — **2–5 short highlights, newest first,
 REPLACING the old cell, not appending** (a dashboard, not a ledger; the story lives in
 your CHANGELOG, and git history keeps every superseded cell). The tool never touches
 that column. This is the practices repo's no-signoff carve-out, so commit directly —
