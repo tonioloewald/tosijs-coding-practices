@@ -54,6 +54,12 @@ const TIERS = {
   // "is it pleasant, honest and covered". Pair with a WHOLE-RELEASE baseRef,
   // not a remediation diff — the questions are release-level.
   dx: ['dx', 'docs', 'coverage', 'dryness'],
+  // THE IDIOM TIER (owner, 2026-09-26): tosijs code judged as what it is. Agents
+  // write React-shaped code by default and hand-roll what the library already does
+  // (observe -> DOM instead of bind), then patch the edge cases one at a time. Run
+  // on any repo with tosijs components or state, over the whole release or the
+  // whole subsystem — reactisms accumulate across diffs.
+  idiom: ['idiom'],
 }
 const VERIFY_SEVERITIES = depth === 'fast' ? ['blocker'] : ['blocker', 'major']
 // Key on the severity you'd ACT on, not just the label the finder typed: a reviewer who is
@@ -132,6 +138,11 @@ Report 7b findings even when they are not defects in the diff (e.g. "issue #N ha
 Findings here are proposed CHANGES TO THE PRACTICES (or to this repo's agent docs), not to the shipping code. Severity is usually minor/major, rarely a blocker. Returning zero findings is suspicious — it usually means nobody looked.`,
   },
   {
+    key: 'idiom',
+    title: 'tosijs idiom: antipatterns and reactisms',
+    checks: `Judge this code as tosijs code, against practices/observant-model.md, practices/model-priors.md, practices/web-components.md and practices/state-and-schema.md (read them first). tosijs is OBSERVANT, not reactive: the DOM is built once and updated pin-point from observed state; there is no UI = f(state), no re-render, no diff. The failure you are hunting is code that imports mainstream habits, or hand-rolls what the library already provides. For each finding, name the idiomatic replacement (the library facility that already does it) and the edge cases the hand-rolled version will keep hitting. A finding here IS "this is React-shaped" — that is the defect, the inverse of the prior-art rule other lenses apply.`,
+  },
+  {
     key: 'security',
     title: 'Security (subsystem-scoped)',
     checks: `Review security-critical subsystems the diff touches OR sits adjacent to — sandbox/VM, capability and tool boundaries, RBAC/auth, URL/SSRF guards, regex/ReDoS and other untrusted-input paths, secrets handling, network listeners. Security holes are LATENT: they sit in already-shipped code outside the diff, so escalate any touched security subsystem to WHOLE-SUBSYSTEM depth regardless of diff size (a minor bump's review once found five VM blockers, four latent in the prior shipped release). Check: unauthenticated reachable surfaces (who can hit this endpoint/port/handler, from where, with what Origin); input validation at every trust boundary; fail-open vs fail-closed on every gate (a gate must never report a pass it didn't earn, and a documented divergence at a gate is still fail-open); what a compromised or malicious caller could make this code do; whether tests cover the hostile input class, not just the happy path. Findings whose subject is an isolation, capability, or auth guarantee get adversarially verified regardless of reported severity.`,
@@ -188,6 +199,10 @@ consumer upgrades in the release-RFC threads, judgement ceremony caught nothing;
 check that existed paid.
 */
 const CASCADES = {
+  idiom: `1. Greppable reactisms (grep the changed files, then read each hit): render() that builds or rebuilds DOM, or holds conditional/dynamic logic; conditional or data-dependent logic in content(); observe(...) callbacks that write to the DOM (use bind / bindings); innerHTML or string-built markup; on<Event> callback props (the element factory turns them into listeners — use handle<Event>); cond && child in element trees; document.createElement('style') or raw CSS strings (use StyleSheet / vars); setTimeout or requestAnimationFrame to wait for a render (use await updates()); === on a boxed value; value declared as an initAttribute; path bindings inside shadow DOM. Each hit is a finding unless the code states why it is the exception.
+2. Hand-rolled library features: home-grown memoization, coalescing, dirty-checking or change-detection (the observer already coalesces); manual list rendering or index-keyed rebuilds instead of list bindings with id-paths; querySelector lookups for the component's own elements instead of parts; local component state that mirrors tosi state instead of binding to it. Each: name the facility that already does it.
+3. Edge-case accretion: does the diff patch several edge cases around one hand-written mechanism (observer, list, lifecycle)? If yes, the finding is the mechanism, not the cases: replace it with the library facility (practices/review.md 'look for the guard at the earliest point').
+4. Judgement, triggered only by gates 1-3 having found something: is there a legitimate reason to leave the platform idiom here (performance measured, a third-party integration)? If the code does not say so, it is a finding.`,
   correctness: `1. Did runtime behavior change (non-test, non-doc code in the diff)? NO -> only gates 5-6 can fire.
 2. For each behavioral change: does a test exist that FAILS without it? (run it) NO -> finding.
 3. Does the changed code run in >1 mode (flags, http/https, dev/prod, headless/desktop)? YES -> state what it does in EACH mode. Hard rules: a default only one path sets = finding; a check reading input that is parsed later = finding.
@@ -458,7 +473,7 @@ Produce a triaged report:
 - Never silently drop a finding — deferred ones must appear as explicit follow-ups.
 - **A failing test is never dismissed as "pre-existing" or "not caused by this change."** Any red/skipped test in the coverage findings must appear in the report — fixed if easy, otherwise flagged as a follow-up that is still scheduled, never waved away.
 - **ROUTE BY LENS — findings do not all belong in the same place.** Put each follow-up under the right destination heading:
-  - lenses correctness/efficiency/dryness/docs/coverage/dx -> fix now, or file to this repo's \`TODO.md\`.
+  - lenses correctness/efficiency/dryness/docs/coverage/dx/idiom -> fix now, or file to this repo's \`TODO.md\`.
   - lens **ecosystem** -> a **GitHub issue filed on the UPSTREAM repo** (name the tool and the missing seam), mirrored in this repo's \`UPSTREAM.md\` with the issue URL. NEVER a direct edit to another repo — agents stay in their own repo unless the human signs off. Also list any incoming open issues this release should have addressed or should now close.
   - lens **practices** -> a change to the shared \`tosijs-coding-practices\` repo (name the doc), and/or this repo's CLAUDE.md/AGENTS.md.
 - **ecosystem and practices findings rarely BLOCK** — they compound. Do not let them drag the verdict to BLOCK unless something is actively broken; but never drop them either.

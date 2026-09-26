@@ -121,6 +121,11 @@ install** before treating it as a code defect — a stale `node_modules` has fak
      that was never released and never named the affected range, so a consumer
      could not tell whether their version had leaked. Pair with a WHOLE-RELEASE
      `baseRef`, not a remediation diff; these are release-level questions.
+   - `tier: "idiom"` — **tosijs antipatterns and reactisms**: code judged as tosijs,
+     not as React (render() rebuilding DOM, observe writing to the DOM instead of bind,
+     hand-rolled memo/lists/lookups the library already provides, edge cases patched
+     around one hand-written mechanism). Run it on any repo with tosijs components or
+     state, over a whole release or subsystem, not just a remediation diff.
    - `tier: "quarterly"` — ecosystem + practices dispositions; a standing job with a
      deadline, never a release gate. The structural audit (redundant code paths, examples
      audit, style conformance, render-creep) runs at this cadence too, as does the **AAR

@@ -1547,6 +1547,20 @@ unique to this list:
   [`cross-project.md`](cross-project.md) → "The three artifacts".
   — seen in: tosijs-product, tosijs-3d
 
+## The idiom review: tosijs as what it is
+
+Agents write React-shaped code by default and hand-roll what tosijs already provides; the
+general lenses don't catch it because the code is often *correct*, just in the wrong
+idiom, and it pays later in edge cases. Run the review workflow with `tier: "idiom"` on
+any repo with tosijs components or state, over a whole release or subsystem. Its cascade:
+greppable reactisms first (DOM-building `render()`, `observe` writing to the DOM,
+`on<Event>` props, `cond && child`, raw CSS, waiting on timers instead of
+`await updates()`), then hand-rolled library features (memo, coalescing, list
+rebuilding, `querySelector` for own elements), then edge-case accretion around one
+hand-written mechanism. The checklist lives in the workflow; the reasoning lives in
+[observant-model.md](observant-model.md) and [model-priors.md](model-priors.md). This
+is the inverse of the prior-art rule below: here, "this is React-shaped" is the finding.
+
 ## Review posture
 
 - **Review the code as what it IS — not as a deficient version of the mainstream thing it
