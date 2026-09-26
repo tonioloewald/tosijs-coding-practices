@@ -131,7 +131,16 @@ const cannotRun = (out: string): string | undefined => {
  */
 function laneFailureDetail(out: string): string {
   const lines = out.split('\n')
-  const failed = lines.filter((l) => /^\(fail\)/.test(l.trim())).slice(0, 10)
+  /*
+   * bun's `(fail)` lines AND Playwright's. Without the second pattern a browser lane fell back
+   * to the TAIL, and `run()` appends stderr after stdout — so the tail was the dev server's
+   * stderr warnings, never the `✘` line or the `N failed` summary. tosijs-3d-ensemble's 0.4.0
+   * Tier 0 reported `test:scene` FAIL with a WebServer warning as its whole explanation, and
+   * three reruns passed, so the one failure could never be named.
+   */
+  const failed = lines
+    .filter((l) => /^\(fail\)/.test(l.trim()) || /✘|^\s*\d+\) \[[\w-]+\] ›|^\s*\d+ (failed|flaky)\b/.test(l))
+    .slice(0, 10)
   const tail = lines.slice(-8).join('\n')
   return failed.length ? `${failed.join('\n')}\n${tail}` : tail
 }
