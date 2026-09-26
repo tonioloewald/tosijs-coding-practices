@@ -10,10 +10,8 @@ task.
 
 > One index (this file) → a small set of focused practice docs. Nothing else to discover.
 
-> **Every session: check your repo against [`practices/rollouts.md`](practices/rollouts.md)** —
-> ecosystem-wide changes every repo adopts (currently: the virta task board, and publishing
-> through the shared workflow). Adopt what is missing without being asked; ask the owner only
-> for the steps marked Owner.
+> **Every session: check your repo against [`practices/rollouts.md`](practices/rollouts.md)**,
+> the ecosystem-wide changes every repo adopts, and adopt what is missing without being asked.
 
 ## The organizing idea: negative blast radius
 
