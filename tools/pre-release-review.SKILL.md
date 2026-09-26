@@ -36,6 +36,10 @@ independently (`releasing.md`).
   diff only** (re-reading the whole span is where review waves come from); a mechanical
   fix needs nothing beyond Tier 0. (Why the question:
   `reviews/2026-09-06-review-cost-measurement.md`.)
+- **If your blocker fix led to another blocker: STOP.** Don't patch again. Work out the
+  general, underlying problem, and plan a proper fix. If that's tractable, do it. If not,
+  it's a separate task: file it, with the plan, and ship only what is sound now.
+  (practices/review.md "The fix-led-to-a-blocker stop".)
 - Whenever the user asks to "review before release", "do the release review", "pre-release
   check", etc.
 

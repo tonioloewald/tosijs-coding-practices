@@ -279,6 +279,14 @@ factual after-action report per release cycle (releasing.md, "The after-action r
 mined *periodically* for patterns and opportunities (Tier 3). Reviews record facts; the
 quarterly pass does the thinking.
 
+**The fix-led-to-a-blocker stop** (owner, 2026-09-26, from a tjs-lang remediation that
+turned when applied). If your blocker fix leads to another blocker: **stop.** Think about
+the general, underlying problem. Plan a proper, robust fix. If it's tractable, do it. If
+not, it's a separate issue: file it with the plan, and don't keep patching. The trigger
+is a fact (a re-review found a blocker in your remediation), so this needs no judgement to
+start. It's the decision the incomplete-fix waves never made: tosijs 1.11.0 went twelve
+rounds patching instances. — seen in: tjs-lang (worked), tosijs 1.11.0 (the counterexample)
+
 **The blocker→fix→blocker cycle illustrates the split.** The trigger is deterministic — a
 re-review finds a blocker *in the remediation of a prior blocker*, or the same lens blocks
 twice in one release cycle (both observable in `reviews/`). The **in-review action is one
