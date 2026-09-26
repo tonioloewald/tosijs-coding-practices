@@ -139,6 +139,30 @@ export async function verifyShipped(cwd: string, tarball: string): Promise<strin
   return `the tarball CI built is not the attested build (${diffs.length} file(s)):\n  ${diffs.slice(0, 40).join('\n  ')}${diffs.length > 40 ? '\n  …' : ''}`
 }
 
+/**
+ * Which paths the lanes changed that SHIP, from `git status --porcelain` output.
+ *
+ * The lanes must not change anything that ships, or the attestation vouches for bytes that
+ * are not the committed ones. Files that do NOT ship are a different matter: a doc site's
+ * version stamp or ePub rewritten by a dev server the browser lane starts (tosijs, 2026-09-26)
+ * cannot affect what npm serves, and the publish workflow's build check already ignores them
+ * by the same rule. Refusing on them made attestation impossible in any repo whose test lane
+ * builds its site.
+ */
+export function shippedChanges(porcelain: string, shipped: Record<string, string>): { shipped: string[]; ignored: string[] } {
+  const paths = porcelain
+    .split('\n')
+    .filter(Boolean)
+    // NOT slice(3): `git()` trims its output, which eats the FIRST line's leading status space
+    // (` M a` → `M a`), and a fixed slice then misnames that path — so a shipped file listed
+    // first was read as some other, unshipped name, and waved through.
+    .map((line) => line.replace(/^\s*\S{1,2}\s+/, '').split(' -> ').pop()!.replace(/^"(.*)"$/, '$1'))
+  return {
+    shipped: paths.filter((p) => p in shipped),
+    ignored: paths.filter((p) => !(p in shipped)),
+  }
+}
+
 export function attestedLanes(cwd: string): string[] {
   const pkg = JSON.parse(readFileSync(join(cwd, 'package.json'), 'utf8'))
   const lanes = pkg.releaseDoctor?.attestedLanes
@@ -210,10 +234,20 @@ async function attest(cwd: string) {
     }
     if (r.exitCode !== 0) failed = true
   }
-  // The lanes must not have changed the tree either, or the record describes something else.
-  if (await git(['status', '--porcelain'], cwd)) {
-    console.error('🛑 running the lanes modified the tree — the attestation would not describe it. Fix that first.')
-    process.exit(1)
+  // The lanes must not have changed what SHIPS, or the record describes something else.
+  const shipped = await shippedManifest(cwd)
+  const dirty = await git(['status', '--porcelain'], cwd)
+  if (dirty) {
+    const changes = shippedChanges(dirty, shipped)
+    if (changes.shipped.length) {
+      console.error(
+        `🛑 running the lanes modified files that SHIP — the attestation would not describe them. Fix that first:\n  ${changes.shipped.join('\n  ')}`
+      )
+      process.exit(1)
+    }
+    console.warn(
+      `⚠️  the lanes rewrote ${changes.ignored.length} file(s) that do not ship — ignored, as the publish workflow ignores them. Discard them before committing the attestation:\n  ${changes.ignored.join('\n  ')}`
+    )
   }
   if (failed) {
     for (const [lane, r] of Object.entries(results))
@@ -227,7 +261,7 @@ async function attest(cwd: string) {
     commit: await git(['rev-parse', 'HEAD'], cwd),
     bun: Bun.version,
     lanes: results,
-    shipped: await shippedManifest(cwd),
+    shipped,
   }
   writeFileSync(join(cwd, ATTESTATION_FILE), JSON.stringify(att, null, 2) + '\n')
   console.log(`✅ attested ${lanes.join(', ')} for ${pkg.version} on tree ${att.tree.slice(0, 12)}, and the ${Object.keys(att.shipped!).length} files it ships`)

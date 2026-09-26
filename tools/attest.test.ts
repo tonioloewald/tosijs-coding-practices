@@ -7,7 +7,7 @@ import { $ } from 'bun'
 import { mkdtempSync, rmSync, writeFileSync, readdirSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import { shippedManifest, verifyShipped, ATTESTATION_FILE } from './attest'
+import { shippedManifest, shippedChanges, verifyShipped, ATTESTATION_FILE } from './attest'
 
 let repo: string
 let out: string
@@ -75,5 +75,28 @@ describe('verifyShipped', () => {
     } finally {
       delete process.env.DRY_RUN
     }
+  })
+})
+
+describe('shippedChanges', () => {
+  const shipped = { 'dist/index.js': 'a', 'README.md': 'b' }
+  it('a rewritten file that ships is refused', () => {
+    expect(shippedChanges(' M dist/index.js\n M docs/version.json\n', shipped)).toEqual({
+      shipped: ['dist/index.js'],
+      ignored: ['docs/version.json'],
+    })
+  })
+  it('files that do not ship are ignored, not refused', () => {
+    expect(shippedChanges(' M docs/version.json\n M docs/site.epub\n', shipped).shipped).toEqual([])
+  })
+  it('an untracked file that would ship counts, and renames resolve to the new path', () => {
+    expect(shippedChanges('?? README.md\nR  old.js -> dist/index.js\n', shipped).shipped).toEqual(['README.md', 'dist/index.js'])
+  })
+  it('the first line survives trimming — a shipped file listed first is still refused', () => {
+    // git() trims its output, so the first porcelain line arrives without its leading space
+    expect(shippedChanges('M dist/index.js\n M docs/version.json', shipped)).toEqual({
+      shipped: ['dist/index.js'],
+      ignored: ['docs/version.json'],
+    })
   })
 })
