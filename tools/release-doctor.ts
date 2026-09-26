@@ -19,6 +19,7 @@
 import { $ } from 'bun'
 import { existsSync, readFileSync, readdirSync, statSync } from 'fs'
 import { join } from 'path'
+import { verifyAttestation } from './attest.ts'
 
 type Result = { name: string; status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP'; detail: string }
 const results: Result[] = []
@@ -156,7 +157,22 @@ function laneFailureDetail(out: string): string {
      * reason is itself a FAIL: an unexplained exemption is a silent hole.
      */
     const advisory: Record<string, unknown> = pkg.releaseDoctor?.advisoryLanes ?? {}
+    /*
+     * ATTESTED lanes (tools/attest.ts): suites CI cannot run, e.g. tjs-lang's live-LLM tests.
+     *   package.json → "releaseDoctor": { "attestedLanes": ["test:llm"] }
+     * A valid release-attestation.json for exactly this tree stands in for running them. Without
+     * one, the lane RUNS as usual — so in CI an unattested heavy lane fails rather than passing
+     * silently.
+     */
+    const attestedList: string[] = Array.isArray(pkg.releaseDoctor?.attestedLanes) ? pkg.releaseDoctor.attestedLanes : []
+    const attestedOk = attestedList.length
+      ? await verifyAttestation(process.cwd(), attestedList)
+      : { error: 'none declared' }
     for (const lane of lanes) {
+      if (attestedList.includes(lane) && !attestedOk.error) {
+        add(`tests (${lane})`, 'PASS', 'attested — release-attestation.json verifies for this tree')
+        continue
+      }
       const isAdvisory = Object.prototype.hasOwnProperty.call(advisory, lane)
       const reason = isAdvisory ? String(advisory[lane] ?? '').trim() : ''
       if (isAdvisory && !reason) {

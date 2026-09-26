@@ -219,7 +219,12 @@ helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was th
    and a tag that was never published may be moved (it happened five times during the
    tosijs-ui 1.15.3 pilot). Then trigger the workflow, have the maintainer approve, and treat
    the green run as the success signal. See [publishing-via-oidc.md](./publishing-via-oidc.md).
-8. **Tag only once the publish has LANDED**, then push the tag:
+8. **Tag only once the publish has LANDED**, then push the tag — **manual path only.** A repo on
+   [`publish.yml`](publishing-via-oidc.md) tags FIRST, because the workflow publishes *from* the
+   tag. The rule's purpose still holds there: the tag is ahead of npm only for the length of one
+   run, the workflow refuses a tag whose version is already published, and a tag that never
+   reaches npm stays unpublished and may be moved (it burns nothing until staged). Run the
+   workflow's checks before tagging when you can, so the tag is not moved repeatedly.
    `git tag -a vX.Y.Z -m "…" && git push --tags` (see [Tagging](#tagging)).
 
    ⚠️ **This order used to be the other way round, and the checklist contradicted the rule it
@@ -236,7 +241,11 @@ helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was th
    after a publish lands but we can always move them if we have to."_ — seen in:
    tosijs-3d-ensemble 0.3.0 (2026-09-15), `8eb8461..630a24e`
 
-8a-note. **An agent cannot publish, and OTP is no longer an option.** npm one-time-password
+8a-note. **In a repo on [`publish.yml`](publishing-via-oidc.md) none of this applies:** the agent
+    triggers the workflow, npm's OIDC trusted publishing needs no token, and the maintainer approves
+    the staged version with 2FA. What follows is the manual path.
+
+    **An agent cannot publish, and OTP is no longer an option.** npm one-time-password
     publishing is no longer available, so a human running `npm publish` interactively and an
     agent shelling out to it are both blocked — publishing requires a configured granular
     access or automation token.
@@ -908,6 +917,9 @@ were never pushed (tosijs-timezone-picker 0.6.0), and a dist-tag left pointing a
 superseded pre-release (tosijs-3d `next`). "Confirm the publish landed" (below) is the check;
 this rule is the ordering that keeps the check meaningful. — seen in:
 tosijs-timezone-picker, tosijs-ui, tosijs-3d (weekly sweep findings); rule set by the owner
+
+**On `publish.yml` repos the tag comes first by design** (the workflow publishes from it); the
+workflow is what keeps the gap to one run. The rule below governs the manual path.
 
 **A tag is part of publishing, not a step ahead of it — and never fix an unpublished tag with
 a new version number.** The rule above says land the current release before starting the next;
