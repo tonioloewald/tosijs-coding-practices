@@ -145,6 +145,19 @@ This is standing rollout 2 in [`rollouts.md`](rollouts.md): agents adopt it with
 8. Before the first real release: `dry_run` on the branch, and read it through to the stop
    before staging.
 
+## Known gaps (raised by reviews, not yet decided)
+
+- **The practices checkout in `publish.yml` is unpinned.** It checks out this repo's default
+  branch, so on release day `release-doctor`, `attest --verify-shipped` and `publish-smoke` are
+  whatever HEAD holds here, while the attestation was made by the releaser's local checkout.
+  Pinning trades that for missing fixes. The other option is recording the practices SHA in
+  `release-attestation.json` and comparing it. Raised by tosijs-3d-ensemble's 0.4.0 review.
+- **A missing attestation is skipped silently.** "Tarball matches the attested build" is
+  `if: hashFiles('release-attestation.json') != ''`. For a repo that declares
+  `attestedLanes`, a missing file should FAIL. `release-doctor` does run the lanes in that case,
+  so it is not a hole, but on a runner that cannot render the error reads as a browser failure,
+  not as "you forgot to attest".
+
 ## History
 
 - **2026-09-26, tosijs-ui 1.15.3 (pilot).** The first run found four defects before anything
