@@ -478,3 +478,32 @@ _(dev-loop quirks that haven't earned a cross-project rule yet)_
   first.
 - **tosijs-schema** — generate user-facing docs from executable code (`bun examples.ts >
   examples.md` during `pack`) so docs can't drift from real behavior.
+
+## Never `pkill -f` a pattern the whole ecosystem shares
+
+The dev server's identity is its **port**, not its command line. `bun bin/site.ts` is the
+entry point in tosijs-editor, tosijs, tosijs-3d and tosijs-virta — every repo on this
+machine that uses the `tosijs-ui/site` doc system — so
+
+```sh
+pkill -f "bin/site.ts"      # kills FOUR projects' dev servers
+```
+
+Measured on the shared dev machine: that pattern matched `tosijs-editor` on :8789 and
+`tosijs-3d` on :8030 simultaneously, while a haltija session had live tabs against :8030.
+An agent restarting its own dev server takes down whatever the owner was looking at in
+another repo, and neither of them gets an error — the tab just stops responding.
+
+Target the port, and **verify the process is yours before killing it**:
+
+```sh
+pid=$(lsof -ti:8789 -sTCP:LISTEN | head -1)
+cwd=$(lsof -a -p "$pid" -d cwd -Fn | grep '^n' | sed 's/^n//')
+[ "$cwd" = "$PWD" ] && kill "$pid" || echo "refusing: :8789 is served by $cwd"
+```
+
+The refusal matters as much as the kill: a port collision means someone else's server
+already holds it, and killing it is the wrong repair. The same applies to any `pkill -f`
+over a build tool, a watcher or a test runner — the pattern that identifies YOUR process
+is almost never the one that identifies the program. — seen in: tosijs-editor (2026-09-27,
+four times in one session before the owner noticed)
