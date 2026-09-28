@@ -33,38 +33,26 @@
   (tosijs-ui#165). Agreed at the tosijs-ui level, but it did not propagate: tosijs-3d's
   `bun format` rewrote every `.md` until 2026-09-25, and tosijs-3d-ensemble and tjs-lang
   still format markdown. Also never pass `.md` files to `prettier --write` by hand (an
-  agent doing so is how the tosijs-3d gap was noticed). Proposed as a shipped default
-  so nobody has to rediscover it: tosijs-ui#187. — seen in: tosijs, tosijs-ui, tosijs-3d
+  agent doing so is how the tosijs-3d gap was noticed). **Use `tosijs-format`** (tosijs-ui
+  1.16+, #187): the house format step as a command, `eslint --fix` then `prettier --write .
+  '!**/*.md'`, with `--check` for CI. A command, because Prettier 2 cannot share an ignore
+  file through a config package. Adopting it is a standing rollout (`rollouts.md`).
+  — seen in: tosijs, tosijs-ui, tosijs-3d
 - **In markdown prose, never let a wrapped line begin with `+`, `-`, `*`, or `1.`.** Per
   CommonMark that starts a list, so the marker is swallowed and vanishes from the rendered
   output: `JSON-Schema\n  + $predicate` renders as a nested bullet reading "`$predicate`
   as..." — the `+` is simply gone. Keep the operator off column one (rewrap, or put the
-  clause on one line). If Prettier rewrites your `+` bullet to `-`, that's not Prettier
-  breaking your prose — it's Prettier *reporting* that the renderer already ate it. Don't
-  `.prettierignore` the file to silence it. — seen in: tjs-lang (CHANGELOG.md, TODO.md —
-  it recurs)
-- **In a doc-comment project, `embeddedLanguageFormatting: 'off'` is not optional.** A
-  `tosijs-ui/site` project's pages ARE markdown and `/*# … */` comments whose fenced blocks
-  are executable live examples; letting Prettier reformat them rewrites running code and
-  RTL sample markup. (Prettier does not touch comment contents, so the `/*# … */` blocks are
-  safe either way — it is the `.md` files that need the override.) — seen in: tosijs-editor
-
-- **Turn off Prettier's *embedded* formatting for markdown, not Prettier itself.** Prettier
-  reformats fenced code **inside** `.md`, which mangles hand-laid-out examples: two separate
-  ` ```js ` lines `'5' == 5` and `[1] == 1` become the single nonsense expression
-  `;('5' == (5)[1]) == 1` (ASI guards). The surgical fix is a config override, not
-  `.prettierignore` on your docs:
-
-  ```json
-  "overrides": [
-    { "files": "*.md", "options": { "embeddedLanguageFormatting": "off" } }
-  ]
-  ```
-
-  Code fences are then left exactly as written, while Prettier still normalizes markdown
-  prose — which is what catches the swallowed-bullet bug above. Banishing Prettier from
-  markdown entirely would hide that class of defect instead of fixing it. (Note the value
-  is `"off"`; `"ignore"` is not valid and Prettier will error out.) — seen in: tjs-lang
+  clause on one line). Prettier used to surface this by rewriting such a `+` bullet to `-`;
+  with Prettier off markdown (owner decision, above) that signal is gone, so read diffs of
+  prose for it, and a doc-build warning for it is planned in tosijs-ui. — seen in: tjs-lang
+  (CHANGELOG.md, TODO.md — it recurs)
+- **Superseded: the `embeddedLanguageFormatting: 'off'` override for `*.md`.** It stopped
+  Prettier reformatting executable fenced code inside markdown (turning two lines `'5' == 5`
+  and `[1] == 1` into `;('5' == (5)[1]) == 1`). With Prettier not touching markdown at all,
+  it is unnecessary. The earlier argument here, that Prettier should keep formatting markdown
+  prose because it reveals the swallowed-list-marker bug, was overruled: the prose edits cost
+  more than that one signal. Prettier never touches comment contents, so `/*# … */` doc blocks
+  were always safe. — seen in: tosijs-editor, tjs-lang
 
 - **Never silence format/lint in a verification pipeline, and always chain with `&&`.** A
   `bun format 2>/dev/null` (or an unchained `format; test`) lets a lint failure ride to green:
