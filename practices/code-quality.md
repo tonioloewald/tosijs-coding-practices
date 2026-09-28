@@ -33,10 +33,14 @@
   (tosijs-ui#165). Agreed at the tosijs-ui level, but it did not propagate: tosijs-3d's
   `bun format` rewrote every `.md` until 2026-09-25, and tosijs-3d-ensemble and tjs-lang
   still format markdown. Also never pass `.md` files to `prettier --write` by hand (an
-  agent doing so is how the tosijs-3d gap was noticed). **Use `tosijs-format`** (tosijs-ui
-  1.16+, #187): the house format step as a command, `eslint --fix` then `prettier --write .
-  '!**/*.md'`, with `--check` for CI. A command, because Prettier 2 cannot share an ignore
-  file through a config package. Adopting it is a standing rollout (`rollouts.md`).
+  agent doing so is how the tosijs-3d gap was noticed). **Put it in the Prettier config**, where every entry point reads it (editors'
+  format-on-save, lint-staged, a bare `prettier --write`), not just one script:
+  `"overrides": [{ "files": ["*.md", "*.markdown", "*.mdx"], "options": { "requirePragma": true } }]`.
+  Verified on Prettier 2.8.8, including the `--stdin-filepath` path editors use. (This doc and
+  tosijs-ui 1.16's first cut claimed a v2 config couldn't exclude markdown; `requirePragma` does.)
+  `tosijs-format` (tosijs-ui 1.16+) is an optional convenience on top: `eslint --fix` then
+  prettier with markdown excluded, `--check` for CI. Repos BELOW tosijs-ui in the stack (tosijs,
+  tosijs-schema) should use the config alone rather than depend on tosijs-ui to format.
   — seen in: tosijs, tosijs-ui, tosijs-3d
 - **In markdown prose, never let a wrapped line begin with `+`, `-`, `*`, or `1.`.** Per
   CommonMark that starts a list, so the marker is swallowed and vanishes from the rendered
