@@ -765,6 +765,19 @@ Two corollaries that cost real time:
   bullet written *in* the release commit is not in the range you checked a moment earlier.
 - **Tagging can turn the gate green without the bullet ever being written**, because the range
   is exclusive of the since-commit. The annotation escapes in both directions.
+- **Match against the section being released, never the whole file.** A loose matcher (a
+  distinctive run of words, so prose can paraphrase) is fine; a loose HAYSTACK is not. Matched
+  against the entire CHANGELOG, a new bullet was "covered" by phrases in older sections
+  ("rebuild your site", "code split chunks"), and tosijs-ui 1.16.0's #191 fix had no entry at all
+  while the gate said "all accounted for": a false GREEN, the one failure a gate must not have.
+  The fix scopes the check to `## <version>` and reports when that section is missing.
+  — seen in: tosijs-ui 1.16.0 pre-release review B2, `v1.15.5..a45db9e32`
+- **A dev-dependency bump can change what you ship.** If a bundled artifact inlines a package
+  that is a devDependency (tosijs-ui's CDN `iife.js` inlines tosijs-schema to wire up
+  validation), Dependabot's green CI says nothing about it: CI doesn't rebuild the committed
+  bundle. Rebuild and diff shipped files after dependency PRs, and name the bundled version in
+  the release notes. — seen in: tosijs-ui 1.16.0 (tosijs-schema 1.8.0 → 1.10.2 inside `iife.js`),
+  `v1.15.5..a45db9e32`
 
 Recorded because documenting it did not stop it: tosijs-ui hit this at v1.11.0, then at
 v1.14.0, then again inside the 1.15.0 remediation commit — **three releases, one gate, same
