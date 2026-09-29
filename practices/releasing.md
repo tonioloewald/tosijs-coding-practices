@@ -548,6 +548,17 @@ Removing or changing public API imposes a cost on every consumer. Before you shi
    anything that deliberately doesn't ship — roadmaps, backlogs, agent checklists — absolutely
    on the repo host instead.
 
+   **And name the break in the INDEX, not only on the page.** In a `tosijs-ui/site` project,
+   `llms.txt` lists every page by its metadata `description` — so a migration section the
+   description doesn't mention is invisible to an agent reading the index. tosijs 1.10.0
+   removed `Component`'s index signature with a full `Migration.md` section and CHANGELOG
+   entry, but neither the Migration nor the Component description said so for five releases,
+   and neither did the README. An agent read the `.d.ts`, saw the break, found no remedy in
+   what it reads first, and reported it as "likely TS fallout". When a migration section
+   lands, update the Migration page's description and the affected page's, and the README if
+   the API is on it.
+   — seen in: tosijs v1.10.4..eefdbee
+
 **Deprecation aliases only protect the JS import surface.** Three break classes slip past a
 warn-once alias entirely, because nothing resolves them by name at runtime — plan migration
 notes around these specifically:
