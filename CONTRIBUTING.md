@@ -70,6 +70,14 @@ checkable, one place to look — not something that acts for you unannounced. Au
 checks and reports: always welcome. Automatic actions: only ones the person asked for,
 can see coming, and can undo.
 
+**Measures get critiqued too** (owner, 2026-09-30). A practice's measure is itself open to
+review on three counts: **robustness** (hard to game, not noise), **ease of application**
+(cheap enough to collect every time, ideally automatically), and **fitness** (does it
+measure the thing, or something that correlates until someone optimizes it). Known cases:
+coverage percentage failed fitness; review round counts are robust and cheap but need a
+paired escape measure, or rounds can fall because reviews got lax; a triage acceptance rate
+can be gamed by suggesting only safe tags.
+
 We do things to accomplish goals, and the corpus records the doing — but **intention ≠
 result**, and an entry's existence is an intention. The evidence hierarchy, strongest first:
 
