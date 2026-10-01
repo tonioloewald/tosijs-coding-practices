@@ -364,6 +364,33 @@ a comparison against a run in which the test had been skipped.
 
 — seen in: tosijs-3d-ensemble
 
+## Finding a leak: per-trip metrics, a control, WeakRefs, then retainers
+
+A test that gets steadily SLOWER over repeated trips is measuring a leak until
+shown otherwise. Four steps, cheapest first, each narrowing the next:
+
+1. **Per-trip metrics after a forced GC.** CDP `HeapProfiler.collectGarbage`, then
+   `Performance.getMetrics`: `Nodes` and `JSEventListeners` per round trip. Linear
+   growth is a leak; a flat line is not.
+2. **A control.** The same round trip to a page WITHOUT the suspect component. Flat
+   there and growing here puts the leak in the component, not the router or the
+   doc system.
+3. **WeakRefs.** Before leaving, hold `new WeakRef(x)` to the component, its scene,
+   its engine, one of its nodes; after leaving and GC, see which still `deref()`.
+   "Disposed but alive" (the engine says `isDisposed` and is still reachable)
+   means something holds a REFERENCE, not that teardown failed.
+4. **Retainers.** Take a heap snapshot (`HeapProfiler.takeHeapSnapshot`) and run
+   [`tools/heap-retainers.ts`](../tools/heap-retainers.ts) for the shortest strong
+   path from a GC root. A module-scope `Set` or `Map` of callbacks is the usual
+   answer: something registered, nothing unregisters.
+
+Measured in tosijs-3d-ensemble (2026-10): +3,970 nodes and +61 listeners per editor
+visit, flat for doc pages, every WeakRef alive, and the path was a module-level
+`Set` in tosijs-3d's `keyboard.js` holding each `inputField`'s repaint closure
+(tosijs-3d#96). A plausible first guess (an unremoved field-group listener) was
+added, measured, and made no difference, which is why step 4 exists.
+— seen in: tosijs-3d-ensemble
+
 ## Live browser testing with Haltija
 
 - **Two measurement traps will make you "fix" code that was never broken.** Both cost a
