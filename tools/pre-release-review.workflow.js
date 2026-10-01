@@ -205,7 +205,7 @@ const CASCADES = {
 4. Judgement, triggered only by gates 1-3 having found something: is there a legitimate reason to leave the platform idiom here (performance measured, a third-party integration)? If the code does not say so, it is a finding.`,
   correctness: `1. Did runtime behavior change (non-test, non-doc code in the diff)? NO -> only gates 5-6 can fire.
 2. For each behavioral change: does a test exist that FAILS without it? (run it) NO -> finding.
-3. Does the changed code run in >1 mode (flags, http/https, dev/prod, headless/desktop)? YES -> state what it does in EACH mode. Hard rules: a default only one path sets = finding; a check reading input that is parsed later = finding.
+3. Does the changed code run in >1 mode (flags, http/https, dev/prod, headless/desktop — and >1 CALLER: grep the changed function's name for internal re-entries, not just the exports)? YES -> state what it does in EACH mode. Hard rules: a default only one path sets = finding; a check reading input that is parsed later = finding; a refusal about the CALLER's argument on a path the implementation itself re-enters = finding.
 4. Greppable hard rules, each hit = finding: manual re-render; on<Event> callback props; value as initAttribute; proxy-on-proxy; path bindings inside shadow DOM.
 5. Diff touches measurement/inspection/remote-control code? YES -> can a result be right-looking-but-wrong? Then it must carry the caveat that makes it interpretable.
 6. Did an instrument gain a signal it previously lacked? YES -> every prior green obtained with the old instrument is unverified; re-run those checks.`,

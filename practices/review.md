@@ -719,8 +719,11 @@ obligations, which is why its reviews need more than the generic nine.
    finding.
 3. **Does the changed code run in more than one mode?** (fact: enumerate flags, http/https,
    dev/prod, headless/desktop from the code) Yes → state what the change does in *each* mode.
-   Hard rules, no judgement: a default only one path sets is a finding; a check reading input
-   that is parsed later is a finding.
+   **Who calls it is a mode too:** enumerate the changed function's callers, internal ones
+   included (`grep` its name in the repo, not just the exports). Hard rules, no judgement: a
+   default only one path sets is a finding; a check reading input that is parsed later is a
+   finding; a refusal about the *caller's* argument on a path the implementation itself
+   re-enters is a finding.
 4. **Greppable hard rules** — each hit is a finding: manual re-render introduced;
    `on<Event>` callback props; `value` as initAttribute; proxy-on-proxy; path bindings inside
    shadow DOM.
@@ -749,6 +752,15 @@ Detail and evidence for the gates above:
   - **A new message or check placed before the input it depends on.** Argument parsing, config
     merging and validation have an order; code inserted "near the top" can read a flag that
     hasn't been parsed yet and confidently say the opposite of what the run then does.
+  - **A boundary check on a path the implementation re-enters.** A new refusal at a public
+    entry point ("the argument you passed is ambiguous") also fires at every internal call that
+    goes back through that entry on already-resolved data: union branches, re-validation,
+    lint passes, a wrapper's own method. Then the refusal applies at whichever depths happen to
+    recurse through the public door, and a valid value is refused. Split the boundary (resolve +
+    check the caller's argument) from the core (resolved input), route every internal caller to
+    the core, and pin each internal call site with a test that fails if it is reverted to the
+    public entry. Some of these are masked by an outer re-check, so pin those with the outer
+    check switched off.
 - **The instrument must not lie.** For any tool that does remote control, inspection, or
   measurement, the failure that costs the user the most is not an error or a timeout — it's a
   **plausible-but-wrong answer** returned with the same confidence as a right one. A backgrounded
@@ -776,7 +788,10 @@ Detail and evidence for the gates above:
 — seen in: haltija (1.4.0: an https-only server kept `PORT`'s http default and advertised a
 port it wasn't listening on; a new warning was emitted before `--port` was parsed, so
 `hj --port N` told the user to use `--port`. 1.5.0: a hidden tab and a focus-chosen tab each
-returned a confident wrong answer until the result was made to carry a warning — #2/#3)
+returned a confident wrong answer until the result was made to carry a warning — #2/#3); tosijs-schema (1.12.0: an ambiguity refusal added to `validate()` fired inside `anyOf`
+branches, `filter`'s re-validation and a builder's own `.validate()`, all of which re-entered
+the public `validate`. A builder with a `.meta({ schema })` key rejected valid data. The full
+review saw only the lint symptom; the cause was every internal re-entry.)
 
 ### 2. Efficiency
 
