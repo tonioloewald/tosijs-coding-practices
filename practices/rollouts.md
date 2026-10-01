@@ -16,7 +16,7 @@ it here.
 
 | Rollout | Instructions | Adopted? |
 | --- | --- | --- |
-| The virta task board | <https://virta.tosijs.net/start/> | `virta brief` prints this repo's board |
+| The virta task board | <https://virta.tosijs.net/start/> — **the owner runs or approves the two setup commands** (`project init` writes agent hooks, so an agent's own safety checks rightly refuse it); the repo's agent does the rest | `virta brief` prints this repo's board |
 | Prettier never touches markdown | [`code-quality.md`](code-quality.md): the `requirePragma` override for `*.md`/`*.markdown`/`*.mdx` in the Prettier config (optionally `tosijs-format` as the `format` script, for repos that already depend on tosijs-ui) | the override is in the Prettier config, and `prettier --check .` does not list any `.md` file |
 | Publishing through the shared workflow | [`publishing-via-oidc.md`](publishing-via-oidc.md) "Adopting it in a repo" | `.github/workflows/publish.yml` is identical to [`templates/publish.yml`](../templates/publish.yml) (repos that publish to npm) |
 
