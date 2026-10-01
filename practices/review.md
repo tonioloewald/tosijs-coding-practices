@@ -1482,6 +1482,30 @@ being true. If nothing does, either add one or move the claim somewhere that doe
 as a guarantee. Invariants currently held by _remembering_ are the target — those are the
 ones that regress silently.
 
+**"Who else can reach it?" — for an access invariant, list EVERY reader and writer.**
+"Where else?" applied to authorization. Before claiming a protected resource is unreachable
+"as a class", write down every path that reads or writes it, including the ones that bypass
+the rules you just changed: admin-SDK endpoints, signed or token URLs, operator scripts, and
+readers of its metadata. Then show the invariant against each one. In one release, three
+review rounds each re-proved "private files are out of reach" for the paths in view; an
+endpoint using the Admin SDK (which ignores the storage rules) was missed until the list was
+made. The class fix was to make the old readers **allowlist** what they may read instead of
+denylisting the new thing.
+
+**An early-return success skips every refusal below it.** When a fix adds a fast path
+("unchanged", "already done"), check each refusal that follows it: the shortcut ran before an
+immutability check, so two different answers came back again. Prefer stating the rule the
+responses must obey ("a caller who can't read gets answers independent of the stored content")
+and testing that as a property, over ordering checks by hand.
+
+**A live check says which path it exercised, and a 404 needs a positive control.**
+- "Verified live" via the function URL is not verification through the CDN. Hosting replaced
+  a security header the function set, so the sandbox never reached browsers on the real
+  domain; only a check through the site's own URL found it.
+- A check that expects 404 passes just as well when the reader looks in the wrong bucket.
+  Pair it with a request that must succeed through the same path.
+— seen in: tosijs-platform 0.3.0 (`v0.2.1..194957e`; reviews/0.3.0-storage-areas*.md)
+
 ### Triage & gate
 
 - Dedupe the union of findings and rank by severity.
