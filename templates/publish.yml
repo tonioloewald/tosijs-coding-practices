@@ -12,7 +12,8 @@
 # Before tagging, run it with `dry_run` on the branch: every check, no staging, no tag to move.
 #
 # Approved after the 60-minute wait? Run it again with `verify_only` — a re-run starts over and
-# stops at "already published". npm pack is deterministic, so verify_only re-packs the tag.
+# stops at "already published". npm pack is deterministic, so verify_only re-packs the tag. Its
+# build reports the dependency audit rather than failing on it: what shipped cannot change.
 #
 # Every check runs BEFORE staging: a staged version burns its number exactly as a publish does.
 # The npm Trusted Publisher entry names this file (publish.yml) with direct `npm publish`
@@ -138,6 +139,13 @@ jobs:
       # that does not gets it built here from the frozen lockfile and pinned Bun. Files that do
       # not ship (a site's ePub, a version stamp) are not this check's business.
       - name: Build
+        env:
+          # verify_only checks bytes that are ALREADY published, so a gate whose verdict can change
+          # after publication must not decide it: an advisory announced the day after a release
+          # made that release impossible to verify (tosijs v1.10.5, practices #2469). The build
+          # still runs, because a repo that does not commit its build output needs it to
+          # reproduce the tarball; the tosijs-ui/site dependency audit only REPORTS here.
+          TOSIJS_AUDIT: ${{ inputs.verify_only && 'warn' || '' }}
         run: |
           set -euo pipefail
           # The full build is not always called `build`: tjs-lang's is `make`, because `bun build`
