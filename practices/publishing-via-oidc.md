@@ -9,6 +9,14 @@ adopted it yet keep the manual path in [releasing.md](./releasing.md).
 - **The workflow can only _stage_.** OIDC trusted publishing gives `publish.yml` a short-lived
   credential, and the Trusted Publisher entry has direct `npm publish` **unchecked**, so the only
   thing CI can do is `npm stage publish`. No stored token exists anywhere.
+- **Only one job can mint that credential, and it runs no code from the repo or from here.**
+  Three jobs (#1083): `build` (read-only) builds, tests, packs and runs every check, then hands
+  over the tarball as an artifact; `stage` (the only job with `id-token: write`) has no checkout,
+  re-derives name, version, dist-tag and integrity **from the tarball's own bytes**, checks them
+  against the tag, and stages; `verify` (read-only) checks what the registry serves against the
+  integrity `stage` computed. A compromised build step can still change what gets staged (the
+  2FA approval is the gate on that), but it can no longer reach the credential. Third-party
+  actions are pinned to commit SHAs.
 - **The maintainer's 2FA approval is the human GO.** npmjs.com → the package → **Staged
   Packages** → Approve. It works from a phone, hours later. This replaces the old argument for a
   manual trigger as the gate; `workflow_dispatch` is still the trigger, but the approval is what
