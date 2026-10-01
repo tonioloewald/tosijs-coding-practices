@@ -36,7 +36,10 @@ adopted it yet keep the manual path in [releasing.md](./releasing.md).
 5. The run verifies: published `integrity` equals the staged tarball's, dist-tags are right, a
    prerelease is never `latest`, and the consumer smoke test runs on the **registry's** copy.
 
-**Approved after the run's 60-minute wait?** Run it again with `verify_only` ticked. A re-run of
+**Approved after the run's 60-minute wait?** The run ends green but says so: a "Verification owed"
+annotation and job output `verification=owed`, because green alone read as verified (#2495). An
+hour in which the registry never answered ends red instead: that is an outage, not a pending
+approval. Run it again with `verify_only` ticked. A re-run of
 the failed job starts over and stops at "already published". Verify-only re-packs the tag, which
 works because `npm pack` is deterministic: re-packing v1.15.3 reproduced the published shasum
 `eb3c854c…` exactly. Its build runs the tosijs-ui/site dependency audit in `warn` mode: an
