@@ -131,7 +131,7 @@ compile-time; it is that **intent gets written somewhere it can be falsified.**
 - **A colon value is an EXAMPLE, not a type.** `function foo(x: 'default')` means a
   *required* param whose example is `'default'` (widens to `string`) — not a string-literal
   type. The example survives to runtime as a contract/test. This is called out as the single
-  most common LLM mistake in the language. Full reference: `CLAUDE-TJS-SYNTAX.md`.
+  most common LLM mistake in the language. Full reference: `TJS-SYNTAX.md` (renamed from `CLAUDE-TJS-SYNTAX.md` in tjs-lang 0.14.0; the old path is a pointer).
   — seen in: tjs-lang
 - **Respect the `TJS ⊇ JS ⊇ AJS` invariant.** A richer layer may do more but must never
   make subset-legal code illegal; subset violations are bugs (`PRINCIPLES.md`). Set the
