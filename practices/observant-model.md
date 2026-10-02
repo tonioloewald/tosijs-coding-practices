@@ -131,6 +131,14 @@ Three specific traps, each of which cost real time in `tosijs-3d-ensemble`:
   the store instead when the point is to normalise what was just written.
   — seen in: tosijs-3d-ensemble
 
+A fourth, from snowfox-app: **a MISSING property reads back as a truthy box.** Reading a
+field the object never had (`sheet.isProcessed` on a plain loaded sheet, `sheet.sourceSheet`)
+returns a box, not `undefined`, so `if (sheet.isProcessed && sheet.sourceSheet)` is true for
+every sheet and `!= null` checks pass too. It showed as a "View Source Data" button on sheets
+that had no source, and as a provenance walk that ran straight past its real source. Test
+optional flags on the unwrapped value — `tosiValue(sheet).isProcessed` — and keep the proxy
+only for what binds to it. — seen in: snowfox-app (SNOW-8311)
+
 ## Do not roll your own coalescing, memoization, or dirty-checking
 
 Updates are queued on an rAF and tosijs skips writes that change nothing.

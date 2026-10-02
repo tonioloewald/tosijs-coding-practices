@@ -176,6 +176,19 @@ There is **no clean workaround**, and don't go hunting for one: the slot is a re
   bar because the doc site paints buttons near-white. `lightStyleSpec` is a tag-scoped document
   stylesheet, so it competes on equal terms. Keep `::slotted()` for layout the page has no
   opinion about. — seen in: tosijs-editor
+- **`lightStyleSpec` class names are GLOBAL names.** `:host` becomes the tag name, not a
+  boundary, so every global rule the host app ships for a class name reaches your element's
+  children too. A component that picks a generic name (`grid`, `toolbar`, `span-one`) inherits
+  whatever the app's legacy stylesheet says about it — snowfox's next-gen home page reused the
+  React-era `.home-grid` / `.span-one`, and the global `.span-one { grid-column: span 2 }` made
+  every card span two of its three tracks on wide screens only, so it passed every check below
+  1500px. Prefix component-private classes with something no global rule uses (`hp-grid`), and
+  guard the known collisions with a test that scans source. — seen in: snowfox-app (SNOW-8378)
+- **An author `display` rule beats `[hidden]`.** The UA's `[hidden] { display: none }` has the
+  lowest precedence, so any `display` you set on that element — including one spread in from a
+  shared style spec — silently cancels `hidden`, and the "hidden" part keeps its space. Restate
+  `[hidden] { display: none }` after the rule (or after the spread) for any part you toggle.
+  — seen in: snowfox-app (SNOW-8029)
 - **`<slot>` is ALWAYS `:empty`.** `:empty` tests for child nodes, and a slot's assigned nodes
   are not its children — so `[part="toolbar"]:empty { display: none }`, meant to collapse an
   empty bar, hides it exactly when it is populated. Reflect the state instead: read
