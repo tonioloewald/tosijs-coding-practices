@@ -34,6 +34,13 @@ for (let h = 0; h < q.length; h++) {
   for (let e = firstEdge[n]; e < firstEdge[n + 1]; e += EF) {
     const et = edgeTypes[edges[e + eType]];
     if (et === "weak" || et === "shortcut") continue;
+    // A WeakMap entry is an EPHEMERON: its value lives only while its key does.
+    // The snapshot records it as an ordinary "internal" edge ("… / part of key
+    // (…) -> value"), so following it reports a WeakMap as the retainer when
+    // the real holder is whatever keeps the KEY alive. Measured: it pointed at
+    // a scene-keyed WeakMap whose value led back to the key (a cycle V8
+    // collects); skipping these edges found the two real module-level Maps.
+    if (et === "internal" && / part of key /.test(String(strings[edges[e + eName]]))) continue;
     const to = edges[e + eTo] / NF;
     if (!seen[to]) { seen[to] = 1; prev[to] = n; prevEdge[to] = e; q.push(to); }
   }

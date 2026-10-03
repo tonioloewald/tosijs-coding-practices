@@ -391,6 +391,32 @@ visit, flat for doc pages, every WeakRef alive, and the path was a module-level
 added, measured, and made no difference, which is why step 4 exists.
 — seen in: tosijs-3d-ensemble
 
+**After the first retainer is fixed, measure again; there is usually another.**
+The same editor still leaked once tosijs-3d#96 landed. Three more causes came
+out in turn, each found by re-measuring rather than assuming:
+
+- **A control isolates a mechanism, not just a component.** Re-run the same
+  probe with ONE suspect switched off (here: binding widgets to state boxes).
+  Listeners went from +125 per ten panel rebuilds to flat, which convicted the
+  binding (a subscriber that never unsubscribes, tosijs-3d#100) before any
+  heap snapshot was read.
+- **Leaks that are TIMERS don't show in node counts.** The test still slowed
+  from 5 s to 40 s a trip with nodes nearly flat. Wrap `setInterval` in an
+  init script, record each creation site's stack, and rank sites by ticks per
+  second after leaving the page. The top site was ~2,700 ticks/s.
+- **A workaround outlives the bug it covered and becomes the bug.** That top
+  site was our own 12 s poll for an upstream race that upstream had fixed
+  three releases earlier, so every poll now ran its full budget, on every
+  edit. When an upstream fix lands, delete the workaround, and keep its
+  REGRESSION as a test (`rapid-edits.pw.ts`: a burst of edits settles at the
+  same mesh count), not its mechanism.
+- **The retainer tool treats WeakMap entries as strong** unless told not to.
+  `tools/heap-retainers.ts` now skips ephemeron edges, after it reported a
+  WeakMap whose value pointed back at its own key.
+
+Covers tosijs-3d-ensemble b02ece7..6f35823.
+— seen in: tosijs-3d-ensemble
+
 ## Live browser testing with Haltija
 
 - **Two measurement traps will make you "fix" code that was never broken.** Both cost a
