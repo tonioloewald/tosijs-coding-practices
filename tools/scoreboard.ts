@@ -44,7 +44,7 @@ const PROJECTS: Project[] = [
   { key: '[react-tosijs](', repo: 'tonioloewald/react-tosijs', npm: 'react-tosijs' },
   { key: '[ngx-tosijs](', repo: 'tonioloewald/ngx-tosijs', npm: 'ngx-tosijs' },
   { key: '[tosijs-3d](', repo: 'tonioloewald/tosijs-3d', npm: 'tosijs-3d' },
-  { key: 'tosijs-3d-ensemble' }, // local repo, unpublished — row is hand-maintained
+  { key: 'tosijs-3d-ensemble', repo: 'tonioloewald/tosijs-3d-ensemble', npm: 'tosijs-3d-ensemble' },
   { key: 'manta-recon' }, // local, private
   { key: '[tosijs-product](', repo: 'tonioloewald/tosijs-product', npm: 'tosijs-product' },
   { key: '[tosijs-timezone-picker](', repo: 'tonioloewald/tosijs-timezone-picker', npm: 'tosijs-timezone-picker' },
@@ -59,7 +59,12 @@ const PROJECTS: Project[] = [
 ]
 
 // On the board but deliberately not a scoreboard row.
-const NOT_A_ROW = new Set(['tonioloewald/tosijs-coding-practices'])
+const NOT_A_ROW = new Set([
+  'tonioloewald/tosijs-coding-practices',
+  'tonioloewald/foresight-rpg', // a book, not software: on the board, deliberately not on the scoreboard
+  'tonioloewald/falling-forward', // a novel: same
+  'tonioloewald/static-assets', // has a row, hand-maintained: no package.json to read a version from
+])
 
 const check = process.argv.includes('--check')
 const readmePath = join(import.meta.dir, '..', 'README.md')
