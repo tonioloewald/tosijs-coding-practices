@@ -52,7 +52,7 @@ const PROJECTS: Project[] = [
   { key: '[wobbly](', repo: 'tonioloewald/wobbly', npm: 'wobbly-js' },
   { key: '[tosijs-editor](', repo: 'tonioloewald/tosijs-editor', npm: 'tosijs-styled-editor' },
   { key: '[lukko](', repo: 'tonioloewald/lukko' },
-  { key: '[loewald-dot-com](', repo: 'tonioloewald/tosijs-platform' },
+  { key: '[service-compris](', repo: 'tonioloewald/tosijs-platform', npm: 'service-compris' },
   { key: '[kith-email](', repo: 'tonioloewald/kith-email' },
   { key: '[kilpi](', repo: 'tonioloewald/kilpi', npm: 'tosijs-kilpi' },
   { key: 'tosijs-virta', repo: 'tonioloewald/tosijs-virta' }, // private; deploys are its distribution
