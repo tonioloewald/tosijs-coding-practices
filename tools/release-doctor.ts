@@ -190,6 +190,13 @@ function laneFailureDetail(out: string): string {
       }
       const r = await run(['bun', 'run', lane])
       const blocked = r.ok ? undefined : cannotRun(r.out)
+      // An ATTESTED lane exists because CI can't run it. With no valid attestation, "could not
+      // run" means it was never verified anywhere, so it FAILs instead of SKIPping: a SKIP exits
+      // 0, and an unattested publish passed that way (practices #1751).
+      if (blocked && attestedList.includes(lane)) {
+        add(`tests (${lane})`, 'FAIL', `attested lane with no valid release-attestation.json (${attestedOk.error}), and it could not run here: ${blocked}`)
+        continue
+      }
       if (blocked) {
         add(`tests (${lane})`, 'SKIP', `could not run: ${blocked}`)
         continue
