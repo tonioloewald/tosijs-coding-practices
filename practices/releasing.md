@@ -375,16 +375,24 @@ bundler, so even an explicit `instanceof` assertion passes vacuously in a bundle
 "more dogfood," and it is not in tension with a dogfood-first practice.
 — seen in: manta-recon (four of its five cross-repo integration failures were this class),
 tosijs-3d-ensemble ("this project's own loop is Bun and a bundler, and so is the doc site,
-and so was the first consumer") 9. **Update your row in the shared scoreboard** — the "Project scoreboard" table in the
-practices repo's `README.md`. **The fact cells are machine-written**: run
-`bun tools/scoreboard.ts` (in that repo) to refresh Version and "As of" from the registry
-and GitHub; write the Activity cell yourself (skip it if the project is on the task board — the board is its scoreboard) — **2–5 short highlights, newest first,
-REPLACING the old cell, not appending** (a dashboard, not a ledger; the story lives in
-your CHANGELOG, and git history keeps every superseded cell). The tool never touches
-that column. This is the practices repo's no-signoff carve-out, so commit directly —
-but with **`git pull --no-rebase`** (that repo inverts the rebase rule; see its
-`CONTRIBUTING.md`). Do it even for a beta/patch: a stale scoreboard is worse than none,
-and the row is how other agents (and the human) see the ecosystem at a glance.
+and so was the first consumer")
+
+9. **A project on the virta board: showcase what shipped; skip the scoreboard.** The board
+   already tracks version, activity and status live, so a hand-run scoreboard refresh only
+   duplicates it (owner, 2026-10-04). Instead, give each closed task worth showing off a
+   showcase — `virta showcase #n "what it does" --media ./shot.png --link <docs>` — a
+   picture, one line (≤200 chars, **bold** only) and a link, in the board's carousel. Pick
+   work a reader can SEE; a fix with nothing to look at needs no showcase.
+
+   **A project NOT on the board** still updates its row in the shared scoreboard — the
+   "Project scoreboard" table in the practices repo's `README.md`. **The fact cells are
+   machine-written**: run `bun tools/scoreboard.ts` (in that repo) to refresh Version and
+   "As of" from the registry and GitHub; write the Activity cell yourself — **2–5 short
+   highlights, newest first, REPLACING the old cell, not appending** (a dashboard, not a
+   ledger; the story lives in your CHANGELOG, and git history keeps every superseded cell).
+   This is the practices repo's no-signoff carve-out, so commit directly — but with
+   **`git pull --no-rebase`** (that repo inverts the rebase rule; see its
+   `CONTRIBUTING.md`). Do it even for a beta/patch: a stale scoreboard is worse than none.
 
 10. **Post a short after-action report** — append a section to `reviews/AAR.md` in the
     project repo (newest first). **Five minutes, 3–6 bullets, facts not analysis:**
