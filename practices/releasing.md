@@ -712,6 +712,18 @@ The whole selling point of these libraries is being small, so make size regressi
 gzip the built entry and print the size as a build/pack step (`gzip -9 -k dist/index.js`, or
 `zlib.gzipSync` in the build script), then delete the temp artifact. — seen in: tosijs-schema, tosijs-editor
 
+**Re-record the baseline as part of cutting the tag, and record which version it came from.**
+A baseline nobody refreshes silently changes what the printed delta MEANS: it stops being
+release-over-release and becomes cumulative-since-whenever. Measured in tosijs-styled-editor at
+0.6.0 — `dist-sizes.json` was last recorded at `v0.5.0`, two releases back, so the delta the
+build printed for 0.6.0 covered v0.5.0→0.6.0. It happened to be nearly identical to the true
+v0.5.2→HEAD figure (checked by building `v0.5.2` from `git archive`), which is luck, not a
+property: once a release's growth is never re-baselined, the next release attributes it again,
+and a genuine regression inside one release becomes indistinguishable from several releases of
+drift. The doctor's WARN only catches a MISSING baseline, not a stale one — so put the version
+in the JSON and print it in the delta line, which makes staleness visible instead of something
+that has to be noticed. — seen in: tosijs-styled-editor (0.6.0 review, `v0.5.2..9f4c063`)
+
 ## Regenerate generated files, then verify they're in sync
 
 Built output (`dist/`, `docs/`, `version.ts`, `llms.txt`, generated docs) is committed and
