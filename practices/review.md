@@ -307,6 +307,32 @@ in the library underneath, and the patches are symptoms of going around it. Sear
 upward through your own code for a common fix builds a second funnel beside the real one.
 Live case: an agent hand-rolling `observe` hit edge case after edge case and kept looking
 one level up for a shared fix, when the fix was to use `bind`, which already handles them.
+**The counter-rule, because over-reach is its own failure: fix the cause you have EVIDENCE
+for, not a grander one you have inferred.** "Find the general problem" is not licence to
+invent one. Measured in tosijs-styled-editor 0.6.0: a blocker where a tracked paragraph merge
+corrupted the footnote list had exactly one cause — `renumberFootnotes` keyed its map so a
+second reference to one note minted a duplicate item — and fixing that alone made all eight
+regression tests pass. The remediation ALSO stripped `id` from the merged proposal "for the
+general case", on the reasoning that identity should not be duplicated. That implemented
+neither coherent model of who owns an id while a proposal is pending, so accepting a merge
+permanently destroyed every descendant `id`, silently, reaching `value` and
+`setFormValue` — a worse blocker than the one it was generalising, found by the re-review and
+reverted. A second fix for a cause nobody demonstrated is a new defect with a rationale
+attached. The test for whether you have the cause is the one already in this file: can you make
+the fix fail? If removing the second fix leaves every test green, it was not fixing anything.
+— seen in: tosijs-styled-editor 0.6.0 (`v0.5.2..512cfda`)
+
+**Second instance of the dx-tier rule above, confirming it rather than amending it.**
+tosijs-styled-editor 0.6.0 ran `pre-minor` and then `always-on` over the remediation, both
+BLOCK, and the dx tier — which holds `dryness` — was not run until after the second round.
+Every blocker and major in that release was one shape: **one rule, several copies, and nothing
+that makes a divergence fail.** Word stickiness in three copies; the mergeability gate pasted
+into `backspace()` twice and `forwardDelete()` not at all; `refuseStructural`'s return read at
+one of three sites; both resolution sweeps deriving a block the same wrong way; a rule stated
+one way in CHANGELOG and the opposite way in the code and in CLAUDE.md. The suite was green for
+all of them, through two gate rounds. The rule as written ("run it after a BLOCK remediation,
+not once at the end") would have caught them; it was not followed, which is the finding.
+
 It's the decision the incomplete-fix waves never made: tosijs 1.11.0 went twelve rounds
 patching instances. — seen in: tjs-lang (worked), tosijs 1.11.0 (the counterexample)
 
