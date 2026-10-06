@@ -904,6 +904,13 @@ plausible-but-wrong results rather than errors:
 
 **Cascade:**
 
+0. **Naive read first** (owner, from a tjs-lang documentation review). Before opening any
+   source or running any example, read each changed doc as a newcomer who has only that
+   document: what is this, who is it for, is it in the order you'd need it, are there
+   undefined terms, missing steps, contradictions? **Only if it works as a standalone
+   document** do the deeper gates below. A deep pass anchored in the details missed
+   problems a naive reading would have caught instantly, and verifying the examples of a
+   document nobody can follow is wasted work. — seen in: tjs-lang
 1. **Do generated docs regenerate clean?** (mechanical: build, then `git diff --exit-code`)
 2. **Did the public surface change?** (fact: export/`.d.ts` diff) For each new surface:
    **named in at least one consumer-facing doc?** (fact) **Reachable from the error or warning

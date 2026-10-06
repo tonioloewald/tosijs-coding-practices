@@ -217,7 +217,8 @@ const CASCADES = {
 2. Does new code duplicate an existing path? (search for the same shape: helper names, near-identical blocks, a second implementation of one behavior) YES -> unify, or record the keep-decision; a structural twin cannot be deferred without one.
 3. New abstraction with fewer than two real consumers? (count call sites) YES -> premature generalization, flag.
 4. Does an existing copy-pair show drift? (diff the twins) Drift = a correctness bug wearing two addresses; report both copies.`,
-  docs: `1. Do generated docs regenerate clean? (build, then git diff --exit-code)
+  docs: `0. NAIVE READ FIRST. Before opening any source, running any example or reading the diff, read each changed doc as a newcomer who has only that document: does it say what the thing is and who it's for, in what order you'd need it, without undefined terms, missing steps, contradictions or references to things it never introduces? Report what a first-time reader trips on. ONLY IF it works as a standalone document do the deeper gates below; if it doesn't, that is the finding and deeper checking of a document nobody can follow is wasted. (A deep pass anchored in the details misses what a naive reading sees at once.)
+1. Do generated docs regenerate clean? (build, then git diff --exit-code)
 2. Did the public surface change (export/.d.ts diff)? Each new surface: named in a consumer-facing doc? REACHABLE from the error/warning a user hits when they have the problem it solves?
 3. CHANGELOG entry for this version? (Tier 0 answers this — trust its output.)
 4. Security-relevant fix? -> does the entry name the affected SHIPPED versions?
