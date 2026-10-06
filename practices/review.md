@@ -281,6 +281,25 @@ reviewer works the facts in order and reports which branches closed on fact and 
 into judgement — "no findings" from a lens should mean "the gates all answered no," not
 "nothing occurred to me."
 
+**Every lens opens with a big-picture gate** (owner, 2026-10-06). Before any detailed gate,
+one cheap wide look that can end the lens at once; if it fails, that is the finding, and the
+reviewer reports it as a blocker and stops. A reviewer deep in the details stops seeing the
+whole: the deep docs lens missed what a naive reading caught instantly (tjs-lang).
+
+| Lens | Gate 0: stop here if… |
+| --- | --- |
+| correctness | it doesn't build or start, or the headline behavior is plainly wrong when driven once |
+| efficiency | a printed number (bundle size, build or suite time) jumped by a large factor |
+| DRYness | the change is far bigger than what it does, or re-implements something that exists |
+| docs | the document doesn't work on a naive read as a standalone document |
+| coverage | the suite is red, or ran zero (or far fewer) tests |
+| DX | a newcomer can't install and start from the README, or can't tell from the CHANGELOG what changed |
+| ecosystem | a consumer is blocked right now by something filed against this repo (report it first) |
+| practices | the process left no record (no review report, no after-action entry) |
+| security | the diff has a secret, a new unauthenticated surface, a widened permission or a removed check |
+| blast radius | there's a destructive or machine-wide action with no guard |
+| idiom | the UI is rebuilt or re-rendered wholesale instead of built once and bound |
+
 **A cascade must shorten the review, not decorate it** (owner). The gates exist to replace
 open-ended judgement with cheap facts and to close branches early; a lens change that adds
 reviewer work without closing branches earlier fails its own test. Process improvement does

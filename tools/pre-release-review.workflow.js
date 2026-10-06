@@ -253,6 +253,30 @@ const CASCADES = {
 3. Does the TEST SUITE touch any of it? Check even when the diff doesn't touch tests.
 4. Benefit half, triggered: does the diff fix a bug, work around a dependency, or copy a policy? Each -> captured or leaked (fixed where every consumer benefits? workaround filed upstream? does the copy sever propagation?)`,
 }
+/*
+Gate 0, the BIG PICTURE (owner, 2026-10-06): before any detailed gate, one cheap wide look that
+can end the lens at once. A reviewer deep in the details stops seeing the whole — the deep docs
+lens missed what a naive reading caught instantly (tjs-lang). If gate 0 fails, that IS the
+finding: report it as a blocker and stop, because careful checking of something broken at this
+level is wasted, and the fix will change what the detailed gates would have looked at.
+*/
+const BIG_PICTURE = {
+  correctness: `Does the headline thing work at all? Build it and run or drive the main changed behavior once, the way a user would. If it doesn't build, doesn't start, or the headline behavior is plainly wrong, stop here.`,
+  efficiency: `Look at the printed numbers first (bundle size, build time, suite time). Did any of them jump by a large factor? If so, stop here: that is the finding.`,
+  dryness: `Is the size of the change out of proportion to what it does, or is there an obvious second implementation of something that already exists? If so, stop here.`,
+  docs: `(Gate 0 for docs is the naive read, below.)`,
+  coverage: `Run the suite. Is it red, or did it run zero tests (or far fewer than before)? If so, stop here: nothing about coverage can be judged until it runs green.`,
+  dx: `Be a newcomer: from a fresh clone, do the install and start steps the README gives work, and can you tell from the CHANGELOG what changed and whether it breaks you? If not, stop here.`,
+  ecosystem: `Is a consumer blocked RIGHT NOW by something filed against this repo (an open blocker, an unanswered question)? If so, that outranks everything else in this lens: report it first.`,
+  practices: `Did the process leave its record (the review report filed, an after-action entry for the last release)? If the record is missing, say so first: there is nothing to review the process against.`,
+  security: `Scan the whole diff once for the obvious: a secret or token, a new unauthenticated endpoint or listener, a permission widened, a check removed. If you find one, stop here.`,
+  'blast-radius': `Is there an obviously destructive or machine-wide action without a guard (rm -rf, a kill, a global install, a write under the home directory)? If so, stop here.`,
+  idiom: `Stand back from the diff: is the UI built once and bound to state, or is it rebuilt or re-rendered wholesale when state changes? If it's the latter, stop here: the detailed gates would only list symptoms of that.`,
+}
+LENSES.forEach((l) => {
+  if (BIG_PICTURE[l.key] && CASCADES[l.key])
+    CASCADES[l.key] = `GATE 0 — BIG PICTURE, before anything else: ${BIG_PICTURE[l.key]}\n` + CASCADES[l.key]
+})
 LENSES.forEach((l) => {
   if (CASCADES[l.key])
     l.checks =
