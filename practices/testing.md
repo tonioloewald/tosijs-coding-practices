@@ -334,7 +334,38 @@ resolves* — with a timing clause attached: **make sure that artifact is the on
 you think it is at the moment the test reads it.** If in doubt, have the test
 assert a marker it knows should be present (a version string, a new export) and
 fail loudly if the bundle is older than the source.
-— seen in: tosijs
+
+### Second instance: a committed WEB ROOT, and the remedy above is what caught it
+
+*(tosijs-styled-editor 0.7.0, `e32bed1..c301dcb`.)* Same trap, different
+artifact, and worth recording because the first instance was already written
+down here. In every `tosijs-ui/site` project `docs/` is the generated web root
+**and it is committed** — so a dev server has something to serve the instant it
+binds. The browser lane's readiness probe fetched a page, got an answer, and
+started testing.
+
+**Readiness is not freshness.** The probe proves the server responds; it says
+nothing about whether what it serves is this working tree. Every touch
+affordance in the editor was redesigned in `src/`, the whole lane went **green**,
+and the bundle under test still contained an element the source no longer
+creates. Eleven tests passed against the previous release's build.
+
+Two notes:
+
+- **It was caught by the precondition this section already prescribes.** One new
+  test asserted that the element it was about to measure exists, and that is the
+  only thing that failed. Writing the remedy down did not apply it — the lane had
+  gone green for three releases.
+- So make it structural: **every describe that drives a browser carries a
+  precondition asserting its subject is present.** A lane that cannot see what it
+  measures reports zero failures, which is indistinguishable from passing. (The
+  same repo's doc-fence lane already does this, for the same reason: "if the
+  examples never upgrade, every page reports zero failures and this lane is a
+  green light that checked nothing.")
+
+The fix is one step in the harness, not a rule for the operator to remember: the
+lane rebuilds before it tests. ~2.5s against a 38s lane.
+— seen in: tosijs, tosijs-styled-editor
 
 ## Browser lanes run locally and are attested — not in CI
 
