@@ -236,6 +236,12 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   remediation.** Triage doesn't promote majors to a block; a missing test, a docs line or a
   follow-up carried from before is filed, not blocking. A re-review reports the delta, a
   screen at most.
+- **Depth verifies; breadth discovers** (owner, 2026-10-07). Releases are now high quality
+  on what they set out to fix; what still gets found comes from the wide looks, and it's
+  what nobody knew to look for: the dx tier's blocker that seven security rounds walked
+  past, the naive docs read, a consumer's integration failures, the clickjacking hole in a
+  release that wasn't about framing. So when tuning review, spend on breadth (gate 0s,
+  naive reads, a different lens, a real consumer), not on another deep pass over a known fix.
 - **Adoption beats another round.** Shipping and letting consumers use it finds the deeper
   issues faster than more review (manta found five integration failures in nine upgrades
   that no review had; service-compris 0.4.0's re-review blocked a tag while stating that
