@@ -227,11 +227,25 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   finding as a real defect. Check which before you reshape anything; both reflexes point away
   from the remediation mode that is actually costing the rounds. — seen in: snowfox-app
 
-- **A BLOCK verdict must name its re-review scope.** "Fix and re-run" is how review waves
-  happen. Each blocker states what must be re-examined after remediation — which lens(es),
-  over what (default: correctness + blast-radius over the remediation diff only). A blocker
-  whose fix is mechanical (typo, missing entry) needs no re-review beyond Tier 0; say so
-  explicitly, so the cheap case stays cheap.
+- **A BLOCK names the check that clears it, and the default clearance is not another
+  review** (owner, 2026-10-07). Each blocker states what passing looks like: a test that
+  fails with the fix reverted, a driven scenario. When that passes, plus Tier 0, it's
+  cleared. A model re-review happens only for a blocker in a security subsystem or one
+  whose report asks for it, over the remediation diff only.
+- **Only blockers block, and a re-review blocks only on a functional defect in the
+  remediation.** Triage doesn't promote majors to a block; a missing test, a docs line or a
+  follow-up carried from before is filed, not blocking. A re-review reports the delta, a
+  screen at most.
+- **Adoption beats another round.** Shipping and letting consumers use it finds the deeper
+  issues faster than more review (manta found five integration failures in nine upgrades
+  that no review had; service-compris 0.4.0's re-review blocked a tag while stating that
+  neither blocker was a functional defect). So weight the review by what the change can
+  do: an **additive patch** gets Tier 0 and one fast always-on pass, then ships; a
+  **coherent body of work** gets one pre-tag gate; **security subsystems, irreversible
+  changes and breaking API** always get the full gate, because adoption finds what
+  doesn't work, not exploits, and can't undo data loss. The first review of substantial
+  security-relevant work has earned its place (0.4.0's found a real clickjacking hole);
+  what this retires is the default re-review and non-functional blocks.
 - **Respond to a blocker in development mode, not appeasement mode** (owner, 2026-09,
   diagnosing the measured wave record). A blocker is a **bug report entering the normal
   loop, not an exam question** — "focused on fixing the blocker" instead of writing good

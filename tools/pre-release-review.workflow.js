@@ -494,7 +494,7 @@ ${gaps ? `\nCompleteness gaps (major release):\n${JSON.stringify(gaps.gaps, null
 Produce a triaged report:
 - Dedupe near-identical findings across lenses; keep the sharpest wording.
 - Group by severity; within a group, correctness/security first.
-- Recommendation: BLOCK if any confirmed blocker (or unresolved correctness/security) remains; GO_WITH_FOLLOWUPS if only non-blocking findings remain (list them as TODO items to file); GO if clean.
+- Recommendation: BLOCK only for a confirmed finding that is (a) rated blocker by its lens, or (b) a functional defect in a security subsystem (auth, RBAC, sandbox/VM, install) or an irreversible action (data loss, a published promise broken). Do NOT promote majors to a block, and never block on a missing test, a docs line, or a follow-up carried from an earlier review: those are GO_WITH_FOLLOWUPS items to file. If this run is a RE-REVIEW of a remediation, block only on a functional defect IN the remediation, and keep the report to the delta (what changed since the last report), a screen at most. GO_WITH_FOLLOWUPS if only non-blocking findings remain (list them as tasks to file); GO if clean. Shipping and letting consumers adopt it finds the remaining issues faster than another round here.
 - Never silently drop a finding — deferred ones must appear as explicit follow-ups.
 - **A failing test is never dismissed as "pre-existing" or "not caused by this change."** Any red/skipped test in the coverage findings must appear in the report — fixed if easy, otherwise flagged as a follow-up that is still scheduled, never waved away.
 - **ROUTE BY LENS — findings do not all belong in the same place.** Put each follow-up under the right destination heading:

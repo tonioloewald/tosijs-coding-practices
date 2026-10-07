@@ -25,17 +25,28 @@ structure". This skill is the executable version of it.
 letter first and inheriting a weaker gate; the version number follows the narrative
 independently (`releasing.md`).
 
-- **Any substantive diff** — `tier: "always-on"`, `depth: "fast"`. Cheap enough to be routine.
-- **Before cutting any tag** — `tier: "pre-minor"`, `depth: "full"`. Once per coherent body of
-  work, whatever the bump turns out to be. A patch is not exempt: 0.6.5 was a patch that
-  shipped a broken tarball.
+- **Weight the review by what the change can do, not by habit** (owner, 2026-10-07:
+  adoption finds deeper issues faster than more review). Three cases:
+  - **Additive patch** (nothing public removed or changed, no security subsystem touched,
+    no data migration): Tier 0 + `tier: "always-on"`, `depth: "fast"`. One pass, then
+    ship. Consumers adopting it are the next reviewer.
+  - **A coherent body of work** before its tag: `tier: "pre-minor"`, `depth: "full"`, once.
+  - **Security subsystems, irreversible changes, breaking API** (sandbox/VM, auth, RBAC,
+    install, data deletion or migration): always the full gate. Adoption finds what
+    doesn't work; it doesn't find exploits or undo data loss.
+  Tier 0 runs in every case: 0.6.5 was a patch that shipped a broken tarball.
 - **After remediating a BLOCK** — first answer out loud: **"did you solve the blocker
   problem writ large, or just fix what failed?"** Apply the class fix, or record the
-  deferral explicitly (releasing.md "Say what you are NOT fixing"). Then re-run scoped to
-  what each blocker named — default: correctness + blast-radius **over the remediation
-  diff only** (re-reading the whole span is where review waves come from); a mechanical
-  fix needs nothing beyond Tier 0. (Why the question:
-  `reviews/2026-09-06-review-cost-measurement.md`.)
+  deferral explicitly (releasing.md "Say what you are NOT fixing"). Then **clear it the
+  cheap way: the default is NOT another model review.** A blocker is cleared when the
+  check its report named passes (a test that fails with the fix reverted, a driven
+  scenario) plus Tier 0. Run a model re-review only when the blocker was in a security
+  subsystem or its report asked for one, and then over the remediation diff only. **A
+  re-review may block only on a functional defect in the remediation**; a missing test,
+  a docs line or anything carried from before is a follow-up, filed, not a block. Its
+  report is the delta, a screen at most. (Why:
+  `reviews/2026-09-06-review-cost-measurement.md`; service-compris 0.4.0's re-review
+  blocked the tag while stating neither blocker was a functional defect.)
 - **If your blocker fix led to another blocker: STOP.** Don't patch again. Work out the
   general, underlying problem, and plan a proper fix. If that's tractable, do it. If not,
   it's a separate task: file it, with the plan, and ship only what is sound now.
