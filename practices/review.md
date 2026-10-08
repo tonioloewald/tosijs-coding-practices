@@ -24,6 +24,11 @@ unreachable from where a lens sits. State it in the lens preamble:
 > reading, so staleness in committed artifacts is expected between releases and
 > is a release-step concern, not a finding.
 
+The workflow's lens preamble now says this and gives the excluding diff command. It did
+not before, although this section said to: at tosijs-3d 0.8.15, 1071 files had changed
+and 32 were source. Check the build script first; in some repos `docs/` is
+hand-written source and is under review. — seen in: tosijs-3d 0.8.0, 0.8.15
+
 **A claim that a value is LIVE must be asserted at the consumer.** Second
 recurrence of one class, one level deeper each time (tosijs-3d 0.8.2: a
 "live" attribute read only at material creation — the shader never saw the

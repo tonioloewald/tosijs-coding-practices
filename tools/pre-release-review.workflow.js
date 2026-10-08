@@ -385,7 +385,7 @@ const reviewPrompt = (lens) =>
 
 You are the **${lens.title}** reviewer in a pre-release review of THIS repository.
 
-Scope: run \`${diffCmd}\` and \`git diff --stat ${base}...HEAD\` to see everything that changed since the last release (base = \`${base}\`). Read the changed files, and the tests/docs/config around them, as needed for real judgment.${
+Scope: run \`${diffCmd}\` and \`git diff --stat ${base}...HEAD\` to see everything that changed since the last release (base = \`${base}\`). Read the changed files, and the tests/docs/config around them, as needed for real judgment. GENERATED OUTPUT IS NOT UNDER REVIEW: where \`dist/\`, \`docs/\` or similar are build output in this repo (check the build script; in some repos \`docs/\` is hand-written source and IS under review), read the source diff with them excluded, e.g. \`git diff --stat ${base}...HEAD -- . ':!docs' ':!dist'\`. The tree that ships is built at release time, so stale committed artifacts are a release-step concern, not a finding. Only the docs lens reads generated output, and only to check it regenerates clean and that the packed tarball is intact.${
     bump === 'major' ? ' This is a MAJOR release — also review the whole affected subsystems, not only the diff.' : ''
   }
 
