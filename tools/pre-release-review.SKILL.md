@@ -1,6 +1,6 @@
 ---
 name: pre-release-review
-description: Run the tiered pre-release review over a substantive diff — Tier 0 is the mechanical `release-doctor` script, then independent adversarially-verified lens passes (always-on: correctness + blast radius; pre-minor adds efficiency + security; dx covers dx/docs/coverage/dryness; quarterly: ecosystem, practices and the structural audit) ending in a GO / GO-with-followups / BLOCK recommendation. Trigger on the WORK, not the version letter: run it for any substantive change, and before cutting any tag. Use when preparing a release, cutting a version, after remediating a BLOCK, or when the user asks for a release review / pre-release check. Part of the shared tosijs-coding-practices process (practices/review.md).
+description: Run the tiered pre-release review over a substantive diff — Tier 0 is the mechanical `release-doctor` script, then independent adversarially-verified lens passes (always-on: correctness + blast radius; pre-minor adds efficiency + security + docs; dx covers dx/docs/coverage/dryness; quarterly: ecosystem, practices and the structural audit) ending in a GO / GO-with-followups / BLOCK recommendation. Trigger on the WORK, not the version letter: run it for any substantive change, and before cutting any tag. Use when preparing a release, cutting a version, after remediating a BLOCK, or when the user asks for a release review / pre-release check. Part of the shared tosijs-coding-practices process (practices/review.md).
 ---
 
 # Pre-release review
@@ -120,7 +120,7 @@ install** before treating it as a code defect — a stale `node_modules` has fak
    `bun tools/release-doctor.ts` (Tier 0, free, mechanical) before ANY model review:
    - `tier: "always-on"` + `depth: "fast"` — correctness + blast-radius, for any substantive
      change; never keyed to the version letter.
-   - `tier: "pre-minor"` (default) + `depth: "full"` — adds efficiency + security; the
+   - `tier: "pre-minor"` (default) + `depth: "full"` — adds efficiency + security + docs; the
      once-per-coherent-body-of-work gate. Re-reviews after remediation scope to the
      remediation diff only, per each blocker's stated re-review scope.
    - `tier: "dx"` — **dx + docs + coverage + dryness**, the consumer-facing set.

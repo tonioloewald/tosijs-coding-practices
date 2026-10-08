@@ -121,7 +121,7 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   recorded gate-dodges came from letter selection; the trigger is a substantive diff, and
   the version number follows the narrative independently (releasing.md).
 - **Tier 2 — pre-minor (`depth: full`), once per coherent body of work.** Adds
-  **efficiency** and **security** (subsystem-scoped: sandbox/VM, capability boundaries,
+  **efficiency**, **docs** and **security** (subsystem-scoped: sandbox/VM, capability boundaries,
   auth, untrusted input — the escalation rule below already prescribed the depth; now it has
   its own lens). Diff-level DRY and DX ride inside correctness/blast-radius as framings, not
   separate agents (27% duplicate rate; DX never originated a blocker). **Re-reviews cover
@@ -137,6 +137,14 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   transpiled source that no size cap measured, and 80k keys took 76 seconds to transpile
   before fuel or timeout applied.
   — seen in: tjs-lang 0.14.0 (`4c6bcb4..a3cc78e`)
+  **The docs lens runs at every pre-minor** (owner). It sat in the pool and ran only by
+  name. Asked to measure their docs, five projects each found drift within minutes that no
+  release review had looked at: a README with no install line and 12 of 89 exports
+  documented nowhere (tosijs), a README and llms.txt pointing at a retired site (tjs-lang),
+  two thirds of example pages parsed but never executed (tosijs-ui), a flat navigation
+  nobody noticed for weeks. A docs-only release reviewed by correctness and security lenses
+  has nothing to look at (tosijs 1.10.5).
+  — seen in: tosijs, tosijs-ui, tosijs-3d, tjs-lang
 - **The `dx` tier — dx + docs + coverage + dryness, run on a WHOLE RELEASE, not a
   remediation diff.** These four sat in the lens pool and in no tier, so they ran
   only if asked for by name. Over tosijs 1.11.0 they went **seven rounds without
@@ -960,6 +968,17 @@ plausible-but-wrong results rather than errors:
 5. **Is any fix security-relevant?** Yes → does the entry **name the affected shipped
    versions**? (fact)
 6. **Anything deprecated?** Yes → warns once and names its replacement? (fact)
+7. **Is what ships intact?** (mechanical: pack the tarball; README, `llms.txt` and the docs
+   they link are in it, and their links resolve there)
+8. **Was every example this release touched executed** without error or warning? (fact:
+   name the lane that runs it, or say none does)
+9. **Anything removed or renamed?** Yes → grep docs, examples and editor completions for the
+   old spelling. Is there a guard against it coming back?
+10. **Do the surfaces agree?** README, `llms.txt`, `package.json` metadata and the site name
+    the same URLs and version; a breaking change is named in the index a reader sees first.
+11. **Any prose claim a reader will act on** (security, data loss)? → pinned by a test?
+12. **Any new input** (option, attribute, directive, flag)? → is a misplaced or misspelled
+    one reported, or silently ignored?
 
 Detail:
 
@@ -995,8 +1014,28 @@ Detail:
   would have passed here — it is too narrow, and its Done-when is accuracy-only. Copyable mechanism:
   a CONCEPTS table asserting each named concept appears in each consumer-facing doc
   (haltija's `src/docs-coverage.test.ts`). — seen in: haltija (at least the fifth recurrence)
-- **Done when:** docs regenerate clean, the public-API surface is documented, AND every new surface
-  is reachable from a doc a consumer actually reads.
+- **Check what was published, not the checkout.** A link test that passes against the repo
+  proves nothing about the tarball or the deployed site. — seen in: tjs-lang (an `llms.txt`
+  with 29 of 43 links dead in the tarball while its repo link test passed)
+- **"The examples work" means they were executed.** Parsed or rendered is not run. — seen
+  in: tosijs-3d 0.8.0 (three dead callbacks shipped in examples that rendered), tosijs-ui
+  (the runner visits only pages with tests)
+- **Deleting is half the job; the guard is the other half.** Removed syntax returns through
+  examples and editor completions. — seen in: tjs-lang 0.14.0 (a deprecated prefix still
+  taught in 8 places across 6 docs after removal)
+- **Running examples does not check prose.** A sentence someone will act on gets a pinned
+  test. — seen in: tosijs 1.10.2 (a security note recommending a remedy that failed in all
+  three cases it listed, on a page whose examples ran green)
+- **Accepted and ignored is the costliest docs gap.** Say what happens when an input is
+  misspelled or misplaced. — seen in: tosijs-ui (a metadata directive ignored inside a doc
+  block; function props stringified to attributes), service-compris (a token scope that
+  denied with an opaque 404)
+- **A drift finding ends as a check**, not only a fix; report hand-written reference you
+  could not check against types as unverified.
+- **Not in this lens:** navigation, the four audiences, books, references out and deletion
+  across the whole site. Those need a whole-docs pass, not a release diff (open RFC).
+- **Done when:** docs regenerate clean, the public-API surface is documented, every new surface
+  is reachable from a doc a consumer actually reads, AND the published artifact was checked.
 
 ### 5. Test coverage
 

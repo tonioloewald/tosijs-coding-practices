@@ -37,13 +37,15 @@ const diffCmd =
 const depth = opts.depth || 'full'
 // Tier structure (reviews/2026-09-practices-audit.md D2): which lenses run depends on tier.
 //   'always-on'  — correctness + blast-radius, every substantive change, pair with depth:'fast'
-//   'pre-minor'  — adds efficiency + security; DRY/DX ride inside correctness/blast-radius
+//   'pre-minor'  — adds efficiency + security + docs; DRY/DX ride inside correctness/blast-radius
 //   'quarterly'  — ecosystem + practices dispositions (never release-gating)
-// Docs & coverage lenses are retired to the Tier-0 script (tools/release-doctor.ts).
+// Coverage is retired to the Tier-0 script (tools/release-doctor.ts). Docs was too, and came
+// back into pre-minor (owner, 2026-10-08): five projects measured their docs in one morning and
+// every one found drift no release review had looked at, because the docs lens ran only by name.
 const tier = opts.tier || 'pre-minor'
 const TIERS = {
   'always-on': ['correctness', 'blast-radius'],
-  'pre-minor': ['correctness', 'efficiency', 'security', 'blast-radius'],
+  'pre-minor': ['correctness', 'efficiency', 'security', 'docs', 'blast-radius'],
   quarterly: ['ecosystem', 'practices'],
   // THE CONSUMER-FACING TIER. `dx`, `docs`, `coverage` and `dryness` are in
   // the pool and in no tier, so they run only if someone asks for them by
@@ -91,7 +93,7 @@ const LENSES = [
   {
     key: 'docs',
     title: 'Documentation accuracy & up-to-dateness',
-    checks: `Regenerate generated docs and diff-check: run the build/doc generator then \`git diff --exit-code\` over docs/, llms.txt, version.ts, examples.md, API.md — a dirty tree means shipped docs are stale. Inline /*# */ doc-comments must match the changed public API; live-example fences valid (only html/css/js/test execute). CHANGELOG has an entry for this version. README / CLAUDE.md / AGENTS.md reflect the change. Deprecations warn once and name their replacement.`,
+    checks: `Regenerate generated docs and diff-check: run the build/doc generator then \`git diff --exit-code\` over docs/, llms.txt, version.ts, examples.md, API.md — a dirty tree means shipped docs are stale. Inline /*# */ doc-comments must match the changed public API; live-example fences valid (only html/css/js/test execute). CHANGELOG has an entry for this version. README / CLAUDE.md / AGENTS.md reflect the change. Deprecations warn once and name their replacement. CHECK WHAT IS PUBLISHED, NOT THE CHECKOUT: pack the tarball (\`npm pack --dry-run\` or the project's pack step) and confirm the README, llms.txt and every doc they link to are in it and their links resolve there; a link test that passes against the repo proves nothing about the tarball. EXAMPLES touched by this release must have been EXECUTED, not just parsed, with no error or warning; say which were not run by any lane. REMOVED OR RENAMED API: grep docs, examples and editor completions for the old spelling; a hit is a finding, and the recommendation is a guard that fails when the docs teach it again. SURFACES AGREE: README, llms.txt, package.json (homepage, repository, version) and the site name the same URLs and version. A PROSE CLAIM SOMEONE WILL ACT ON (security, data loss, "this is safe") needs a test that pins it; examples running green do not check prose. Each NEW INPUT (option, attribute, directive, flag): do the docs say what happens when it is misspelled or put in the wrong place? Accepted-and-ignored is a finding. Hand-written reference you could not check against types is reported as UNVERIFIED, never as checked. Cite the page, the sentence and the question a reader would have; where a finding is drift, recommend the check that would have caught it, not only the fix.`,
   },
   {
     key: 'coverage',
@@ -222,7 +224,13 @@ const CASCADES = {
 2. Did the public surface change (export/.d.ts diff)? Each new surface: named in a consumer-facing doc? REACHABLE from the error/warning a user hits when they have the problem it solves?
 3. CHANGELOG entry for this version? (Tier 0 answers this — trust its output.)
 4. Security-relevant fix? -> does the entry name the affected SHIPPED versions?
-5. Anything deprecated? -> warns once and names its replacement?`,
+5. Anything deprecated? -> warns once and names its replacement?
+6. Is what SHIPS intact? (pack the tarball; README, llms.txt and the docs they link are in it and their links resolve there)
+7. Was every example this release touched EXECUTED without error or warning? (fact: name the lane, or say none runs it)
+8. Anything removed or renamed? -> grep docs, examples and completions for the old spelling; is there a guard against it coming back?
+9. Do README, llms.txt, package.json metadata and the site agree on URLs and version? Is a breaking change named in the index a reader or agent sees first, not only on its page?
+10. Any prose claim a reader will act on (security, data loss)? -> pinned by a test?
+11. Any new option, attribute, directive or flag? -> is a misplaced or misspelled one reported, or silently ignored?`,
   coverage: `1. Was the suite RUN and the output READ?
 2. Any failing or skipped test? Each is IN SCOPE — hard rule, no dismissals.
 3. For each bug fix: does a failing-first regression test exist? (verify it fails pre-fix where feasible)
