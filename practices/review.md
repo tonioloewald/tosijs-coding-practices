@@ -150,6 +150,9 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   nobody noticed for weeks. A docs-only release reviewed by correctness and security lenses
   has nothing to look at (tosijs 1.10.5).
   — seen in: tosijs, tosijs-ui, tosijs-3d, tjs-lang
+  **Ecosystem, practices and coverage do not run at a patch or a minor, by design.**
+  Ecosystem and practices are the quarterly tier; coverage is Tier 0. A report need not
+  flag their absence. — asked by: tosijs-3d 0.8.15
 - **The `dx` tier — dx + docs + coverage + dryness, run on a WHOLE RELEASE, not a
   remediation diff.** These four sat in the lens pool and in no tier, so they ran
   only if asked for by name. Over tosijs 1.11.0 they went **seven rounds without
@@ -313,6 +316,12 @@ So each lens is written as a **cascade**: factual gates first, cheap and determi
 reviewer works the facts in order and reports which branches closed on fact and which opened
 into judgement — "no findings" from a lens should mean "the gates all answered no," not
 "nothing occurred to me."
+
+**Every gate is accounted for.** A lens returns each gate of its cascade as checked,
+not applicable or not done, with one line on what it ran or why not, and the report lists
+the gates not done. "No findings" must not read as "checked". At tosijs-3d 0.8.15 the docs
+lens was told to check the packed tarball, did not, and its output did not say so; two
+other gates left no trace either way. — seen in: tosijs-3d 0.8.15
 
 **Every lens opens with a big-picture gate** (owner, 2026-10-06). Before any detailed gate,
 one cheap wide look that can end the lens at once; if it fails, that is the finding, and the

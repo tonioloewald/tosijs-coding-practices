@@ -306,9 +306,26 @@ const SEVERITY = ['blocker', 'major', 'minor', 'nit']
 const FINDINGS_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['lens', 'findings'],
+  required: ['lens', 'gates', 'findings'],
   properties: {
     lens: { type: 'string' },
+    // Every gate in the lens's cascade gets a line. tosijs-3d 0.8.15: the docs lens was told
+    // to pack the tarball, did not, and nothing in its output said so; two more gates left no
+    // trace either way. A gate that was skipped must be visible, or "no findings" reads as "checked".
+    gates: {
+      type: 'array',
+      description: 'one entry per numbered gate in your cascade, including gate 0, in order',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['gate', 'status'],
+        properties: {
+          gate: { type: 'string', description: 'the gate number and a few words naming it' },
+          status: { type: 'string', enum: ['checked', 'not-applicable', 'not-done'] },
+          note: { type: 'string', description: 'what you ran or read (checked), or why (not-applicable / not-done); one line' },
+        },
+      },
+    },
     findings: {
       type: 'array',
       items: {
@@ -394,6 +411,8 @@ ${lens.checks}
 
 REVIEW THE CODE AS WHAT IT IS — not as a deficient version of the mainstream thing it resembles. tosijs is NOT a deficient React (observant, not reactive: static-by-default DOM, pin-point updates, no re-render, no diff); tjs is NOT a deficient TypeScript. The stack's divergences from mainstream convention are DELIBERATE — they are the product — and a finding whose remedy is "make it more like React / TypeScript / the usual convention" is presumptively an imported prior, not a defect. To report such a finding you must ground it in a CONCRETE FAILURE SCENARIO in this stack or a documented principle of this stack (practices/observant-model.md, practices/model-priors.md, the project's own docs) — "this differs from what <mainstream tool> does" is not a failure scenario. (A deliberate divergence is not self-justifying either: if it causes a MEASURED problem here, report that on the measurement.)
 
+ACCOUNT FOR EVERY GATE. In \`gates\`, list each numbered gate of your cascade (gate 0 included) as checked, not-applicable or not-done, with one line saying what you ran or why not. "not-done" is an honest answer and costs nothing; a gate left off the list, or marked checked when you only reasoned about it, is the failure. "checked" means you ran the command or read the thing.
+
 Report concrete, ranked findings. Each finding needs a real failure scenario (or, for non-correctness lenses, the concrete cost/risk) and an actionable recommendation. Prefer a few high-signal findings over an exhaustive dump; if the diff is clean on this lens, return an empty findings array. Severity: blocker (must fix before release) / major / minor / nit. BLOCKER IS A STATUS, NOT A SEVERITY: it means only "the release waits for this" — a typo'd name in docs can be a blocker without being poor work. Report blockers without moral weight; do not frame them as failures of whoever wrote the code. For each blocker, ALSO state its RE-REVIEW SCOPE: which lens(es) must re-examine what after the fix — default "correctness + blast-radius over the remediation diff only"; for mechanical fixes (typo, missing entry) say "Tier 0 only" so the cheap case stays cheap. If you are not confident in a severity label — especially "this minor might really be a blocker" — set severityUncertain: true so it gets adversarially verified regardless of the label.`
 
 const verifyPrompt = (f, lens) =>
@@ -412,6 +431,7 @@ REFUTE any finding whose only support is conformance to mainstream prior art (Re
 
 // ---- phase 1+2: review each lens, verify its findings as they land ----------
 phase('Review')
+const gateLog = {}
 const reviewed = await pipeline(
   activeLenses,
   (lens) =>
@@ -421,8 +441,9 @@ const reviewed = await pipeline(
       schema: FINDINGS_SCHEMA,
       agentType: 'general-purpose',
     }),
-  (result, lens) =>
-    parallel(
+  (result, lens) => {
+    gateLog[lens.key] = (result && result.gates) || null
+    return parallel(
       (result && result.findings ? result.findings : []).map((f) => () => {
         const tagged = { ...f, lens: lens.key }
         // Only spend an adversarial verification where the verdict can change the release
@@ -436,6 +457,7 @@ const reviewed = await pipeline(
         }).then((v) => ({ ...tagged, verdict: v }))
       })
     )
+  }
 )
 
 const all = reviewed
@@ -497,6 +519,10 @@ ${refuted.length ? `
 Findings a skeptic REFUTED (the first-order claim is false — do NOT report these as defects):
 ${JSON.stringify(refuted.map((f) => ({ title: f.title, lens: f.lens, why_refuted: f.verdict && f.verdict.reasoning })), null, 2)}
 Mine these briefly: a competent reviewer believing a false thing often means the truth is undiscoverable — surface that as a docs/naming follow-up (minor); if the refutation reveals no gap, drop it silently. Not a quota.` : ''}
+
+Gates each lens accounted for (null = the lens returned no account, which is itself a gap):
+${JSON.stringify(gateLog, null, 2)}
+In the report, under a heading "Gates not done", list every gate marked not-done and every lens with no account, each with its reason. Do not describe a lens as clean if any of its gates is not-done: say what was and was not checked. A not-done gate does not block by itself; it is named so the owner can decide.
 ${gaps ? `\nCompleteness gaps (major release):\n${JSON.stringify(gaps.gaps, null, 2)}` : ''}
 
 Produce a triaged report:
