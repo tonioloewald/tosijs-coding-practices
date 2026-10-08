@@ -367,6 +367,43 @@ The fix is one step in the harness, not a rule for the operator to remember: the
 lane rebuilds before it tests. ~2.5s against a 38s lane.
 — seen in: tosijs, tosijs-styled-editor
 
+### Third instance, and it is why the rule above is not enough: a browser lane must be able to FAIL
+
+*(tosijs-styled-editor 0.7.0, `v0.6.1..2bc7fc5`.)* The remedy above shipped, the
+lane rebuilt, **and the same lane was blind again one release later** — found
+by a pre-release review, not by the lane. The affordance tests passed with the
+function under test replaced by a stub that ignored its input entirely.
+
+The precondition recommended above *was in place*. It asked whether the subject
+EXISTED. It did — a thousand pixels outside the scrolling viewport the probe was
+measuring against, so every placement hit the same terminal clamp, produced a
+byte-identical result for five different inputs, and "the menu does not overlap
+the selection" was true of any menu anywhere. A second cause compounded it: the
+element transitions its position over 0.1s and the probe measured synchronously,
+so each assertion compared one case's geometry against the PREVIOUS case's.
+
+So, three rules, and only the third is self-enforcing:
+
+1. **A probe must assert its subject is inside the viewport it measures
+   against**, not merely present. "Exists" and "is measurable" are different
+   claims, and a lane that confuses them reports zero failures.
+2. **Read the value the code WROTE** (`style.top`), or switch the transition
+   off. A rect under a CSS transition is asynchronous; waiting a guessed number
+   of milliseconds is the worse answer, because it passes on a slow machine and
+   flakes on a fast one.
+3. **Gut the thing under test and confirm the lane goes red.** This is the only
+   one that does not depend on a reviewer thinking to look — and in this repo it
+   is now mechanical: the falsification lane (`bin/falsify.ts`) grew a
+   `lane: 'browser'` flag, having previously run the unit suite and nothing
+   else. It had been reporting "26/26 guarantees guarded" while **no browser
+   guarantee was reachable by it at all.**
+
+The general shape, which is the thing to carry: *an assertion that cannot
+distinguish the code being right from the code being absent is not a test, and
+test COUNT measures neither.* The cheapest detector is destructive and takes one
+minute. Run it when you write the lane, not when someone asks.
+— seen in: tosijs-styled-editor
+
 ## Browser lanes run locally and are attested — not in CI
 
 **Owner's rule:** _"You can just do the tests locally and attest to the checksummed tarball.

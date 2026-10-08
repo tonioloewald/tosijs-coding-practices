@@ -266,8 +266,31 @@ const buildScript = declaredBuild
   if (!existsSync(clPath)) add('changelog', 'FAIL', 'no CHANGELOG.md — every product ships one (development.md)')
   else {
     const cl = readFileSync(clPath, 'utf8')
-    if (version && cl.includes(version)) add(`changelog entry for ${version}`, 'PASS')
-    else add(`changelog entry for ${version}`, 'FAIL', 'no heading mentions the version being released')
+    /*
+     * A HEADING, anchored at line start — not a substring of the whole file.
+     *
+     * `cl.includes(version)` is defeated by the changelog's own prose. Measured
+     * in tosijs-styled-editor 0.7.0: the notes still sat under
+     * `## [Unreleased]` while four lines of body text elsewhere said "0.7.0"
+     * ("removed in 0.7.0", "0.7.0 finishes it"), so a bump that forgot the
+     * rename would have passed this gate and published a release whose
+     * changelog index showed its PREDECESSOR as the newest entry. Forward
+     * references are normal in a changelog; they are not an entry.
+     *
+     * Keep-a-changelog's shape is `## [1.2.3] - 2026-01-01`, and the bare
+     * `## 1.2.3` form is common enough to accept.
+     */
+    const heading = new RegExp(
+      `^##\\s*\\[?${version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]?(\\s|$)`,
+      'm'
+    )
+    if (version && heading.test(cl)) add(`changelog entry for ${version}`, 'PASS')
+    else
+      add(
+        `changelog entry for ${version}`,
+        'FAIL',
+        `no "## [${version}]" heading — a mention in prose is a forward reference, not an entry`
+      )
     /*
      * …AND THE CHECK ABOVE IS SATISFIABLE BY NOT BUMPING.
      *
