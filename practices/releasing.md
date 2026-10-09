@@ -174,6 +174,16 @@ The failure mode is cutting a minor because a change is _technically_ additive. 
 unsure, it's a patch — a minor is a claim that a chapter closed. — seen in: tosijs-product (six
 helpers exported → 0.6.2 patch, not 0.7.0; the additive-so-minor reflex was the wrong call)
 
+The opposite mistake is cheaper to make and costs consumers more: **a request for "a patch" is a
+request for a release, not a ruling on its number.** When someone asks for "a patch for X", read
+the `[Unreleased]` section before agreeing. If it opens with **⚠️ Breaking** (a raised peer floor,
+a changed default, a value that now means something else), the release is a minor whatever it
+was called, because on 0.x a caret range (`^0.4.0`) admits every 0.4.x, so a breaking 0.4.1
+reaches every consumer silently. Say so and offer the two honest shapes: a real patch branched
+from the last tag with only the non-breaking fixes, or the minor from main. — seen in:
+tosijs-3d-ensemble 0.5.0 ("can we cut a patch for manta?" over 25 commits whose CHANGELOG opened
+with Breaking; the owner chose the minor). Covers tosijs-3d-ensemble v0.4.0..b983433.
+
 ## Cutting a release (canonical flow)
 
 1. **Bump `version`** in `package.json` (semver) — this is the single source of truth (below).
