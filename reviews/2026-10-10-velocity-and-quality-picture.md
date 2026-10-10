@@ -72,6 +72,9 @@ Share of commits whose subject is about review or remediation:
   without a release. Its blockers were real defects in a sandbox boundary (a Proxy lying
   about length, an Array subclass crossing unchecked), found before any release carried
   them.
+- **Owner's reading of the tjs-lang wave (2026-10-10):** not a process cost. The project
+  is closing on 1.0 and the remaining work is hard; the review is where that work shows
+  up, and the slowness is accepted. Read the 84 reports as hardening, not as overhead.
 - Rounds per release fell to one or two in tosijs and tosijs-ui after mid-September while
   release cadence held. This is the clearest measured improvement.
 
