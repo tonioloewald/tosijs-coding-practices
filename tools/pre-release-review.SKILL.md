@@ -169,8 +169,12 @@ install** before treating it as a code defect — a stale `node_modules` has fak
   `docPaths`/the site's output dir (the web).
 - **BLOCK** → do not cut the release. Walk the blockers; fix them (or get the user to), then
   re-run.
-- **GO_WITH_FOLLOWUPS** → the release can proceed, but **file every follow-up** before moving
-  on. Never let a deferred finding evaporate — "reviewed and fine" and "reviewed, deferred,
+- **GO_WITH_FOLLOWUPS** → **fix every verified major before the tag** (no re-review: clear
+  each by a named check plus Tier 0), or state by name why one is deferred (needs a device,
+  an upstream change, a design decision). Verify or fix an unverified major. Then **file
+  every remaining follow-up** before moving
+  on. The owner reads only the exceptions: lead your summary with any blocker, deferred
+  major or gate not done; with none of those, say so in one line and go on. Never let a deferred finding evaporate — "reviewed and fine" and "reviewed, deferred,
   tracked" are different outcomes and the user must see which.
 - **GO** → proceed to the release flow (`practices/releasing.md`).
 

@@ -99,6 +99,9 @@ routes through the owner is a cost; spend it only where the owner's judgement is
   slow, triage your inbox and backlog: classify, verify before closing, close with
   evidence, prioritize what stays. Do not start new feature work to fill the gap, and do
   not sit idle.
+- **The owner reads exceptions, not reports.** A review with no blocker, no deferred major
+  and no gate left undone needs no reading from the owner. Lead with those three when
+  they exist (review.md).
 - **Report what you promoted.** One line per item in your next summary, so the owner can
   overrule after the fact.
 

@@ -252,6 +252,18 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   remediation.** Triage doesn't promote majors to a block; a missing test, a docs line or a
   follow-up carried from before is filed, not blocking. A re-review reports the delta, a
   screen at most.
+- **A verified major is fixed before the tag, not deferred** (owner). It does not block and
+  it does not buy a re-review: fix it, clear it by a named check (a test that fails with
+  the fix reverted, a driven scenario) plus Tier 0, and ship. Deferring a verified major
+  needs a stated reason (it needs a device nobody has, an upstream change, a design
+  decision) and the report says so by name. An unverified major is verified or fixed, not
+  filed as it stands. Minors and nits are filed. tosijs-3d 0.8.15 did this unprompted:
+  five verified majors, the three with small fixes landed before the tag, two filed with
+  the reason (one needs a headset). — seen in: tosijs-3d 0.8.15
+- **The owner reads the exceptions** (owner). A report with no blocker, no deferred major
+  and no gate left undone needs no reading from the owner: file the follow-ups and go on
+  to the release flow. Put a blocker, a deferred major or an undone gate in the first
+  lines of your summary. — seen in: every board project
 - **Depth verifies; breadth discovers** (owner, 2026-10-07). Releases are now high quality
   on what they set out to fix; what still gets found comes from the wide looks, and it's
   what nobody knew to look for: the dx tier's blocker that seven security rounds walked
