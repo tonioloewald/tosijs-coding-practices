@@ -51,8 +51,8 @@ CLI and MCP (start: <https://virta.tosijs.net/start/>). A repo is on the board i
 
 - **On the board:** file, track, and close tasks there, not in `TODO.md` / `UPSTREAM.md`
   (which become pointers). An ask of another board repo is a task in *that* project —
-  owned there, and you subscribe. Close with a reason. `ready` is the owner's go-ahead:
-  agents put work in the backlog and let the owner promote it.
+  owned there, and you subscribe. Close with a reason. For who may promote work to `ready`,
+  see "The owner's attention is the scarce resource" below.
 - **GitHub issues stay** for anything external: reporters outside the ecosystem, and repos
   not yet on the board.
 - **Check the TARGET, not just your own repo.** `virta brief` in the target's directory
@@ -76,6 +76,33 @@ CLI and MCP (start: <https://virta.tosijs.net/start/>). A repo is on the board i
 
 The rest of the practices still mention `TODO.md`, `UPSTREAM.md` and GitHub issues. In a
 board repo, read those as "the board."
+
+## The owner's attention is the scarce resource
+
+Work sped up and the owner did not. In one 13-day stretch nine repos cut 49 releases, and
+1,087 backlog tasks were waiting for one person to mark them ready. Every gate that
+routes through the owner is a cost; spend it only where the owner's judgement is needed.
+
+- **Standing go-ahead for routine work in your own repo.** You may promote to `ready`
+  and do: bug fixes, review follow-ups, tests, docs corrections and chores.
+- **These still wait for the owner, with no default:** a major risk, an architectural
+  decision, a breaking or public API change, anything that reaches another project,
+  anything irreversible (publishing stays the owner's approval), a change to security
+  posture, and anything that spends money.
+- **A decision arrives with a default.** State your recommendation, what is at stake in
+  one line, and what you will do if there is no answer by a date. Silence means the
+  default. This applies to choices inside the standing go-ahead; the list above gets no
+  default.
+- **When in doubt which class it is, it waits.** Say why you were unsure; that is how the
+  line gets drawn better.
+- **Waiting is triage time.** While a review runs, an approval is pending or a build is
+  slow, triage your inbox and backlog: classify, verify before closing, close with
+  evidence, prioritize what stays. Do not start new feature work to fill the gap, and do
+  not sit idle.
+- **Report what you promoted.** One line per item in your next summary, so the owner can
+  overrule after the fact.
+
+— seen in: every board project
 
 ## The channel: GitHub Issues on the target repo
 
