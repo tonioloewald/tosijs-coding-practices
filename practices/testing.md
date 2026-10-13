@@ -432,6 +432,18 @@ a comparison against a run in which the test had been skipped.
 
 — seen in: tosijs-3d-ensemble
 
+## A "ready" check the empty start state already passes is not a baseline
+
+A browser test that waits for "everything built" before taking a baseline
+(`built.pieces.size >= ensemble.pieces.length`, a stable mesh count) can be
+satisfied by the page's EMPTY initial state: 0 of 0 is built, and 3 meshes hold
+still. Under load the baseline is then taken before the document arrives, and
+the test blames whatever it does next for the difference. Wait on the NAMED
+document with a non-zero count (`ensemble.name === "pirate-cove"` and its
+pieces built), not on "settled". — seen in: tosijs-3d-ensemble, twice (the
+re-parent baseline before 0.4.0; rapid-edits.pw.ts at 0.5.2, 3 meshes vs 74 in
+1 run of 4). Covers tosijs-3d-ensemble v0.5.1..724528b.
+
 ## Finding a leak: per-trip metrics, a control, WeakRefs, then retainers
 
 A test that gets steadily SLOWER over repeated trips is measuring a leak until
