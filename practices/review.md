@@ -1455,6 +1455,17 @@ to a test that destroys data, and precisely the wrong position to put a reviewer
   it self-terminates once the harmful population is gone. And when it can't act, it must
   **complain rather than fail silently** — an unfixed hazard the user doesn't know about is
   worse than a loud one.
+  - **An executable name is never an identity.** Before signalling, match the **command
+    line** (`ps -p PID -o command=`) against the entry points your package ships — not
+    `ps -o comm=` against `bun|node|deno`, which names an ecosystem and matches a consumer's
+    Vite or `node server.js`. Strictness is free: over-matching kills somebody else's work,
+    under-matching prints "choose another port."
+  - **The code that signals refuses `process.pid`.** A listener enumeration may honestly
+    report the caller; the thing that acts on the list must not. Without that filter, the
+    new tests SIGTERMed their own runner mid-suite, with no summary.
+  — seen in: tjs-lang (`tjs-playground --port 3000 --force` killed a plain `node` server as
+  "ours"; fixed `6596ae3`), tosijs-ui (`dev-server.ts`, same `comm=` match), haltija
+  (`port-pid.ts`, the one that matched the command line)
 - **Ports and sockets.** A well-known default port is shared state; squatting or reclaiming it
   affects whoever else wanted it.
 - **THE TEST SUITE'S OWN FOOTPRINT.** Ask explicitly: _does running the tests write to any of
