@@ -349,6 +349,10 @@ determinism gap is the part to design around, not the old blanket rule.
   `reactWebComponents.xinLottie` renders `<xin-lottie>`. It maps camelCase→kebab-case and caches
   by tag name so `.fooBar` and `['foo-bar']` resolve to the same component — no per-element
   wrappers.
+- On a custom element under **React 18**, write `class`, not `className`; React 19 handles
+  `className` natively. The bridge supports both (`react: ^18.2.0 || ^19.0.0`), so examples
+  should use the spelling that works in both. — seen in: react-tosijs 1.1.0; external:
+  react.dev "Custom HTML elements"
 
 ### tosijs-3d
 

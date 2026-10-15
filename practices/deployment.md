@@ -251,6 +251,10 @@ That is the whole ceremony. **No DNS change** (a `*.dev` wildcard already resolv
   handling belongs to genuinely secret tokens (`sk.`, API keys with write scopes) — those
   ARE leaks when visible, at any distance. — seen in: tosijs-ui (Mapbox, years public,
   zero observed abuse), the weekly sweep's standing rule
+- **A copy step publishes everything in the directory, including what you didn't mean to
+  ship.** A demo build that copies `static/` wholesale shipped a 107 KB design-tool working
+  file to the public site. Keep design sources out of copied directories, or copy by
+  extension allowlist. — seen in: react-tosijs 1.1.0 (an Amadine `.amdc` file; `dev.ts`)
 - **An ignore rule protects a path, not a secret.** If a build copies files, the copy is not
   covered by the rule that names the original: a `static/manifest.webmanifest` gitignored
   *specifically because it carries a preview token* was copied by the doc build into a tracked

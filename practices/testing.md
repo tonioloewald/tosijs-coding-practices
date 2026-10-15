@@ -716,9 +716,15 @@ exercise the branch, and assert on the store's own observable (`new IndexedDBLog
   deleted" across a 535k-line port, ~1.38M assertions counted per platform)
 - Keep security-critical surfaces at high coverage against a written audit, not a blanket
   percentage — target the sandbox/RBAC/validation slices explicitly. — seen in: tjs-lang, loewald-dot-com, tosijs-schema
-- Not every project has a suite: pure demo/bridge libraries verify by running the demo app in
-  the browser. If a repo has no `*.test.ts`, that's the intended workflow, not an omission.
-  — seen in: react-tosijs
+- **"It's only a bridge" is not a reason to have no suite.** react-tosijs shipped suite-less
+  as a bridge library verified by its demo; the first 13 tests caught a shipped 1.0.x defect
+  (a resubscribe on every render). The React-under-bun recipe: a `bunfig.toml` `[test]
+  preload` that runs `GlobalRegistrator.register()` (happy-dom) and sets
+  `globalThis.IS_REACT_ACT_ENVIRONMENT = true`; render inside `act()`; flush state with
+  `await act(async () => { await updates() })`. A `mock.module` factory may reference only
+  values captured **before** `mock.module` runs — touching the mocked module's live binding
+  inside the factory deadlocks bun silently. — seen in: react-tosijs 1.1.0
+  (`tests/setup.ts`, `tests/subscription-churn.test.tsx`)
 
 ## A test that fails when the code is right is a defect in the test
 

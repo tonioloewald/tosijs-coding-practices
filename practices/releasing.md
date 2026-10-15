@@ -1289,6 +1289,11 @@ published VERSION, and the bar is a question about **escape**, not severity:
 - **If they cannot, deprecate.** The qualifying shape: a break in `0.12.0` where the
   consumer's range is `^0.12.0`, which under 0.x semver cannot float past `0.13.0`. They are
   stuck permanently and `npm deprecate` is the only thing that reaches them.
+- **A renamed package qualifies too.** No update of the old name reaches the new one, so
+  deprecate every version of the old name with "Renamed: install <new>" and its npm URL.
+  Then update `repository.url`, the scoreboard row, and the checkout folder, or tooling
+  that discovers repos by folder name will miss the new one. — seen in: xinjs → tosijs,
+  xinjs-ui → tosijs-ui, react-xinjs → react-tosijs
 
 **"This version had a bug" is not the bar.** Every project has bugs; the ones that fix them
 quickly end up with several superseded versions in a row, and deprecating each one produces
