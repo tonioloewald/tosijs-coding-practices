@@ -1768,6 +1768,18 @@ followups. — seen in: tosijs-product (0.6.x)
 
 — seen in: tosijs, tosijs-ui, tjs-lang (release discipline); tooling: `/code-review`, `/code-review ultra`
 
+## A rewritten doc page leaves its summaries behind
+
+When a doc page is rewritten, grep every other surface that summarises the same
+API (README, guides, `llms.txt`) for the claims the rewrite retracted. tosijs
+1.10.9 rewrote its Hot Reload page to say the feature was a debugging aid with
+a specific reset key; the README, which is both the npm landing page and the
+site home, still said "and not just in development!" and gave a different
+reset. Every check passed because each page was internally consistent; only a
+docs-lens reviewer reading both caught it. Better still, replace the summary
+with a sentence and a link, so there is one copy of the facts.
+— seen in: tosijs (v1.10.8..b253e5e)
+
 ## Verify end-to-end — don't approve on tests + typecheck alone
 
 - **Drive the real flow before you call it done.** Happy-DOM unit tests can't see real
