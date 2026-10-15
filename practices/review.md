@@ -1257,7 +1257,7 @@ Evidence for the outcome review's proposal 2 (structure transmits, prose does no
 re-review trigger stated in a report's closing sentence did not fire — seen in: tosijs-virta
 0.5.0 (`4ab9cfb..cb074ed`; "sooner if the SyncLog adapter lands", the adapter landed, 53
 commits went unreviewed until the next scheduled pass). Write triggers as `TODO.md`
-checkboxes with their condition; the doctor's `review freshness` WARN is the backstop.
+checkboxes with their condition (in a board repo, tasks tagged `area:release`); the doctor's `review freshness` WARN is the backstop.
 Transcription after a review names all three destinations (`TODO.md`, `UPSTREAM.md`, the
 practices repo), and a practices-routed item is ticked only by a practices commit hash.
 

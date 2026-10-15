@@ -242,5 +242,6 @@ tools/               ← executable forms of practices (pre-release-review workf
 Bootstrapped from the tosijs ecosystem's accumulated conventions and enriched by
 per-project surveys. Every practice should be traceable to real usage in at least one
 project. See `CONTRIBUTING.md` for how entries are added and kept honest, and
-[`TODO.md`](TODO.md) for open work on the repo itself — chiefly **making the history
-invariant**, since the no-signoff carve-out above rests on it.
+the [board](https://virta.tosijs.net/host/#?virta.scope=tosijs-coding-practices) for open
+work on the repo itself ([`TODO.md`](TODO.md) points there). The history is append-only,
+since the no-signoff carve-out above rests on it.

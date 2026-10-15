@@ -49,10 +49,17 @@ The ecosystem is moving task tracking onto **virta**, a task board agents use th
 CLI and MCP (start: <https://virta.tosijs.net/start/>). A repo is on the board if
 `virta brief` prints something there (a board repo's SessionStart hook runs it for you).
 
-- **On the board:** file, track, and close tasks there, not in `TODO.md` / `UPSTREAM.md`
-  (which become pointers). An ask of another board repo is a task in *that* project —
-  owned there, and you subscribe. Close with a reason. For who may promote work to `ready`,
-  see "The owner's attention is the scarce resource" below.
+- **On the board:** file, track, and close tasks there, not in `TODO.md` / `UPSTREAM.md`.
+  An ask of another board repo is a task in *that* project — owned there, and you
+  subscribe. Close with a reason. For who may promote work to `ready`, see "The owner's
+  attention is the scarce resource" below.
+- **When you adopt the board, `TODO.md` becomes a pointer.** A notes file plus a board are
+  two lists, and two lists drift: virta's `TODO.md` held 45 open items, untouched for three
+  days, that the board had already triaged or closed. Import the file, then replace it
+  with prose naming the board URL and the `virta brief` / `ls` / `show` / `create`
+  commands. Keep it prose: a list item there would be imported as a task. Re-review
+  triggers become tasks tagged `area:release`, which the brief surfaces; a checkbox never
+  did. — seen in: tosijs-virta, tosijs-coding-practices
 - **GitHub issues stay** for anything external: reporters outside the ecosystem, and repos
   not yet on the board.
 - **Check the TARGET, not just your own repo.** `virta brief` in the target's directory

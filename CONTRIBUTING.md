@@ -134,7 +134,7 @@ A rebase replays your commit *on top of* whatever landed while you were writing 
 in two projects, learned different things about the same practice. Per the rules above,
 *contradictions are bugs — resolve them, don't stack them* — and **you cannot resolve a
 contradiction you never saw.** A merge commit (or an honest conflict you have to look at) is the
-mechanism that shows it to you. See [`TODO.md`](TODO.md) — the history invariant is what makes
+mechanism that shows it to you. The history invariant is what makes
 the no-signoff carve-out safe, and **the invariant *is* the permission.**
 
 Likewise: **never force-push, never rebase over published commits, and never squash a merge that
