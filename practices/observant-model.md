@@ -115,7 +115,10 @@ Three specific traps, each of which cost real time in `tosijs-3d-ensemble`:
   a failed *write*, so every diagnosis goes to the wrong end — a test asserting
   "the write did not land" passed for the wrong reason, and a correct line of
   code got "fixed". **Never hold a boxed proxy — read it through the chain each
-  time** (every access mints a fresh one; `store.q === store.q` is `false`).
+  time** (every access mints a fresh one; `store.q === store.q` is `false`). For the
+  same reason, never use proxy identity as a memo or change-detection key. A bridge to an
+  external-store API that needs a stable snapshot wraps the read in `{ value }` and
+  replaces the wrapper only when the value changed (react-tosijs 1.2.0's `_createStore`).
   Historical, per the author: leaves used to be bare values, then wrapped
   primitives (stale, and `new Boolean(false)` truthy), then honest empty
   proxies — and objects were left behind. tosijs#35 tracks emptying them too,

@@ -723,7 +723,11 @@ exercise the branch, and assert on the store's own observable (`new IndexedDBLog
   `globalThis.IS_REACT_ACT_ENVIRONMENT = true`; render inside `act()`; flush state with
   `await act(async () => { await updates() })`. A `mock.module` factory may reference only
   values captured **before** `mock.module` runs — touching the mocked module's live binding
-  inside the factory deadlocks bun silently. — seen in: react-tosijs 1.1.0
+  inside the factory deadlocks bun silently. `mock.module` also cannot re-wrap a module
+  another test file already imported, and test-file order is not dependable: import the
+  module under test with a cache-busting query (`../src/thing.ts?fresh-under-mock`), and
+  target the concrete module, not a barrel, which would re-export the cached copy.
+  — seen in: react-tosijs 1.1.0–1.2.0
   (`tests/setup.ts`, `tests/subscription-churn.test.tsx`)
 
 ## A test that fails when the code is right is a defect in the test

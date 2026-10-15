@@ -211,10 +211,10 @@ These recur in every app in the ecosystem. Internalize them.
 
 ### react-tosijs
 - Bridge tosijs into React with a hook mirroring `useState` exactly:
-  `const [value, setValue] = useTosi(path)` — observe/unobserve in `useEffect`, write back via
-  `xin[path] = value`. Accepts a string path or a xinProxy (resolved via `xinPath`). Note:
-  `useTosi`'s `useEffect` has no dependency array, so it re-subscribes every render — deliberate,
-  don't "optimize" it blindly.
+  `const [value, setValue] = useTosi(path)`, writing back via `xin[path] = value`. Accepts a
+  string path or a xinProxy (resolved via `xinPath`). Since 1.2.0 it is built on
+  `useSyncExternalStore`; the 1.0.x `useEffect` with no dependency array re-subscribed on
+  every render, which was a bug, not a design. — seen in: react-tosijs 1.2.0
 
 ### tjs-lang
 - Import schema from `tjs-lang/schema`, not tosijs-schema directly — it re-exports the full

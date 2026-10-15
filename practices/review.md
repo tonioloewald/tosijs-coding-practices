@@ -1106,7 +1106,7 @@ Detail:
   priority is fine, dropping it is not.
 - New behavior has tests; every bug fix ships a **failing-first regression test**.
 - Right tier: pure logic extracted and unit-tested; DOM via Happy DOM with `await updates()`;
-  integration/E2E actually starts its target; type-level tests in `*.types.ts` under `tsc`.
+  integration/E2E actually starts its target; type-level tests (`*.types.ts` / `*.typecheck.ts`) under `tsc`, gated in `prepublishOnly`.
 - Security-critical code (VM/runtime, capability registry, RBAC) held to its high coverage bar.
 - No skip-guarded tests passing vacuously (green ≠ ran); no Bun-only imports leaked into Playwright.
 - **Done when:** changed lines are covered, criticals hit target, and the suite is green — verified

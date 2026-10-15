@@ -422,7 +422,9 @@ every time, which is exactly the distinction that goes wrong. — seen in: tjs-l
 - Keep **type-level tests in a separate `*.types.ts` file** verified only by `tsc --noEmit`
   (they hold intentional `@ts-expect-error` lines + `assertType<T>()` no-ops). Running that
   file under `bun test` is a category error — it asserts compile-time failures, not runtime
-  behavior.
+  behavior. `*.typecheck.ts` is equally good: what matters is that `bun test` skips the
+  suffix, a `typecheck` script runs it (`tsc --noEmit -p tsconfig.typecheck.json`), and
+  `prepublishOnly` runs that script. — seen in: tosijs-schema, react-tosijs 1.2.0
 
 ### tjs-lang
 - **Don't name the full-build script `build`.** `bun build` is a Bun builtin; a `build`
