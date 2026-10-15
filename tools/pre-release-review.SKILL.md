@@ -101,7 +101,7 @@ install** before treating it as a code defect — a stale `node_modules` has fak
 5. **Run the harness** — invoke the **Workflow** tool with the bundled script:
    ```
    Workflow({
-     scriptPath: "/Users/tonioloewald/.claude/skills/pre-release-review/pre-release-review.workflow.js",
+     scriptPath: "{{skill-dir}}/pre-release-review.workflow.js",
      args: { baseRef: "<tag>", bump: "<patch|minor|major>", depth: "full" }
    })
    ```

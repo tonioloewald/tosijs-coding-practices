@@ -26,15 +26,24 @@ practices. If they return nothing, be suspicious — it usually means nobody loo
 ### Install (per developer, user-level so it works in every repo)
 
 ```bash
-mkdir -p ~/.claude/skills/pre-release-review
-cp tools/pre-release-review.workflow.js  ~/.claude/skills/pre-release-review/pre-release-review.workflow.js
-cp tools/pre-release-review.SKILL.md      ~/.claude/skills/pre-release-review/SKILL.md
+virta skill install pre-release-review
 ```
 
-Then in `~/.claude/skills/pre-release-review/SKILL.md`, make sure the `scriptPath` in the
-"Run the harness" step points at the installed workflow (i.e.
-`$HOME/.claude/skills/pre-release-review/pre-release-review.workflow.js` — the shipped copy
-uses an absolute path; adjust it to your home directory).
+That writes a stub to `~/.claude/skills/pre-release-review/SKILL.md`. The stub runs
+`virta skill run pre-release-review`, which prints the current published version and writes
+the workflow file to a cache directory; the skill text's `{{skill-dir}}` is filled in with
+that directory, so the `scriptPath` is always the published copy.
+
+**There is one copy, and it lives here.** To change the tool, edit the files in this
+directory, commit, and publish:
+
+```bash
+virta skill publish pre-release-review tools/pre-release-review.SKILL.md \
+  tools/pre-release-review.workflow.js --note "<what changed>"
+```
+
+Never edit the cached copy: the next run replaces it. An improvement found during a release
+run is a commit here, not an edit in place.
 
 **Copies of this tooling must not pin model IDs.** The workflow's `agent()` calls deliberately
 omit `model` so every reviewer inherits the session's current model — a copy that pins one
@@ -44,25 +53,11 @@ constraint after it's gone. If a platform limitation genuinely forces a pin, rec
 reason and a revisit condition next to it — an unexplained pin is drift, not configuration.
 — seen in: a nine-lens adopter's copy, 2026-08
 
-**The install is a second copy, and it WILL diverge.** Real release runs improve the
-installed copy in place (that's where the tool actually gets exercised); repo edits land here.
-Both have happened without the other: an audit found the installed copy carrying four
-improvements the repo lacked (defensive args parsing, log-spam DX criteria, a blast-radius
-check, `repoDir` support) while the repo carried `severityUncertain` the installed copy
-lacked. **When you edit either copy, diff the other and merge both directions** — and a
-practices-repo audit should include that diff.
-
-> **This convention has now failed TWICE, which is the evidence that it should
-> stop being a convention.** 2026-09-12: a `dx` tier was added to the installed
-> copy during a tosijs release and did not reach the repo — found by a critique
-> agent, not by anyone diffing. The first failure (four improvements stranded in
-> the install) produced this paragraph; the paragraph did not prevent the second.
-> Per `CONTRIBUTING.md`'s promotion ladder, a rule that has been observed to fail
-> twice is not a rule to restate — it wants a mechanism: make the installed path
-> a symlink to this file, or generate it on install, so there is one copy and
-> `diff` is structurally unnecessary. **Open question for the owner** (it changes
-> how the skill installs, so it is not an agent's call).
-
+**The install used to be a second copy, and it diverged.** Real release runs improved the
+installed copy in place while repo edits landed here: once four improvements were stranded
+in the install, and once a whole `dx` tier, found by a critique agent rather than by anyone
+diffing. A paragraph asking people to diff both ways did not prevent the second. Serving the
+skill from the board removed the second copy (board #115).
 
 ### Use
 
@@ -74,7 +69,7 @@ practices-repo audit should include that diff.
 Or run the workflow directly:
 
 ```
-Workflow({ scriptPath: "~/.claude/skills/pre-release-review/pre-release-review.workflow.js",
+Workflow({ scriptPath: "<the dir `virta skill show pre-release-review` names>/pre-release-review.workflow.js",
            args: { baseRef: "v1.6.8", bump: "minor" } })
 ```
 
