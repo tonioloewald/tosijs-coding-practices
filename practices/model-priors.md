@@ -310,6 +310,26 @@ reason to carry it.
 **The tell.** You justified a design decision by an idiom you did not find in this codebase.
 Grep for it before treating it as a requirement.
 
+## 14. "Set the attribute and the element will re-apply it"
+
+The prior: writing a component attribute makes the component re-render, so
+re-asserting a value is a cheap way to make it take effect again.
+
+In tosijs it is not. An attribute setter that receives the value it already
+holds does **nothing**: no notification, no `render()`. Code that relies on a
+write to re-apply state silently stops working exactly when the value has not
+changed, which is often the case it was written for.
+
+Measured in tosijs-3d-ensemble 0.6.0 (`v0.5.2..e773c9de`): leaving a
+per-axis stretch for uniform scale 1 wrote `element.scale = 1`, already 1
+under the stretch, so nothing re-applied it and the piece stayed stretched
+while the document said 1. Its unit test passed because the STUB called
+`render()` on every write. A stub of a tosijs element should render only on
+change, like the real setter, or it tests a component that does not exist.
+
+The fix shape: when you need the effect, apply it directly (write the node,
+call the method) rather than re-asserting the attribute.
+
 ## The missing prior: corpus-absent domains fail silently
 
 This file lists trained priors that are *wrong* here. The inverse case is worse: a domain
