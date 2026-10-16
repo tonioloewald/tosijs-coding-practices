@@ -265,6 +265,13 @@ That is the whole ceremony. **No DNS change** (a `*.dev` wildcard already resolv
   copied-through secret needs its own rule — and only the first of those fails safe. Sweep
   check: for each gitignored path under `static/`/assets, grep the tracked output tree for its
   basename. — seen in: manta-recon
+- **The dev server writes a SECOND output tree: `docs.last-good/`.** tosijs-ui's dev server keeps
+  a copy of the last good build beside `outputDir`, and it is a whole site, so it carries every
+  copied-through file, the tokened manifest included. An ignore rule for `docs/` does not cover
+  it (anchored or not), and the first `git add -A` after starting the dev server committed 1,940
+  files of it with a live preview token. Ignore `/docs.last-good/` (or whatever `<outputDir>.last-good`
+  is) alongside `outputDir`, before running `bun start` in a repo for the first time.
+  — seen in: manta-recon (2026-10-16, commit `59db32c`)
 
 ## Project-specific practices
 
