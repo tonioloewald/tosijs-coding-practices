@@ -167,6 +167,13 @@ itself:
   in seconds. The rule above was written and believed while the address stayed
   published. **If a credential has ever been committed, it is public — rotate
   it.** History rewriting on a published repo does not un-publish anything.
+  Rotating the preview invite token is cheap and stays on the box: generate the
+  new value there, `sed` it over the old one in `/etc/caddy/preview.env` *and*
+  the live `/etc/caddy/Caddyfile` (four occurrences), `caddy validate` the copy,
+  `mv`, `systemctl reload caddy`. Check with curl on another preview: the old
+  cookie gets 401 and the new one gets 200. Old invite links and Home Screen
+  icons stop working; projects that bake the token into a manifest need a
+  redeploy. — seen in: manta-recon, 2026-10-17
 - **"Put it in your shell profile" hides it from everything that isn't you.**
   Agents and scripts run in non-interactive shells that inherit no profile — so
   a profile-only value is present for a human and absent for every tool, which
