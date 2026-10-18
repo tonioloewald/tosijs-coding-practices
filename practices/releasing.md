@@ -828,27 +828,55 @@ specific case (unwritten annotations whose only source commit has a CHANGELOG-on
 print the terminating instruction — *"amend these bullets to `[note]`"* — instead of the
 generic message.
 
-## If the release renames anything, sweep the docs and demos
+## If the release changes behaviour, sweep the docs and demos
 
-A rename is only done when the corpus that teaches it is done too. At tosijs-3d
-0.8.0 the flagship `/ui/` page still taught the deprecated spelling on eight
-call sites — and one of them, `iconGrid3d({onSelect})`, was **silently dead**
-rather than deprecated, because that widget had only ever had the new name. The
-page documenting the fix demonstrated the exact bug the release was cut to
-eliminate, and every visit printed deprecation warnings at load.
+A change is only done when the corpus that describes it is done too. That means
+renames, and equally **any change of behaviour**: a new default, a removed mode, a
+control that now works differently. A rename at least leaves a dead name to grep
+for. A behaviour change leaves a comment that is still grammatical, still
+plausible, and wrong, so nothing flags it, and it is the first thing a consumer
+reads (in a per-file build it is the `.d.ts`).
 
-The file _had_ been edited that release (its table of contents gained a link to
-the new page); nobody checked its body. No lens owned the docs corpus.
+Two incidents, one per kind:
 
-One grep, before the tag:
+- **Rename.** At tosijs-3d 0.8.0 the flagship `/ui/` page still taught the
+  deprecated spelling on eight call sites. One of them, `iconGrid3d({onSelect})`,
+  was **silently dead** rather than deprecated, because that widget had only ever
+  had the new name. The file _had_ been edited that release (its table of
+  contents gained a link); nobody checked its body.
+- **Behaviour.** `select3d` became a select that opens a list at 0.8.1. Its
+  JSDoc still said "a compact cycler, no disclosure, no dropdown" at 0.10.13,
+  and an adopting agent nearly filed a feature request for the list picker that
+  already existed (tosijs-3d#116). The review that followed checked every
+  CHANGELOG entry against the shipped docs and found 33 more of the same kind:
+  wrong defaults in attribute tables, a key map that put zoom on the wrong axis,
+  a feature documented as never running in a headset that did.
+
+**Before the tag, read the release's own CHANGELOG as a checklist.** For every
+entry that says *no longer*, *now*, *removed*, *renamed*, *instead of*, *used to*,
+or changes a default, grep the docs for the OLD behaviour and its old words:
 
 ```sh
-# for each spelling the release deprecates
+# a rename: the old spelling
 grep -rn 'onSelect:' src/docs/ demo/ src/*.ts
+# a behaviour change: the words the old behaviour was described in
+grep -rn 'cycler\|no dropdown\|‹ value ›' src/ README.md
 ```
 
-Include `/*# */` doc comments — in a literate-programming setup that is where
-the examples live, and it is not type-checked, so nothing else will catch it.
+Include `/*# */` doc comments and the examples in them: in a literate-programming
+setup that is where the examples live, and they are not type-checked, so nothing
+else will catch them. Check the code, not just the entry, because a later
+release may have changed it again. Two smaller traps the same review found: a
+`/** */` that sits above the wrong declaration documents the wrong thing (here a
+private `const`, leaving the export undocumented), and two stacked `/** */` on
+one field ship both, so a fix written above the old comment contradicts it in the
+`.d.ts`. Fix by moving or deleting the old block, not by adding another.
+
+If a past release skipped this, a one-off sweep of the whole CHANGELOG pays for
+itself. Split it by version range across reviewers, and verify each finding
+against the code before editing.
+
+— seen in: tosijs-3d (0.8.0 renames; 0.10.13 behaviour sweep, #116)
 
 ## Every release check ships with a recorded red run
 
