@@ -1245,6 +1245,18 @@ apparatus; the traps below are the incident-derived part.)_
   per deprecated feature (tracked in a `Set` so it never spams). Renaming without an alias breaks
   consumers silently at their next install. — seen in: tosijs
 
+- **A CHANGELOG entry built from several commits can contradict itself.** A
+  later commit reverses an earlier one, and both bullets stay. tosijs-3d-ensemble
+  0.7.0 shipped-to-review with a "Changed" bullet saying the selected piece is
+  marked `▸ id`, two bullets above one saying the marker was replaced by a
+  row highlight. Re-read the WHOLE release section before tagging, not just
+  the bullet you are adding. (Seen in tosijs-3d-ensemble `v0.6.0..8055228f`.)
+- **A rising `checkExamples SKIPPED` count is a regression, not a note.** A
+  skipped live example is an example nothing checks; the count went from 2 to
+  4 in one release there, and one of the new ones could not run at all.
+  Treat an increase as a build failure, or make the checker able to see it.
+  (Same range.)
+
 ## Project-specific practices
 
 ### tosijs-schema
