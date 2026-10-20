@@ -174,7 +174,7 @@ tosijs-ui, the 2026-09 review-economics audit
     and read the port from `DevToolsActivePort` in the profile dir, or pick a free port per run.
   - **Before launching, check for a leftover from your own previous run** (its scratchpad
     `--user-data-dir` in `pgrep -fl`) and close it, rather than stacking a second one.
-  — seen in: stir-fried-beetles + tosijs-3d (2026-10-20: a headless Chrome on :9333 with
+  — seen in: stir-fried-beetles + tosijs-3d (a headless Chrome on :9333 with
   SwiftShader rendered two `/fights/` tabs for 22h at ~1100% CPU, load average ~20, after its
   session moved on; a hung tosijs-3d `xr-emulate.ts` had attached to it on the same port)
 
