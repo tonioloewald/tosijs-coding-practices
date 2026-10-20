@@ -164,6 +164,19 @@ tosijs-ui, the 2026-09 review-economics audit
   `HALTIJA_SPAWNER_PID` + poll + `app.quit()`; lock skipped for private runs)
 — seen in: a pre-release-review load test spun up 8 `yes > /dev/null` CPU hogs, ran tests under
   contention, then leaked all 8 for over an hour because its `kill $(jobs -p)` no-oped under zsh
+- **A headless browser you launch is yours to close, in a `finally`.** Close it before the task
+  ends, whether the task passed, failed or timed out; use `browser.close()` or kill by the captured
+  PID. A headless Chrome detaches like any `&` child, and a page left open keeps rendering after
+  you've stopped looking. Software GL makes that very expensive: `--use-angle=swiftshader` turns a
+  game page into ~11 cores of continuous CPU. Also:
+  - **Don't hard-code the debugging port.** A fixed `--remote-debugging-port=9333` lets another
+    session's script attach to *your* orphan and quietly depend on it. Use `--remote-debugging-port=0`
+    and read the port from `DevToolsActivePort` in the profile dir, or pick a free port per run.
+  - **Before launching, check for a leftover from your own previous run** (its scratchpad
+    `--user-data-dir` in `pgrep -fl`) and close it, rather than stacking a second one.
+  — seen in: stir-fried-beetles + tosijs-3d (2026-10-20: a headless Chrome on :9333 with
+  SwiftShader rendered two `/fights/` tabs for 22h at ~1100% CPU, load average ~20, after its
+  session moved on; a hung tosijs-3d `xr-emulate.ts` had attached to it on the same port)
 
 ## Fan-out agent work: serialize understanding, pilot the harness, isolate the fleet
 
