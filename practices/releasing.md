@@ -736,7 +736,7 @@ that has to be noticed. — seen in: tosijs-styled-editor (0.6.0 review, `v0.5.2
 
 release-doctor now checks it: a `dist-sizes.json` that records a `version` older than both
 the package's and the last `v*` tag WARNs as stale (a baseline with no `version` is only
-checked for existence). — seen in: tosijs-3d-ensemble (`bin/sizes.ts`, 36b896bd..HEAD)
+checked for existence). — seen in: tosijs-3d-ensemble (`bin/sizes.ts`, 36b896bd..a9c2e215)
 
 ## Regenerate generated files, then verify they're in sync
 
