@@ -329,6 +329,19 @@ Two things make this nastier than ordinary staleness:
 - **Nothing in the run mentions it.** The dev server logs the restore; the
   Playwright output does not, and the two scroll past in the same terminal.
 
+**The same server also writes the COMMITTED site.** In a tosijs-ui/site project
+the webServer is `bun bin/site.ts`, which rebuilds `outputDir` (`docs/`, the
+committed, Pages-served tree) on every run. A browser run overlapping a source
+edit, or a release-doctor pass, leaves `docs/` modified or half deleted, and
+then fails the artifact-freshness check for a reason that has nothing to do with
+the release (twice in tosijs-3d-ensemble 0.8.x). Give the test server its own
+output: `outputDir: process.env.SITE_OUT || 'docs'` in `site.config.ts`, and
+`SITE_OUT=.test-site` in the webServer command, ignored by git and prettier.
+Check it with file times, not `git status`: an identical rebuild leaves the
+status clean while still writing every file. Measured there: 0 files under
+`docs/` newer than a marker after a run, 1911 under `.test-site/`. — seen in:
+tosijs-3d-ensemble (e7155754)
+
 The general rule is the one already here — *assert on the artifact a consumer
 resolves* — with a timing clause attached: **make sure that artifact is the one
 you think it is at the moment the test reads it.** If in doubt, have the test
