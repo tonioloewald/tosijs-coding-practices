@@ -595,8 +595,31 @@ and a muted gate is worse than no gate.
   // baseline. tosijs-virta 0.5.0 grew ×3.8 with nothing printed and no line in
   // the CHANGELOG — the reviewer rebuilt the base by hand to find out.
   if (existsSync(join(process.cwd(), 'dist')) || existsSync(join(process.cwd(), 'docs'))) {
-    if (existsSync(join(process.cwd(), 'dist-sizes.json'))) add('shipped-size baseline', 'PASS')
-    else add('shipped-size baseline', 'WARN', 'no dist-sizes.json: the build cannot print a size delta; record one at release')
+    const baselineFile = join(process.cwd(), 'dist-sizes.json')
+    if (!existsSync(baselineFile))
+      add('shipped-size baseline', 'WARN', 'no dist-sizes.json: the build cannot print a size delta; record one at release')
+    else {
+      /*
+        STALE is the quieter failure (releasing.md: a baseline two releases old
+        turns the delta cumulative). A baseline that names its version can be
+        checked: it should be the last release (read the delta, then re-record)
+        or this one (re-recorded). Anything older is stale. A baseline without
+        a version can only be checked for existence.
+      */
+      let recorded: string | undefined
+      try {
+        recorded = JSON.parse(readFileSync(baselineFile, 'utf8')).version
+      } catch {}
+      const { out: lastTag } = await run(['git', 'describe', '--tags', '--abbrev=0', '--match', 'v*'])
+      const last = lastTag.trim().replace(/^v/, '')
+      if (typeof recorded !== 'string')
+        add('shipped-size baseline', 'PASS', 'present (no version recorded, so staleness is unchecked)')
+      else if (recorded === pkg.version || recorded === last)
+        add('shipped-size baseline', 'PASS', `recorded at ${recorded}`)
+      else
+        add('shipped-size baseline', 'WARN',
+          `dist-sizes.json was recorded at ${recorded}, but the last release is ${last || '(none)'}: the delta the build prints is cumulative since then; re-record it at the tag`)
+    }
   }
 
   // --- bin shebangs (tosijs-ui#35 and #36 — the same bug, filed twice) -------

@@ -734,6 +734,10 @@ drift. The doctor's WARN only catches a MISSING baseline, not a stale one — so
 in the JSON and print it in the delta line, which makes staleness visible instead of something
 that has to be noticed. — seen in: tosijs-styled-editor (0.6.0 review, `v0.5.2..9f4c063`)
 
+release-doctor now checks it: a `dist-sizes.json` that records a `version` older than both
+the package's and the last `v*` tag WARNs as stale (a baseline with no `version` is only
+checked for existence). — seen in: tosijs-3d-ensemble (`bin/sizes.ts`, 36b896bd..HEAD)
+
 ## Regenerate generated files, then verify they're in sync
 
 Built output (`dist/`, `docs/`, `version.ts`, `llms.txt`, generated docs) is committed and
