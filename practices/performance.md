@@ -123,8 +123,12 @@ nothing else:
   box animates from its first render, before any code that would call `animate` has run.
   Short Web Animations moves on HTML boxes (a FLIP slide, a fade) are fine; this is for
   anything long-running, such as loaders and progress. Check on a real WebKit device:
-  desktop Chrome may not show the freeze. — seen in: tosijs-virta (board #3507), tosijs-ui
-  (`spinN`, board #3508)
+  desktop Chrome may not show the freeze. This holds for SVG that stays in the DOM. SVG that
+  is rasterised (tosijs-3d's `SvgTexture` turns it into an in-scene texture in its own
+  document) has no stylesheet and no animation clock, so CSS does not run at all there:
+  animate the geometry from a timer instead, as tosijs-3d's spinner does. The main thread
+  draws that scene anyway, so the compositor has nothing to offer. — seen in: tosijs-virta
+  (board #3507), tosijs-ui (`spinN`, board #3508), tosijs-3d (`widgets3d.ts`, tosijs-3d#60)
 - **Honor `prefers-reduced-motion: reduce`.** Skip child/decorative animations (fire only
   the essential callback). Build accessibility into the engine, don't bolt it on. — seen in:
   tosijs-product
