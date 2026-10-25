@@ -113,6 +113,18 @@ nothing else:
   the `initAttributes` default as a sentinel `0` (=auto) and resolve at use via a
   device-capability probe (`resolveBudget(attr, 'key')`); explicit author values (`>0`)
   always win. Cache setup-time budgets once. — seen in: tosijs-3d
+- **Animations that must keep moving while the page works: CSS on an HTML element.** A
+  spinner exists for the moments the main thread is busy, so it has to run without it. The
+  browser can hand an animation to the compositor (its own thread) when it changes only
+  `transform` or `opacity` on an HTML element. WebKit won't do that for an SVG element, so
+  rotating the `<svg>` itself freezes on Safari and iOS whenever a script runs, whatever
+  starts the animation. Put the static SVG inside an HTML box and turn the box with a CSS
+  `@keyframes` rule. Prefer CSS to `el.animate` because it needs no script to start: the
+  box animates from its first render, before any code that would call `animate` has run.
+  Short Web Animations moves on HTML boxes (a FLIP slide, a fade) are fine; this is for
+  anything long-running, such as loaders and progress. Check on a real WebKit device:
+  desktop Chrome may not show the freeze. — seen in: tosijs-virta (board #3507), tosijs-ui
+  (`spinN`, board #3508)
 - **Honor `prefers-reduced-motion: reduce`.** Skip child/decorative animations (fire only
   the essential callback). Build accessibility into the engine, don't bolt it on. — seen in:
   tosijs-product
