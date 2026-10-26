@@ -126,6 +126,8 @@ actual task for attention and context.
 A byte ceiling converts that slow ratchet into an explicit decision:
 
 - the budget may be **lowered, never raised** — record the history inline so the direction is visible
+  (the strict case of releasing.md "Limits move on purpose", where a deliberate raise is
+  allowed: a discovery surface is read every time, so its growth is never the point)
 - the failure message must say **CUT**, and name the moves (mark something non-core, move an
   enumeration into a generated block, delete a redundant example)
 - assert the **headroom stays tight**, or a generous ceiling enforces nothing

@@ -214,7 +214,8 @@ const CASCADES = {
   efficiency: `1. Is the bundle-size delta printed? (if the build doesn't print it, THAT is the finding) Grew -> named in the CHANGELOG? Unexplained growth = finding; explained -> judgement: justified?
 2. New runtime dependency (package.json diff)? In a core library = finding, hard rule.
 3. Does the diff add work to a hot path (per-frame / per-keystroke / per-row / per-binding)? YES -> complexity before vs after; O(N) on a hot path = finding.
-4. Did build or suite wall-clock grow? Print the numbers — friction habituates, a printed number that grew does not.`,
+4. Did build or suite wall-clock grow? Print the numbers — friction habituates, a printed number that grew does not.
+5. LIMITS AND GATES (practices/releasing.md 'Limits move on purpose'; owner: raise limits, but never by accident). (a) List every number the project CLAIMS (README, docs, CLAUDE.md, package description: sizes, timings, counts, 'no dependencies') and the gate that pins each; a claim with no gate = finding. (b) Did any limit change in the span (ceilings, budgets, floors, toBeLessThan/toBeGreaterThan on a measured value)? A RAISE must say why in its commit and the CHANGELOG, extend the limit's inline history, and update every claim citing the old number (grep it); missing any = finding. (c) Was a message, feature or check shortened or dropped in a change that also brought a measured value just under its limit? = finding: the decision the gate exists to force was dodged. (d) Headroom, measured vs limit, for each: slack well past noise (>5%) = follow-up to ratchet down; under ~1% = report it, so the next change meets a decision rather than a surprise.`,
   dryness: `1. Did the code get NET LARGER? (git diff --stat, source lines) YES -> judgement, triggered: what does the size buy? Could it be smaller without losing function?
 2. Does new code duplicate an existing path? (search for the same shape: helper names, near-identical blocks, a second implementation of one behavior) YES -> unify, or record the keep-decision; a structural twin cannot be deferred without one.
 3. New abstraction with fewer than two real consumers? (count call sites) YES -> premature generalization, flag.
@@ -228,7 +229,7 @@ const CASCADES = {
 6. Is what SHIPS intact? (pack the tarball; README, llms.txt and the docs they link are in it and their links resolve there)
 7. Was every example this release touched EXECUTED without error or warning? (fact: name the lane, or say none runs it)
 8. Anything removed or renamed? -> grep docs, examples and completions for the old spelling; is there a guard against it coming back?
-9. Do README, llms.txt, package.json metadata and the site agree on URLs and version? Is a breaking change named in the index a reader or agent sees first, not only on its page?
+9. Do README, llms.txt, package.json metadata and the site agree on URLs and version? Does every size, timing or count a doc states match today's measurement? (a stale number is a wrong claim) Is a breaking change named in the index a reader or agent sees first, not only on its page?
 10. Any prose claim a reader will act on (security, data loss)? -> pinned by a test?
 11. Any new option, attribute, directive or flag? -> is a misplaced or misspelled one reported, or silently ignored?`,
   coverage: `1. Was the suite RUN and the output READ?

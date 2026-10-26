@@ -738,6 +738,43 @@ release-doctor now checks it: a `dist-sizes.json` that records a `version` older
 the package's and the last `v*` tag WARNs as stale (a baseline with no `version` is only
 checked for existence). — seen in: tosijs-3d-ensemble (`bin/sizes.ts`, 36b896bd..a9c2e215)
 
+## Limits move on purpose: raise with a reason, ratchet down when you can
+
+Owner, 2026-10-26: _"I'm happy to raise limits but not by accident."_ A
+limit (a bundle-size ceiling, a budget, a timing bound, a coverage or
+conversion floor) exists so that crossing it is a DECISION. Three rules
+follow, and the review checks all three (review.md, efficiency lens, gate 5):
+
+1. **Every number the project claims has a gate.** A README saying "under
+   N kB", a doc quoting a load time, a "zero dependencies" line: each is
+   pinned by something that fails when it stops being true. A claim with no
+   gate is drift waiting to happen.
+2. **Going over is a decision, not a squeeze.** When a change crosses a
+   limit, find out WHY (which change, how many bytes, what it buys), then
+   either cut or raise. A raise lands in a commit that says what bought the
+   bytes, extends the limit's inline history, is named in the CHANGELOG, and
+   **updates every claim that cites the old number** (grep for it). What it
+   must not be is trimming a message, an error text or a feature until the
+   number squeaks under: that keeps the gate green and hides the decision it
+   exists to force.
+3. **Ratchet down.** When a release shrinks something, or the headroom has
+   grown past noise, lower the limit to just above the measured value and
+   record it. Better, make the gate say so itself: fail with "lower the limit
+   to X" when the slack is large (the promote-check of testing.md "A ratchet
+   measures a RATE"). A generous limit enforces nothing, and the next
+   unexplained growth fills the slack unseen.
+
+documentation-surface.md's budget for discovery surfaces is the strict case
+(lowered, never raised): text read on every use, where growth is never the
+point. Everywhere else a raise is legitimate when it is deliberate.
+
+Seen in: tosijs-3d-ensemble (`91ec3669`). A game's bundle sat at 15.55 kB
+gz against a 16 kB ceiling, 77 bytes of headroom. Two new registration
+warnings tripped it twice, and the "fix" was shortening them, and leaving
+out the remedy a review had asked a validation message to name, until the
+bundle fitted. Nobody decided anything; the gate was green and the messages
+worse. This section is the owner's answer.
+
 ## Regenerate generated files, then verify they're in sync
 
 Built output (`dist/`, `docs/`, `version.ts`, `llms.txt`, generated docs) is committed and

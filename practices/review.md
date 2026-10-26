@@ -910,6 +910,20 @@ compound invisibly otherwise (seen in: tosijs-virta 0.5.0, 0.9 s → 6 s, mostly
    hot path is a finding.
 4. **Did build or suite wall-clock grow?** (fact: print the numbers — friction habituates,
    a printed number that grew does not; `development.md` "Laziness with the right sign")
+5. **Limits and gates** (releasing.md "Limits move on purpose"). Facts first:
+   - **List every number the project CLAIMS** (README, docs, `CLAUDE.md`, package
+     description: sizes, timings, counts, "no dependencies") and the gate pinning each.
+     A claim with no gate = finding.
+   - **Did a limit change in the span?** (grep the diff for ceilings, budgets, floors,
+     `toBeLessThan`/`toBeGreaterThan` on a measured value) A RAISE must say why in its
+     commit and the CHANGELOG, extend the limit's history, and update every claim citing
+     the old number. Missing any = finding.
+   - **Was something squeezed to fit?** A message, feature or check shortened or dropped
+     in a change that also brought a measured value just under its limit = finding: the
+     decision the gate exists to force was dodged.
+   - **Headroom**, measured vs limit, for each. Slack well past noise (say >5%) =
+     follow-up: ratchet down. Under ~1% = say so in the report, so the next change meets
+     a decision rather than a surprise.
 
 Detail:
 
@@ -990,6 +1004,9 @@ plausible-but-wrong results rather than errors:
    a user hits when they have the problem it solves?** (fact: read that error path)
 3. **Did a documented GUARANTEE change?** (fact) Yes → **grep the OLD wording** across the
    canonical reference, `CLAUDE.md`/`AGENTS.md` and the emitted `.d.ts`.
+   **Numbers too:** every size, timing or count a doc states, against today's
+   measurement. A stale number is a wrong claim however small the drift (releasing.md
+   "Limits move on purpose").
 4. **CHANGELOG entry for this version?** (Tier 0 answers this — trust its output)
 5. **Is any fix security-relevant?** Yes → does the entry **name the affected shipped
    versions**? (fact)
