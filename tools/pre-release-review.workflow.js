@@ -1,7 +1,7 @@
 export const meta = {
   name: 'pre-release-review',
   description:
-    'Tiered adversarial pre-release review: lens set selected by `tier` (always-on: correctness + blast radius; pre-minor adds efficiency + security; quarterly: ecosystem + practices)',
+    'Tiered adversarial pre-release review: lens set selected by `tier` (always-on: correctness + security + blast radius; pre-minor adds efficiency + docs; quarterly: ecosystem + practices)',
   phases: [
     { title: 'Review', detail: 'independent lens reviewers over the diff, per the selected tier' },
     { title: 'Verify', detail: 'adversarially verify decision-changing findings (blockers always; majors unless depth=fast)' },
@@ -36,15 +36,18 @@ const diffCmd =
 // the value is (blast-radius alone found 8 blockers). Cutting lenses would cut value, not cost.
 const depth = opts.depth || 'full'
 // Tier structure (reviews/2026-09-practices-audit.md D2): which lenses run depends on tier.
-//   'always-on'  — correctness + blast-radius, every substantive change, pair with depth:'fast'
-//   'pre-minor'  — adds efficiency + security + docs; DRY/DX ride inside correctness/blast-radius
+//   'always-on'  — correctness + security + blast-radius, every substantive change, pair with depth:'fast'
+//   'pre-minor'  — adds efficiency + docs; DRY/DX ride inside correctness/blast-radius
+// Security is always-on (owner, 2026-10-27, after an ISO 27001 auditor at a consumer asked for a
+// security lens): a patch that touched auth or input handling got no security pass. Its gate 1
+// is a fast exit, so a diff with no security surface costs one line.
 //   'quarterly'  — ecosystem + practices dispositions (never release-gating)
 // Coverage is retired to the Tier-0 script (tools/release-doctor.ts). Docs was too, and came
 // back into pre-minor (owner, 2026-10-08): five projects measured their docs in one morning and
 // every one found drift no release review had looked at, because the docs lens ran only by name.
 const tier = opts.tier || 'pre-minor'
 const TIERS = {
-  'always-on': ['correctness', 'blast-radius'],
+  'always-on': ['correctness', 'security', 'blast-radius'],
   'pre-minor': ['correctness', 'efficiency', 'security', 'docs', 'blast-radius'],
   quarterly: ['ecosystem', 'practices'],
   // THE CONSUMER-FACING TIER. `dx`, `docs`, `coverage` and `dryness` are in

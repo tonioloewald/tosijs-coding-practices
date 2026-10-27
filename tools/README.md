@@ -2,26 +2,29 @@
 
 Executable versions of the practices in this repo.
 
-## `pre-release-review` — the nine-lens release-gate review
+## `pre-release-review` — the tiered release-gate review
 
 The runnable form of [`practices/review.md` → Comprehensive pre-release
 review](../practices/review.md#the-lens-criteria-in-full). Two pieces:
 
-- **`pre-release-review.workflow.js`** — a Claude Code `Workflow` harness. It fans out nine
-  independent lens reviewers (correctness, efficiency, DRYness, docs, test coverage, DX, ecosystem health, practices self-review, blast radius) over
-  `git diff <last-tag>...HEAD`, adversarially verifies every finding, and triages the survivors
-  into a `GO` / `GO_WITH_FOLLOWUPS` / `BLOCK` report. Reviewers are read-only.
+- **`pre-release-review.workflow.js`** — a Claude Code `Workflow` harness. It fans out
+  independent lens reviewers over `git diff <base>...HEAD`, adversarially verifies the
+  findings that change the release decision, and triages the survivors into a `GO` /
+  `GO_WITH_FOLLOWUPS` / `BLOCK` report. Reviewers are read-only. The `tier` argument picks
+  the lenses:
+  - `always-on` — correctness, **security**, blast radius. Every substantive change.
+  - `pre-minor` — adds efficiency and docs. Once per coherent body of work, before its tag.
+  - `dx` — dx, docs, coverage, dryness. `idiom` — tosijs idiom. `quarterly` — ecosystem
+    and practices.
+  Tier 0, `tools/release-doctor.ts`, is a mechanical script that runs before any of them.
 - **`pre-release-review.SKILL.md`** — a `/pre-release-review` skill that wraps the harness:
-  figures out the base tag and bump level, runs the workflow, presents the report, and applies
-  the gate (block on blockers, then **route follow-ups by lens** — `TODO.md` for lenses 1–6,
-  `UPSTREAM.md` / the upstream repo for **ecosystem** findings, the shared practices repo for
-  **self-review** findings).
+  figures out the base and the tier, runs the workflow, presents the report, and applies the
+  gate.
 
-Lenses 1–6 review the change. **Lenses 7–8 are the compounding ones**: *ecosystem &
-abstraction health* asks whether work is happening in the wrong layer (are we hand-rolling
-around a missing seam upstream? nascent anti-patterns? friction we've normalized?), and
-*practices self-review* asks whether this release contradicted or outdated our own documented
-practices. If they return nothing, be suspicious — it usually means nobody looked.
+Older copies describe **nine lenses** (correctness, efficiency, DRYness, docs, coverage, DX,
+ecosystem, practices, blast radius). That version had **no security lens**: security was a
+framing inside correctness plus a separate `/security-review`. The dedicated lens arrived
+with the tiers, and now runs on every substantive change. A copy that still says "nine lens" should be replaced with this one.
 
 ### Install (per developer, user-level so it works in every repo)
 

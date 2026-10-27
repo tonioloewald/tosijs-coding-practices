@@ -121,14 +121,17 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   numbers should equal `package.json`'s version, and a removed identifier should not survive
   anywhere in shipped prose. A grep is enough for both.
   — seen in: tjs-lang 0.13.10 (`v0.13.9..c967ec2`)
-- **Tier 1 — always-on (`depth: fast`), any substantive change.** **Correctness +
-  blast-radius**, blockers-only verification. **Never keyed to the version letter** — two
+- **Tier 1 — always-on (`depth: fast`), any substantive change.** **Correctness, security
+  and blast-radius**, blockers-only verification. Security's first gate is a fast exit (no
+  security surface touched: one line, no findings), so it costs little where it has nothing
+  to do; before, a patch that changed auth or input handling got no security pass unless it
+  remediated an earlier finding. An ISO 27001 auditor reviewing a consumer's copy asked for
+  exactly this lens (seen in: Snowfox, annual ISO 27001 review). **Never keyed to the version letter** — two
   recorded gate-dodges came from letter selection; the trigger is a substantive diff, and
   the version number follows the narrative independently (releasing.md).
 - **Tier 2 — pre-minor (`depth: full`), once per coherent body of work.** Adds
-  **efficiency**, **docs** and **security** (subsystem-scoped: sandbox/VM, capability boundaries,
-  auth, untrusted input — the escalation rule below already prescribed the depth; now it has
-  its own lens). Diff-level DRY and DX ride inside correctness/blast-radius as framings, not
+  **efficiency** and **docs**, and runs security at full verification depth
+  (subsystem-scoped: sandbox/VM, capability boundaries, auth, untrusted input). Diff-level DRY and DX ride inside correctness/blast-radius as framings, not
   separate agents (27% duplicate rate; DX never originated a blocker). **Re-reviews cover
   the remediation diff only** — four runs found blockers introduced by the previous wave's
   own fixes; re-reading the whole span is where review waves came from.
