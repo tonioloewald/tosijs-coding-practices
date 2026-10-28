@@ -126,7 +126,10 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   security surface touched: one line, no findings), so it costs little where it has nothing
   to do; before, a patch that changed auth or input handling got no security pass unless it
   remediated an earlier finding. An ISO 27001 auditor reviewing a consumer's copy asked for
-  exactly this lens (seen in: Snowfox, annual ISO 27001 review). **Never keyed to the version letter** — two
+  exactly this lens (seen in: Snowfox, annual ISO 27001 review). **Rights** rides along the
+  same way: its first gate (does the diff bring in anything we did not make?) is a fast exit,
+  and when it does not exit, an unrecorded licence is cheaper to fix before a release than
+  after a takedown request. **Never keyed to the version letter** — two
   recorded gate-dodges came from letter selection; the trigger is a substantive diff, and
   the version number follows the narrative independently (releasing.md).
 - **Tier 2 — pre-minor (`depth: full`), once per coherent body of work.** Adds
@@ -355,6 +358,7 @@ whole: the deep docs lens missed what a naive reading caught instantly (tjs-lang
 | practices | the process left no record (no review report, no after-action entry) |
 | security | the diff has a secret, a new unauthenticated surface, a widened permission or a removed check |
 | blast radius | there's a destructive or machine-wide action with no guard |
+| rights | the diff ships someone else's content with no licence recorded, or a licence that forbids what we do with it |
 | idiom | the UI is rebuilt or re-rendered wholesale instead of built once and bound |
 
 **A cascade must shorten the review, not decorate it** (owner). The gates exist to replace
@@ -1505,6 +1509,36 @@ machine has not passed review.
 `~/.haltija/`, binds a well-known port, and kills legacy servers; its test suite was silently
 registering spawned servers into the developer's _real_ registry, where they out-ranked the
 developer's own dev server and hijacked their CLI)
+
+### 10. Rights: is everything we ship ours to ship, and credited?
+
+Assets, icons, fonts, data sets, code copied in and dependencies all come from someone. A
+licence that asks nothing (CC0, public domain) is still worth a credit, and the ones that ask
+something (CC BY, MIT, ISC, Apache) ask it as a condition. The lens keeps the project's
+**acknowledgements page** true: every source named, linked to its original, with its licence,
+and a way to reach us for a correction or a takedown.
+
+Gates, in order; a "no" closes the lens:
+
+1. **Does the diff bring in anything we did not make?** A new file in an asset folder, a
+   new icon or font, a dependency added to `dependencies` or `peerDependencies`, a URL to
+   someone else's content, a block of code copied from elsewhere, data converted from
+   another source. No: one line, done.
+2. **Is its licence recorded where the project records licences?** (an asset pack's
+   `metadata.json`, the icon folder's provenance note, a comment above copied code, the
+   package's own licence for a dependency). A licence that was not checked before the
+   download is a finding, whatever it turns out to be.
+3. **Does the licence allow what we do with it?** Redistribution on a CDN, modification,
+   commercial use. "Free to download" is not a licence; a paid bundle's files are not ours to
+   serve.
+4. **Is it on the acknowledgements page,** with the source's own name, a link to the
+   original, and the licence? A removed source comes off it too.
+
+- **Done when:** every third-party thing in the diff is recorded, allowed and acknowledged,
+  or the finding says which is missing.
+
+— asked by: Tonio (owner), 2026-10-28, with tosijs-3d's acknowledgements page (tosijs-ui
+already keeps provenance for its icons)
 
 ### A skipped Tier-0 check is a finding, not a neutral
 
