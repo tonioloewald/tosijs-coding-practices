@@ -92,6 +92,10 @@ describe('addedLines / scanSecrets / primitiveHits', () => {
     expect(primitiveHits(lines, new Set(['src/a.ts']))).toEqual([{ file: 'src/a.ts', line: 10, primitive: 'new Function' }])
     expect(primitiveHits(lines, new Set(['src/b.ts'])).map((h) => h.primitive)).toEqual(['fetch'])
   })
+  test('RegExp#exec is not a process spawn; a destructured exec and Bun.spawn are', () => {
+    const l = addedLines(`+++ b/src/c.ts\n@@ -1 +1,3 @@\n+/^a$/.exec(s)\n+exec('ls')\n+Bun.spawn(['ls'])\n`)
+    expect(primitiveHits(l, new Set(['src/c.ts'])).map((h) => h.line)).toEqual([2, 3])
+  })
 })
 
 describe('workflowHygiene', () => {

@@ -130,7 +130,8 @@ const PRIMITIVES: [string, RegExp][] = [
   ['new Function', /\bnew\s+Function\s*\(/],
   ['eval', /(^|[^.\w])eval\s*\(/],
   ['structuredClone', /\bstructuredClone\s*\(/],
-  ['spawn/exec', /\b(spawn|spawnSync|exec|execSync|execFile)\s*\(|Bun\.spawn/],
+  // `.exec(` is RegExp#exec far more often than child_process; a bare or destructured exec still counts.
+  ['spawn/exec', /(^|[^.\w])(spawn|spawnSync|exec|execSync|execFile)\s*\(|\.(spawn|spawnSync|execSync|execFile)\s*\(|Bun\.spawn/],
   ['listen', /\.listen\s*\(|Bun\.serve\s*\(/],
   ['process.kill', /\bprocess\.kill\s*\(/],
   ['fetch', /\bfetch\s*\(/],
