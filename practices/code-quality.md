@@ -363,6 +363,35 @@ Ask, on every fix to something you ship: *did I fix the instance, or the thing c
 
 — seen in: haltija (#40, #42), tosijs-ui (#61)
 
+## An allowlist of sources says nothing about sinks
+
+When untrusted input chooses both **where to read** and **where to write**, checking only the
+read side is not a policy. It is half of one. The common shape: markup binds a state path to a
+named target (`data-bind-attr-<name>="path"`), and the review checks that the PATH is readable.
+The NAME is the dangerous half, and nobody looked at it.
+
+Measured, in snowfox's declarative-binding prototype (SNOW-8655, the basis of tosijs#54). A
+path-only allowlist accepted all of these:
+
+- `attr-onclick`, which plants a running handler;
+- `attr-href` bound to a `javascript:` value;
+- `prop-inner-h-t-m-l`, which kebab-to-camel turns into `innerHTML`.
+
+Each kind (attribute, property, two-way property, localized attribute) had grown its own partial
+check, and the gaps sat between them.
+
+The rule:
+
+- **Judge every sink by name, in ONE function that every kind calls.** Refuse `on*`, anything
+  that parses HTML, `style`, and prototype names.
+- **Check URL-valued sinks on every write, not once at bind time.** The value is data and it
+  changes. Strip whitespace and control characters first, because browsers ignore them
+  (`java\tscript:` runs).
+- **Test the transform, not the spelling.** If names are normalised (camelCase, lower-casing),
+  test the dangerous name in its pre-transform form.
+
+— seen in: snowfox-app (#1512), tosijs (#54)
+
 ## Errors as curriculum
 
 Every diagnostic is a teaching opportunity, and the measured difference between a good one
