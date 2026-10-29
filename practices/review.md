@@ -991,7 +991,19 @@ Detail:
 3. **New abstraction with fewer than two real consumers?** (fact: count call sites) Yes →
    premature generalization, flag it.
 4. **Does an existing copy-pair show drift?** (fact: diff the twins) Drift is a correctness
-   bug wearing two addresses — report both copies.
+   bug wearing two addresses — report both copies. Two implementations of one thing are
+   either identical (merging is free) or at least one is incomplete, and often **neither is
+   right**: each guards an edge case the other misses, or carries an optimisation (fast path,
+   cache, early exit) the other lacks. So the finding is not "which copy wins" but a per-copy
+   list of what each has that the others don't, and the merge is the **union**: every guard,
+   and the better optimisation (or both, if they don't conflict). An optimisation can depend
+   on a guard elsewhere (a cache that's only safe because something invalidates it); carry
+   the two over together or neither.
+5. **Is the merge a router in disguise?** (fact: does the shared helper take a mode flag or
+   the caller's identity and branch into per-caller bodies?) Then the copies are still there,
+   behind an `if`, and the dedupe bought nothing. Parameterising on *data* (the type of a
+   value) is fine; parameterising on *who is calling* is the smell. A real difference between
+   copies means they weren't the same thing; leave them apart and say so.
 
 Detail:
 
@@ -1001,6 +1013,15 @@ Detail:
 - New code that re-solves a solved problem, or a copy-paste that drifted.
 - Over-abstraction is also a smell — DRY, not premature generalization (the design-time
   version of this rule is [cross-project.md "Adopters before abstraction"](cross-project.md#adopters-before-abstraction)).
+- **Don't grade a dedupe by bytes saved.** gzip makes nearby repeats almost free, so a size
+  argument dismisses exactly the copies that are cheapest to merge. The win is one place to
+  fix things, plus whatever the diff of the copies turns up.
+- Seen in: tosijs 1.10.x dedupe pass (2026-10-29). Lining up share.ts/sync.ts raised #3544;
+  `_resolveInitAttributes`' two branches had each received a different inheritance fix,
+  separately and in turn; the attribute setters' caches differed in a way that is only
+  safe to merge together with the observation that invalidates them. Rule from the owner
+  (provisional, per CONTRIBUTING.md): "deduplication is always a win if you're not
+  building routers in disguise."
 - **Done when:** no copy-pasted logic remains and every new helper earns its place.
 
 ### 3b. A claim about what something LOOKS like requires looking at it
