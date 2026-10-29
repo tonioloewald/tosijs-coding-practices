@@ -380,15 +380,32 @@ path-only allowlist accepted all of these:
 Each kind (attribute, property, two-way property, localized attribute) had grown its own partial
 check, and the gaps sat between them.
 
+**The first fix was a denylist of sink names, and it failed review twice more.** It refused
+`on*`, `innerHTML`, `style` and `href`. Then:
+
+- `<a>.protocol` turned an allowed `mailto:` into `javascript:` without touching `href`;
+- a component's `content` setter assigned `innerHTML` one level down;
+- a binding that wrote `data-tosi-localized` handed a different library an attribute map, and
+  that library wrote the refused handler itself;
+- "any registered custom element" admitted one that runs the code in a child `<pre>`.
+
+Review yield was flat (1, 2, 2), which is the sign that the class had not been found. **Any setter
+can be a sink, so a list of bad names can never be finished.**
+
 The rule:
 
-- **Judge every sink by name, in ONE function that every kind calls.** Refuse `on*`, anything
-  that parses HTML, `style`, and prototype names.
+- **Sinks are an allowlist: a reviewed table of which element, and which data properties on it.**
+  Closed by default. Adding an entry means reading what the setter does with the value.
+- **Keep a built-in floor under the policy that no policy can lift:** no `on*`, no native element
+  member (`prop in HTMLElement.prototype`), and no attribute that is itself a directive to some
+  other interpreter.
 - **Check URL-valued sinks on every write, not once at bind time.** The value is data and it
   changes. Strip whitespace and control characters first, because browsers ignore them
   (`java\tscript:` runs).
 - **Test the transform, not the spelling.** If names are normalised (camelCase, lower-casing),
   test the dangerous name in its pre-transform form.
+- **Prove each sink is real with a mutation:** disable the guard and assert the payload actually
+  lands (an injected `<img>`, a rewritten href). A refusal message only proves the message.
 
 — seen in: snowfox-app (#1512), tosijs (#54)
 
