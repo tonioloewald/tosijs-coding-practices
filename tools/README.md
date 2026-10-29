@@ -17,6 +17,8 @@ review](../practices/review.md#the-lens-criteria-in-full). Two pieces:
   - `dx` — dx, docs, coverage, dryness. `idiom` — tosijs idiom. `quarterly` — ecosystem
     and practices.
   Tier 0, `tools/release-doctor.ts`, is a mechanical script that runs before any of them.
+  `tools/security-surface.ts` (shipped with the skill, no dependencies) computes which
+  security surfaces a diff touches; the security lens may skip only when it says none.
 - **`pre-release-review.SKILL.md`** — a `/pre-release-review` skill that wraps the harness:
   figures out the base and the tier, runs the workflow, presents the report, and applies the
   gate.
@@ -42,7 +44,7 @@ directory, commit, and publish:
 
 ```bash
 virta skill publish pre-release-review tools/pre-release-review.SKILL.md \
-  tools/pre-release-review.workflow.js --note "<what changed>"
+  tools/pre-release-review.workflow.js tools/security-surface.ts --note "<what changed>"
 ```
 
 Never edit the cached copy: the next run replaces it. An improvement found during a release

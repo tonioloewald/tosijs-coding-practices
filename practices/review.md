@@ -121,10 +121,46 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   numbers should equal `package.json`'s version, and a removed identifier should not survive
   anywhere in shipped prose. A grep is enough for both.
   — seen in: tjs-lang 0.13.10 (`v0.13.9..c967ec2`)
+  **Security checks** (from tjs-lang's answer to "what is the security lens missing?",
+  board #3529):
+  - **Security surface is a fact, computed.** `tools/security-surface.ts` (also shipped with
+    the skill) lists what the diff changed in the import closure of the entry points declared
+    in `package.json` → `releaseDoctor.securityEntries`, plus manifests and lockfiles in any
+    tree, CI/publish workflows and release scripts, and `securityDocs` (docs that teach host
+    integration, which consumers copy). The lens may skip only when this says none. Judgement
+    was measured and failed: 17 of 51 tjs-lang commits changed files the sandbox loads, every
+    one subject-lined as language work, and one shipped a getter call inside the VM's own
+    equality with no security pass. A repo with no declared entries gets a WARN, and no fast
+    exit on a source change.
+  - **Execution and egress primitives** added inside the closure (`new Function`, `eval`,
+    `structuredClone`, spawn, listen, `process.kill`, `fetch`, `new RegExp`) are listed for
+    the lens to address by name. A hit is an input, not a finding.
+  - **Secrets in the diff** fail (secret class) or warn (public class: a Mapbox `pk.`, a
+    Firebase web key). The value is never printed.
+  - **Advisories in every dependency tree**, high and critical failing unless exempted with a
+    reason and an expiry (dependencies.md §3). A root-only audit is not a gate: a deployed
+    `functions/` tree carried three criticals while the gate was green, and Dependabot
+    reported 0 for a `bun.lock`-only tree that `bun audit` reported 9 for.
+  - **Declared security guards** (`releaseDoctor.securityGuards`) exist, pass, and skip
+    nothing. CI once skipped three dist-gated guards on a fresh clone and reported green.
+  - **Workflow hygiene:** third-party actions pinned by SHA; a checkout of another repo at a
+    moving ref in a job holding `id-token: write` fails.
+  - **A CHANGELOG Security entry** names the affected range and the advisory or deprecation
+    that reaches users on it.
+  — seen in: tjs-lang 0.13.x–0.14.0
+- **The security record is the audit evidence.** The review report ends with a "Security
+  record": the range and how scope was derived, the hostile-input classes tried per surface
+  with the standing test that pins each, findings with how they were verified and their
+  disposition (a deferral carries a residual-risk sentence), what was not tested, and
+  provenance. "Gates checked" shows a review ran; it is not evidence that security testing
+  happened. Rest the claim on the standing tests and the release attestation, which run
+  every release; a model review is one pass with a known false-negative rate. Commit the
+  record with the review report. — seen in: tjs-lang (board #3529), Snowfox (ISO 27001
+  A.8.29)
 - **Tier 1 — always-on (`depth: fast`), any substantive change.** **Correctness, security
-  and blast-radius**, blockers-only verification. Security's first gate is a fast exit (no
-  security surface touched: one line, no findings), so it costs little where it has nothing
-  to do; before, a patch that changed auth or input handling got no security pass unless it
+  and blast-radius**, blockers-only verification. Security's first gate is a fast exit,
+  taken only when Tier 0's security surface says none, so it costs little where it has
+  nothing to do; before, a patch that changed auth or input handling got no security pass unless it
   remediated an earlier finding. An ISO 27001 auditor reviewing a consumer's copy asked for
   exactly this lens (seen in: Snowfox, annual ISO 27001 review). **Rights** rides along the
   same way: its first gate (does the diff bring in anything we did not make?) is a fast exit,
@@ -1539,6 +1575,54 @@ Gates, in order; a "no" closes the lens:
 
 — asked by: Tonio (owner), 2026-10-28, with tosijs-3d's acknowledgements page (tosijs-ui
 already keeps provenance for its icons)
+
+### 11. Security — the doors, the cost before the meter, and what crosses
+
+Runs in every tier from always-on up. **Scope is the Tier 0 security surface**, never a
+reading of the commit subjects; the lens may widen it, not narrow it. Any touched security
+subsystem is reviewed at whole-subsystem depth, because holes are latent: a minor bump's
+review once found five VM blockers, four of them in the previous shipped release.
+
+The standing questions: who can reach each surface, from where, unauthenticated; is every
+gate fail-closed; what can a malicious caller make this do; is the hostile input class
+tested, not only the happy path. Then the shapes security blockers actually took:
+
+- **Closed set.** Is each surface (regex doors, budget options, membrane crossings, guest key
+  writes, guest-value reads, egress) an enumerated list a test parses, so a new member fails
+  a test? **At the second instance of a class, the finding is "enumerate the doors and pin
+  the list."** Another patch does not close it: in tjs-lang, patching never converged and a
+  list closed every one (`regex-doors`, `budget-funnel`, `membrane-doors`,
+  `guest-key-writes`, `egress-doors`).
+- **Cost before the meter.** What runs before any budget, fuel or cap applies, and is it
+  linear in attacker-controlled size? Parsers, scanners, memos, regex constants, nesting
+  depth. Blocked nine rounds of one release; closed only when the VM admitted ASTs and the
+  front ends ran outside it or behind an admission cap.
+- **Copy at the boundary.** Does a value cross as anything other than a copy built from
+  exactly what was read? `structuredClone` copies slots a check never saw; a Proxy lies
+  about `length`; a thrown value skips the membrane; a request is admitted as one string
+  and forwarded as another. Is any getter, Proxy trap or `toString` reachable from a check?
+- **Defaults.** A security-relevant default changed: what does each population of callers
+  now get? (`resolveInputs: true` evaluated guest data as code; an `effects: 'pure'`
+  default gave an embedder's atoms no membrane, and it shipped.)
+- **Execution outside the sandbox.** Is caller-supplied source run anywhere else: transpile,
+  type-check, test blocks, a CLI that "checks" a file, docs? An API cleanup re-enabled
+  `new Function` once.
+- **Dependencies on the path.** A dependency's behaviour on hostile input (a schema library
+  coercing a non-string `pattern` into a regex; a minor-range semantics change).
+- **Retention.** Does hostile or tenant data outlive the run: memos, caches, evaluators,
+  flight recorders, error messages holding received values?
+- **The fix is the next door.** Review each remediation for the same class, not only the
+  finding it fixed: one run went six rounds, each blocker in the previous round's fix.
+- **Shipped holes.** A fixed hole that was in published versions: affected range named,
+  deprecated, and advised, or `npm audit` reports zero to everyone on it.
+- **The pipeline.** Publish workflows, release scripts and jobs holding `id-token` or
+  secrets are security surface: credential isolation, pinned actions, no moving-ref
+  checkouts.
+
+Findings about an isolation, capability or auth guarantee are adversarially verified
+whatever their severity. The lens records each input class it tried, with the test that
+pins it; that is the Security record's evidence. — seen in: tjs-lang 0.13.x–0.14.0 (board
+#3529)
 
 ### A skipped Tier-0 check is a finding, not a neutral
 

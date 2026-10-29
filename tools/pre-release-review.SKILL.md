@@ -98,13 +98,26 @@ install** before treating it as a code defect — a stale `node_modules` has fak
    ```
    If empty, tell the user there's nothing to review and stop.
 
+   **Then compute the security surface** (a fact, not a judgement):
+   ```bash
+   bun {{skill-dir}}/security-surface.ts --base <baseRef>
+   ```
+   Pass its whole output as `securitySurface` below. The security lens may skip its review
+   only when this says `VERDICT: none`. If it warns that no `releaseDoctor.securityEntries`
+   are declared, tell the user: the project should list its sandbox, auth and other boundary
+   entry points in `package.json` (try them first with `--entries a.ts,b.ts`).
+
 5. **Run the harness** — invoke the **Workflow** tool with the bundled script:
    ```
    Workflow({
      scriptPath: "{{skill-dir}}/pre-release-review.workflow.js",
-     args: { baseRef: "<tag>", bump: "<patch|minor|major>", depth: "full" }
+     args: { baseRef: "<tag>", bump: "<patch|minor|major>", depth: "full",
+             securitySurface: "<the output above>" }
    })
    ```
+   The report ends with a **Security record** (scope and how it was derived, the hostile
+   inputs tried and the tests that pin them, dispositions, what was not tested). Commit it
+   with the review report: it is the audit evidence that security testing happened.
    It fans out the selected tier's lens reviewers in parallel, verifies the decision-changing
    findings adversarially, then triages. Runs in the background; notifies you when done.
 

@@ -20,8 +20,21 @@ import { $ } from 'bun'
 import { existsSync, readFileSync, readdirSync, statSync } from 'fs'
 import { join } from 'path'
 import { verifyAttestation } from './attest.ts'
+import {
+  addedLines,
+  classifySurface,
+  dependencyTrees,
+  exemptionState,
+  importClosure,
+  parseAudit,
+  primitiveHits,
+  scanSecrets,
+  surfaceTouched,
+  workflowHygiene,
+  type Exemption,
+} from './security-surface.ts'
 
-type Result = { name: string; status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP'; detail: string }
+type Result = { name: string; status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'INFO'; detail: string }
 const results: Result[] = []
 const add = (name: string, status: Result['status'], detail = '') =>
   results.push({ name, status, detail })
@@ -1068,6 +1081,145 @@ and a muted gate is worse than no gate.
   else add('dependency ranges', 'PASS')
 }
 
+// --- security (tjs-lang board #3529) ------------------------------------------------------------
+/*
+  The mechanical half of the security lens. INFO lines are inputs for the lens, not findings.
+  The base is the last v* tag, or RELEASE_DOCTOR_BASE.
+*/
+{
+  const root = process.cwd()
+  const rd = pkg.releaseDoctor ?? {}
+  const base =
+    process.env.RELEASE_DOCTOR_BASE ||
+    (await run(['git', 'describe', '--tags', '--abbrev=0', '--match', 'v*'])).out.trim()
+  if (!base) add('security surface', 'SKIP', 'no v* tag and no RELEASE_DOCTOR_BASE: nothing to diff against')
+  else {
+    const changed = (await run(['git', 'diff', '--name-only', `${base}...HEAD`])).out.split('\n').filter(Boolean)
+    const entries: string[] = rd.securityEntries ?? []
+    const closure = importClosure(entries, root)
+    const surface = classifySurface(changed, closure, rd.securityDocs ?? [])
+    const parts = [
+      surface.closure.length && `sandbox/boundary closure: ${surface.closure.join(', ')}`,
+      surface.manifests.length && `manifests: ${surface.manifests.join(', ')}`,
+      surface.pipeline.length && `CI/publish: ${surface.pipeline.join(', ')}`,
+      surface.docs.length && `host-integration docs: ${surface.docs.join(', ')}`,
+    ].filter(Boolean)
+    if (!entries.length)
+      add('security surface', 'WARN',
+        `no releaseDoctor.securityEntries declared, so the sandbox/boundary closure is unknown and the security lens cannot fast-exit on a source change. Declare the entry points (try them with tools/security-surface.ts --entries)${parts.length ? `\n${parts.join('\n')}` : ''}`)
+    else
+      add('security surface', 'INFO',
+        surfaceTouched(surface)
+          ? `TOUCHED since ${base} — the security lens runs its cascade:\n${parts.join('\n')}`
+          : `none since ${base} (closure of ${entries.length} entries, ${closure.size} files) — the security lens may fast-exit`)
+
+    const lines = addedLines((await run(['git', 'diff', '-U0', `${base}...HEAD`])).out)
+    const prims = primitiveHits(lines, new Set(surface.closure))
+    if (prims.length)
+      add('execution/egress primitives in the closure diff', 'INFO',
+        `the security lens addresses each by name:\n${prims.map((h) => `${h.primitive} at ${h.file}:${h.line}`).join('\n')}`)
+
+    const secrets = scanSecrets(lines)
+    const secretClass = secrets.filter((h) => h.secret)
+    if (secretClass.length)
+      add('secrets in the diff', 'FAIL',
+        `secret-class pattern added (value not printed):\n${secretClass.map((h) => `${h.kind} at ${h.file}:${h.line}`).join('\n')}`)
+    else if (secrets.length)
+      add('secrets in the diff', 'WARN',
+        `public-class token added (identifies, does not authorize):\n${secrets.map((h) => `${h.kind} at ${h.file}:${h.line}`).join('\n')}`)
+    else add('secrets in the diff', 'PASS')
+  }
+
+  // Workflow hygiene over every workflow, not only changed ones: a moving ref is a standing risk.
+  const wfDir = join(root, '.github/workflows')
+  if (!existsSync(wfDir)) add('workflow hygiene', 'SKIP', 'no .github/workflows')
+  else {
+    const issues = readdirSync(wfDir)
+      .filter((f) => /\.ya?ml$/.test(f))
+      .flatMap((f) => workflowHygiene(f, readFileSync(join(wfDir, f), 'utf8')))
+    const worst = issues.some((i) => i.severity === 'FAIL') ? 'FAIL' : issues.length ? 'WARN' : 'PASS'
+    add('workflow hygiene', worst, issues.map((i) => `${i.file} › ${i.job}: ${i.detail}`).join('\n'))
+  }
+
+  /*
+    Advisories in EVERY dependency tree. A root-only audit is not a gate: tjs-lang's deployed
+    functions/ tree carried three criticals while the gate was green, and Dependabot reported 0
+    for a bun.lock-only tree that bun audit reported 9 for. High and critical fail unless
+    exempted per dependencies.md §3:
+      package.json → "releaseDoctor": { "auditExemptions": { "GHSA-…": { "reason": "…", "expires": "YYYY-MM-DD" } } }
+  */
+  const exemptions: Record<string, Exemption> = rd.auditExemptions ?? {}
+  const advisories: ReturnType<typeof parseAudit> = []
+  const skipped: string[] = []
+  const trees = dependencyTrees(root)
+  if (!trees.length) skipped.push('no package.json with its own lockfile')
+  for (const tree of trees) {
+    const dir = join(root, tree)
+    const cmd = existsSync(join(dir, 'package-lock.json')) ? ['npm', 'audit', '--json'] : ['bun', 'audit', '--json']
+    const r = await $`${cmd}`.cwd(dir).nothrow().quiet()
+    try {
+      advisories.push(...parseAudit(tree || '.', r.stdout.toString()))
+    } catch {
+      skipped.push(`${tree || '.'} (${cmd.slice(0, 2).join(' ')} gave no JSON: ${r.stderr.toString().trim().split('\n')[0] || `exit ${r.exitCode}`})`)
+    }
+  }
+  const serious = advisories.filter((a) => a.severity === 'high' || a.severity === 'critical')
+  const blocking = serious.filter((a) => exemptionState(exemptions[a.id]) !== 'valid')
+  const notes: string[] = []
+  for (const [id, e] of Object.entries(exemptions)) {
+    const st = exemptionState(e)
+    if (st === 'invalid') notes.push(`exemption ${id} is invalid (needs a reason and an expiry) and does not suppress`)
+    if (st === 'expired') notes.push(`exemption ${id} expired ${e.expires} (was: ${e.reason})`)
+    if (!advisories.some((a) => a.id === id)) notes.push(`exemption ${id} matches no current advisory: delete it`)
+  }
+  const fmt = (a: (typeof advisories)[number]) => `${a.severity} ${a.id} in ${a.pkg} (${a.tree}): ${a.title}`
+  if (blocking.length)
+    add('dependency advisories (every tree)', 'FAIL', [...blocking.map(fmt), ...notes, ...skipped.map((s) => `unaudited: ${s}`)].join('\n'))
+  else if (skipped.length)
+    add('dependency advisories (every tree)', 'SKIP', [...skipped.map((s) => `unaudited: ${s}`), ...notes].join('\n'))
+  else
+    add('dependency advisories (every tree)', notes.length ? 'WARN' : 'PASS',
+      [`${advisories.length} advisories, ${serious.length - blocking.length} high/critical exempted`, ...notes].join('\n'))
+
+  /*
+    Declared security guards exist, ran, and did not skip. CI once skipped three dist-gated
+    guards on a fresh clone and reported green.
+      package.json → "releaseDoctor": { "securityGuards": ["src/vm/regex-doors.test.ts", …] }
+  */
+  const guards: string[] = rd.securityGuards ?? []
+  if (!guards.length) add('security guards', 'SKIP', 'none declared (releaseDoctor.securityGuards)')
+  else {
+    const missing = guards.filter((g) => !existsSync(join(root, g)))
+    const r = await $`bun test ${guards.filter((g) => !missing.includes(g)).map((g) => `./${g}`)}`.cwd(root).nothrow().quiet()
+    const out = r.stdout.toString() + r.stderr.toString()
+    const count = (k: string) => Number(out.match(new RegExp(`(\\d+) ${k}\\b`))?.[1] ?? 0)
+    const [pass, skip, fail] = [count('pass'), count('skip') + count('todo'), count('fail')]
+    const problems = [
+      ...missing.map((g) => `missing: ${g}`),
+      fail && `${fail} failed`,
+      skip && `${skip} skipped or todo — a skipped guard is not a guard`,
+      !pass && 'no test passed',
+    ].filter(Boolean)
+    add('security guards', problems.length ? 'FAIL' : 'PASS',
+      problems.length ? problems.join('\n') : `${guards.length} guards, ${pass} tests, none skipped`)
+  }
+
+  // A Security entry for this version must name what it affects, or consumers cannot tell
+  // whether to move (tjs-lang 0.13.8 B-2, 0.13.10 B-1).
+  const clPath = join(root, 'CHANGELOG.md')
+  if (version && existsSync(clPath)) {
+    const cl = readFileSync(clPath, 'utf8')
+    const start = cl.search(new RegExp(`^##\\s*\\[?${version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]?(\\s|$)`, 'm'))
+    if (start >= 0) {
+      const rest = cl.slice(start + 3)
+      const section = rest.slice(0, rest.search(/^##\s/m) >= 0 ? rest.search(/^##\s/m) : undefined)
+      if (/^#{3,}\s*Security/im.test(section))
+        add('changelog security entry', /affect/i.test(section) && /GHSA-|advisory|deprecat/i.test(section) ? 'PASS' : 'WARN',
+          'a Security entry must name the affected version range, and the advisory or deprecation that reaches users on it')
+    }
+  }
+}
+
 /*
  * PROPOSAL (open — review.md's "remediation record" lesson; virta AAR cycle 6):
  * a gate over remediation-record claims. Every claim in the remediation
@@ -1097,11 +1249,11 @@ and a muted gate is worse than no gate.
  */
 
 // Report
-const icons = { PASS: '✅', FAIL: '❌', WARN: '⚠️ ', SKIP: '⏭️ ' } as const
+const icons = { PASS: '✅', FAIL: '❌', WARN: '⚠️ ', SKIP: '⏭️ ', INFO: 'ℹ️ ' } as const
 console.log(`\nrelease-doctor — ${pkg.name}@${version}\n`)
 for (const r of results) {
   console.log(`${icons[r.status]} ${r.name}${r.detail ? ` — ${r.detail.split('\n')[0]}` : ''}`)
-  if (r.status === 'FAIL' && r.detail.includes('\n'))
+  if (r.status !== 'PASS' && r.detail.includes('\n'))
     console.log(r.detail.split('\n').slice(1).map((l) => `     ${l}`).join('\n'))
 }
 const fails = results.filter((r) => r.status === 'FAIL').length

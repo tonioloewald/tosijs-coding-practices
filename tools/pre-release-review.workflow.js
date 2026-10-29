@@ -10,7 +10,9 @@ export const meta = {
 }
 
 // ---- inputs -----------------------------------------------------------------
-// args: { baseRef?, bump?: 'patch'|'minor'|'major', scope?, depth?: 'fast'|'full', repoDir? }
+// args: { baseRef?, bump?: 'patch'|'minor'|'major', scope?, depth?: 'fast'|'full', repoDir?, securitySurface? }
+// securitySurface: the text `tools/security-surface.ts --base <baseRef>` printed (Tier 0); the
+// security lens may fast-exit only when it says none.
 // args may arrive as a JSON string depending on the caller — parse defensively
 // (this silently degraded three real runs to base='main', an empty diff)
 const opts = typeof args === 'string' ? JSON.parse(args) : args || {}
@@ -150,7 +152,26 @@ Findings here are proposed CHANGES TO THE PRACTICES (or to this repo's agent doc
   {
     key: 'security',
     title: 'Security (subsystem-scoped)',
-    checks: `Review security-critical subsystems the diff touches OR sits adjacent to — sandbox/VM, capability and tool boundaries, RBAC/auth, URL/SSRF guards, regex/ReDoS and other untrusted-input paths, secrets handling, network listeners. Security holes are LATENT: they sit in already-shipped code outside the diff, so escalate any touched security subsystem to WHOLE-SUBSYSTEM depth regardless of diff size (a minor bump's review once found five VM blockers, four latent in the prior shipped release). Check: unauthenticated reachable surfaces (who can hit this endpoint/port/handler, from where, with what Origin); input validation at every trust boundary; fail-open vs fail-closed on every gate (a gate must never report a pass it didn't earn, and a documented divergence at a gate is still fail-open); what a compromised or malicious caller could make this code do; whether tests cover the hostile input class, not just the happy path. Findings whose subject is an isolation, capability, or auth guarantee get adversarially verified regardless of reported severity.`,
+    checks: `Review security-critical subsystems the diff touches OR sits adjacent to — sandbox/VM, capability and tool boundaries, RBAC/auth, URL/SSRF guards, regex/ReDoS and other untrusted-input paths, secrets handling, network listeners, the release pipeline. Security holes are LATENT: they sit in already-shipped code outside the diff, so escalate any touched security subsystem to WHOLE-SUBSYSTEM depth regardless of diff size (a minor bump's review once found five VM blockers, four latent in the prior shipped release).
+
+SCOPE IS A FACT, NOT A JUDGEMENT. Tier 0 computed it (the import closure of the project's declared security entry points, plus manifests, CI/publish workflows and host-integration docs):
+${opts.securitySurface ? opts.securitySurface : `NOT PROVIDED. Run \`bun <practices checkout>/tools/security-surface.ts --base ${base}\` and use its output. If you cannot, you may NOT take the fast exit on any source change: diffs subject-lined as language work changed files the sandbox loads 17 times in 51 commits on tjs-lang, and one shipped a getter call inside the VM's own equality.`}
+You may widen this scope; you may not narrow it.
+
+Check: unauthenticated reachable surfaces (who can hit this endpoint/port/handler, from where, with what Origin); input validation at every trust boundary; fail-open vs fail-closed on every gate (a gate must never report a pass it didn't earn, and a documented divergence at a gate is still fail-open); what a compromised or malicious caller could make this code do; whether tests cover the hostile input class, not just the happy path. Then the classes security blockers actually took (tjs-lang 0.13–0.14, board #3529):
+(a) CLOSED SET. Is each surface (regex doors, budget options, membrane crossings, guest key writes, guest-value reads, egress) an enumerated list a test parses, so a NEW member fails a test? When you find a SECOND instance of a class, the finding is "enumerate the doors and pin the list" — another patch does not close it; patching never converged, lists did.
+(b) PRE-METER COST. What work runs before any budget, fuel or cap applies, and is it linear in attacker-controlled size? Parsers, scanners, memos, regex constants and nesting depth all count. This class blocked nine rounds of one release.
+(c) COPY AT THE BOUNDARY. Does any value cross a boundary as anything other than a copy built from exactly what was read? structuredClone copies slots a check never saw; a Proxy can lie about length; a thrown value can skip the membrane; a request can be admitted as one string and forwarded as another. Is any getter, Proxy trap or toString reachable from a check?
+(d) DEFAULTS. Did a security-relevant default change, and what does each population of callers (guest, embedder, CLI user) now get?
+(e) EXECUTION OUTSIDE THE SANDBOX. Is caller-supplied source executed anywhere else: transpile, type-check, test blocks, docs, a CLI that "checks" a file? An API cleanup can re-enable new Function.
+(f) DEPENDENCIES ON THE PATH. Does a dependency's behaviour on hostile input sit on the path (a schema library coercing a non-string pattern into a regex; a minor-range semantics change)? Read the dependency diff since the base.
+(g) RETENTION. Does hostile or tenant data outlive the run: memos, caches, evaluators, flight recorders, error messages holding received values?
+(h) THE FIX IS THE NEXT DOOR. Review every remediation in the diff for the SAME class as the finding it fixed, not only for that finding (one run went six rounds with each blocker in the previous round's fix).
+(i) SHIPPED HOLES. If a fixed hole was in published versions: is the affected range named in the CHANGELOG, deprecated on the registry, and advised (GHSA) so \`npm audit\` reports it?
+(j) THE PIPELINE. Publish workflows, release scripts and CI jobs holding id-token or secrets: credential isolation, pinned actions, no checkout of another repo at a moving ref.
+Findings whose subject is an isolation, capability, or auth guarantee get adversarially verified regardless of reported severity.
+
+RECORD WHAT YOU TRIED. In \`tried\`, one entry per hostile-input class you exercised: the surface, the class, the concrete inputs (or the generator), the result, and the standing test that pins it (file › test name) or "none". This is the evidence an auditor asks for (ISO 27001 A.8.29); "reviewed, no findings" is not.`,
   },
   {
     key: 'blast-radius',
@@ -256,10 +277,18 @@ const CASCADES = {
 2. Does a prior lens-8 write-back exist? -> does it name its commit range, and has anything landed after it? Stale claim = finding.
 3. Did this release contradict or vindicate a documented practice? (judgement, triggered by an OBSERVED divergence — name the practice and the observation.)
 4. Read reviews/AAR.md entries since the last pass — this lens is where their analysis happens. Deterministic triggers: a recorded blocker->fix->blocker cycle (-> ask WHY the review didn't frame the class the first time, and WHY the fix didn't close it); recurring friction lines (-> tooling opportunity); a lens returning zero findings twice running (dead weight, or nobody looked — say which); a check that fired but has never been seen red.`,
-  security: `1. Does the diff touch or sit adjacent to a security subsystem (sandbox/VM, capability/tool boundary, auth, URL/SSRF, regex over untrusted input, secrets, listeners)? NO -> say so; done. YES -> whole-subsystem depth (holes are latent; diff size is irrelevant).
+  security: `1. Does the Tier 0 security surface say NONE (or, without it, does the diff change no source, manifest, workflow or host-integration doc)? YES -> say so; done. Otherwise -> whole-subsystem depth over every surface it lists (holes are latent; diff size is irrelevant).
 2. For each reachable surface: who can hit it, from where, unauthenticated? (fact)
 3. Every gate: fail-open or fail-closed? (fact, per gate; fail-open = finding)
-4. Is the hostile-input class covered by a test, not just the happy path? (fact)`,
+4. Is each surface a closed set pinned by a test that fails on a new member? (fact; a second instance of a class without one = finding)
+5. What runs before any budget applies, and is it linear in attacker-controlled size? (fact)
+6. Does every boundary crossing copy exactly what was read, with no getter, Proxy trap or toString reachable from a check? (fact)
+7. Did a security-relevant default, a dependency on the path, or a retention (memo, cache, recorder) change? (fact, each)
+8. Is caller-supplied source executed outside the sandbox anywhere the diff touches? (fact)
+9. Does each remediation in the diff open the same class again? (fact)
+10. Was a fixed hole in shipped versions? -> range named, deprecated, advised? (fact)
+11. Did the diff touch CI/publish/release? -> credential isolation and pinning (fact)
+12. Is the hostile-input class covered by a test, not just the happy path, and is each class you tried recorded in \`tried\`? (fact)`,
   'blast-radius': `1. Does the diff write, spawn, bind, kill, or delete ANYTHING outside the repo? (grep the diff: homedir, ~/, /usr/local, .local/bin, XDG_, process.kill, spawn, listen, out-of-repo writes, deletion paths) NO -> the harm half closes in ONE LINE; do not manufacture findings.
 2. YES -> enumerate the footprint; each item through the six done-right criteria (mostly facts: predicate stated? self-terminating? receipt written? opt-out documented?).
 3. Does the TEST SUITE touch any of it? Check even when the diff doesn't touch tests.
@@ -327,6 +356,23 @@ const FINDINGS_SCHEMA = {
           gate: { type: 'string', description: 'the gate number and a few words naming it' },
           status: { type: 'string', enum: ['checked', 'not-applicable', 'not-done'] },
           note: { type: 'string', description: 'what you ran or read (checked), or why (not-applicable / not-done); one line' },
+        },
+      },
+    },
+    // The security lens's evidence: what was actually tried. Other lenses leave it out.
+    tried: {
+      type: 'array',
+      description: 'security lens only: one entry per hostile-input class you exercised',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['surface', 'inputClass', 'inputs', 'result', 'pinnedBy'],
+        properties: {
+          surface: { type: 'string' },
+          inputClass: { type: 'string' },
+          inputs: { type: 'string', description: 'the concrete inputs, or the generator' },
+          result: { type: 'string' },
+          pinnedBy: { type: 'string', description: 'file › test name of the standing test, or "none"' },
         },
       },
     },
@@ -436,6 +482,7 @@ REFUTE any finding whose only support is conformance to mainstream prior art (Re
 // ---- phase 1+2: review each lens, verify its findings as they land ----------
 phase('Review')
 const gateLog = {}
+const triedLog = {}
 const reviewed = await pipeline(
   activeLenses,
   (lens) =>
@@ -447,6 +494,7 @@ const reviewed = await pipeline(
     }),
   (result, lens) => {
     gateLog[lens.key] = (result && result.gates) || null
+    if (result && result.tried) triedLog[lens.key] = result.tried
     return parallel(
       (result && result.findings ? result.findings : []).map((f) => () => {
         const tagged = { ...f, lens: lens.key }
@@ -527,6 +575,10 @@ Mine these briefly: a competent reviewer believing a false thing often means the
 Gates each lens accounted for (null = the lens returned no account, which is itself a gap):
 ${JSON.stringify(gateLog, null, 2)}
 In the report, under a heading "Gates not done", list every gate marked not-done and every lens with no account, each with its reason. Do not describe a lens as clean if any of its gates is not-done: say what was and was not checked. A not-done gate does not block by itself; it is named so the owner can decide.
+${activeLenses.some((l) => l.key === 'security') ? `
+SECURITY RECORD. End the report with a section "Security record", written for an auditor (ISO 27001 A.8.29). It contains: the range reviewed (${base}...HEAD) and how scope was derived (${opts.securitySurface ? 'the Tier 0 surface below' : 'no Tier 0 surface was provided — say so'}); per surface, the hostile-input classes tried, with inputs, result and the standing test that pins each (from the log below); findings with severity, how each was verified, and disposition (fix commit, or card plus the reason for deferral and a residual-risk sentence); what was NOT tested and why (not-done security gates); and provenance (this skill, the reviewing model, the date). Say plainly that a model review is one non-repeatable pass with a known false-negative rate, and that the standing security tests and the release attestation are the stronger evidence.
+${opts.securitySurface ? `Tier 0 surface:\n${opts.securitySurface}\n` : ''}What the security lens tried:
+${JSON.stringify(triedLog.security || null, null, 2)}` : ''}
 ${gaps ? `\nCompleteness gaps (major release):\n${JSON.stringify(gaps.gaps, null, 2)}` : ''}
 
 Produce a triaged report:
