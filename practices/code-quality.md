@@ -404,6 +404,13 @@ The rule:
   (`java\tscript:` runs).
 - **Test the transform, not the spelling.** If names are normalised (camelCase, lower-casing),
   test the dangerous name in its pre-transform form.
+- **Allowlisting the property is not allowlisting the value.** Once the names were closed, the next
+  two review rounds found sinks inside listed properties: an open-ended chart config handed to a
+  third-party library, and schema keys reaching a path setter that walked `__proto__`. Then an
+  audit found the deepest one. tosijs treats a plain object passed as a child as a props bag, so
+  any text field that receives `{"innerHTML": …}` becomes HTML. Untrusted data needs a closed
+  value shape per property (string leaves where text is rendered), or it is trusted content and
+  should be documented that way. snowfox chose the second for now and filed the first (SNOW-8794).
 - **Prove each sink is real with a mutation:** disable the guard and assert the payload actually
   lands (an injected `<img>`, a rewritten href). A refusal message only proves the message.
 
