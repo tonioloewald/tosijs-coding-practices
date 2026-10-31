@@ -40,6 +40,7 @@ const PROJECTS: Project[] = [
   { key: '[tosijs-ui](', repo: 'tonioloewald/tosijs-ui', npm: 'tosijs-ui' },
   { key: '[tosijs-schema](', repo: 'tonioloewald/tosijs-schema', npm: 'tosijs-schema' },
   { key: '[tosijs-floorplan](', repo: 'tonioloewald/tosijs-floorplan', npm: 'tosijs-floorplan' },
+  { key: '[tosijs-encrypt](', repo: 'tonioloewald/tosijs-encrypt', npm: 'tosijs-encrypt' },
   { key: '[tjs-lang](', repo: 'tonioloewald/tjs-lang', npm: 'tjs-lang' },
   { key: '[react-tosijs](', repo: 'tonioloewald/react-tosijs', npm: 'react-tosijs' },
   { key: '[ngx-tosijs](', repo: 'tonioloewald/ngx-tosijs', npm: 'ngx-tosijs' },
