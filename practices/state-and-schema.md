@@ -181,6 +181,20 @@ These recur in every app in the ecosystem. Internalize them.
   — seen in: tosijs-schema 1.6.0, tjs-lang (LLM battery atoms)
 - Pair schema validation with TJS safety boundaries (`./tjs-lang.md`) at public API edges.
 
+## Persisted and wire formats
+
+- **Version every format that outlives the process**: stored records, ciphertexts, files, and
+  messages between deployments that may run different versions. Without a marker the format can
+  never change without breaking old data or guessing at it. **No version is always the first
+  version** (owner): data written before a marker existed is v0 and stays readable. That puts a
+  constraint on the marker: it must be something v0 data can't plausibly start with. A
+  one-byte marker in front of data that starts with random bytes (an IV, a hash) collides 1 in
+  256 times. Use a multi-byte magic, or keep a check that authenticates (an AEAD/MAC failure)
+  and fall back to v0 on it. Bind the header into the integrity check (AEAD associated data),
+  so it can't be stripped or swapped. A new format an old reader can't parse is a major
+  version, even when old data stays readable, because mixed-version deployments break.
+  — owner, 2026-11-01; seen in: tosijs-encrypt (board #3615)
+
 ## Sync
 
 - `share.ts` — cross-tab sync via `BroadcastChannel` + IndexedDB (delta `{path, value}`).
