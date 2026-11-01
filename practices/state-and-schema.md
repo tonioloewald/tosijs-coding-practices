@@ -186,8 +186,10 @@ These recur in every app in the ecosystem. Internalize them.
 - **Version every format that outlives the process**: stored records, ciphertexts, files, and
   messages between deployments that may run different versions. Without a marker the format can
   never change without breaking old data or guessing at it. **No version is always the first
-  version** (owner): data written before a marker existed is v0 and stays readable. That puts a
-  constraint on the marker: it must be something v0 data can't plausibly start with. A
+  version** (owner): data written before a marker existed is v0, and the reader must recognize
+  it, whether it keeps reading it or, in a declared breaking major, refuses it with a distinct
+  error (a cache can then treat that as a deliberate miss). Either way the marker must be
+  something v0 data can't plausibly start with. A
   one-byte marker in front of data that starts with random bytes (an IV, a hash) collides 1 in
   256 times. Use a multi-byte magic, or keep a check that authenticates (an AEAD/MAC failure)
   and fall back to v0 on it. Bind the header into the integrity check (AEAD associated data),
