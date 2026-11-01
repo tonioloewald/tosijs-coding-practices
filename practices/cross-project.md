@@ -92,6 +92,13 @@ routes through the owner is a cost; spend it only where the owner's judgement is
 
 - **Standing go-ahead for routine work in your own repo.** You may promote to `ready`
   and do: bug fixes, review follow-ups, tests, docs corrections and chores.
+- **Finish, commit, continue.** When an item inside the go-ahead is done, commit and push
+  it, then take the next one. Never end a turn on "next up: X" or "shall I continue?":
+  if X is inside the go-ahead, do X. Stop only when the next thing waits for the owner
+  (the list below), when nothing is left (then triage), or when the owner asked a
+  question you have now answered. A summary is not a stopping point; it is a line in
+  the commit log. Owner: *"tell agents not to stop and say 'next up' and simply commit
+  and continue."*
 - **These still wait for the owner, with no default:** a major risk, an architectural
   decision, a breaking or public API change, anything that reaches another project,
   anything irreversible (publishing stays the owner's approval), a change to security
