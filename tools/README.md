@@ -83,3 +83,13 @@ Workflow({ scriptPath: "<the dir `virta skill show pre-release-review` names>/pr
 Edit `pre-release-review.workflow.js` to add/remove lenses, change the verify strategy
 (e.g. multi-vote for blockers), or set per-lens models. Keep it in sync with
 `practices/review.md` — if you change the criteria in one, grep the other.
+
+## `weekly-maintenance.ts`
+
+Files the **Weekly maintenance** task on every enrolled board project; the checklist is
+[`practices/cross-project.md`](../practices/cross-project.md) "Weekly maintenance". A project
+whose last one is still open gets a comment instead. `--dry` prints what it would do.
+
+It runs from a launchd agent on the owner's Mac, `~/Library/LaunchAgents/net.tosijs.weekly-maintenance.plist`
+(Mondays 08:47 local; log in `~/Library/Logs/weekly-maintenance.log`). Remove it with
+`launchctl bootout gui/$(id -u)/net.tosijs.weekly-maintenance`.

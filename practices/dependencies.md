@@ -265,9 +265,10 @@ into an afternoon, and the deadline arrived from outside.
 
 **So: take minor and patch upgrades on a schedule, not on an incident.**
 
-- **Cadence over completeness.** A monthly-ish sweep of `bun update` (respecting semver
+- **Cadence over completeness.** A weekly sweep of `bun update` (respecting semver
   ranges), run through the project's full gate, beats a heroic annual catch-up. Small
-  diffs are reviewable; a 40-package jump is not.
+  diffs are reviewable; a 40-package jump is not. The board files the sweep for you:
+  [cross-project.md](cross-project.md) "Weekly maintenance".
 - **Majors are a decision; minors are hygiene.** Majors get read, planned and scheduled.
   Minors should be boring — and if a minor is *not* boring, that is itself the signal
   that the dependency is drifting away from you.

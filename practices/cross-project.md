@@ -121,6 +121,32 @@ routes through the owner is a cost; spend it only where the owner's judgement is
 
 — seen in: every board project
 
+## Weekly maintenance
+
+Every Monday the board files a **Weekly maintenance** task (`area:maintenance`, ready) on each
+enrolled project, from [`tools/weekly-maintenance.ts`](../tools/weekly-maintenance.ts). If last
+week's is still open it gets a comment instead of a sibling. It is routine work inside the
+standing go-ahead: do it when you next see it, commit as you go, and close it with one line
+per item.
+
+1. **Triage what arrived.** Re-run `virta project onboard` to pull in new GitHub issues, then
+   triage the inbox (practice #2860): classify, verify before closing, close with evidence.
+2. **Take minors and patches.** `bun outdated`, then `bun update` within ranges in every
+   dependency tree. Run the full gate, then commit. A major becomes a task with a
+   recommendation, because majors are the owner's decision ([dependencies.md](dependencies.md) §11).
+3. **Clear advisories.** Run `bun audit` in every tree, or let release-doctor run it. Fix with
+   the minimal change (dependencies.md §8), or add a time-boxed exemption (§3).
+4. **Adopt missing rollouts.** Check [rollouts.md](rollouts.md).
+5. **Read the last CI run's annotations.** Deprecations such as a retiring runtime or a
+   runner image move arrive there first, weeks before anything breaks.
+6. **Close it.** One line per item: what moved and what was filed. Anything that needs the
+   owner goes out as a decision with a default, per the standing go-ahead.
+
+Publishing stays the owner's approval. A sweep that changes shipped dependencies is a
+release candidate, not a release.
+
+— seen in: tosijs-encrypt (the Node 20 runtime warning sat in CI annotations), every board project
+
 ## The channel: GitHub Issues on the target repo
 
 Every repo in the ecosystem has issues enabled and `gh` works against all of them. **An issue
