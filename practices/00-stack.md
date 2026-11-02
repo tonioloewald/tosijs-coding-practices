@@ -127,6 +127,14 @@ Where a project departs from the defaults, and why. Format: `project — what di
   retired: the four most active repos all have Actions — haltija ×3 incl. Docs-Drift,
   tosijs-ui, tosijs `main`-only, tjs-lang fast-lane with the full suite in a pre-push hook
   on tags). Most others have none; local gates + landing-the-plane substitute
-  ([`releasing.md`](releasing.md)). **CI never publishes anywhere** — releases are local in
-  every repo.
+  ([`releasing.md`](releasing.md)). **CI never publishes to npm** — releases are local in
+  every repo. One repo deploys its site from CI (dramatis3d, below).
+- **dramatis3d** — **the site deploys from CI** (`.github/workflows/pages.yml` builds `www/`
+  on push to `main` and deploys with the Pages actions; `www/` is gitignored, not a committed
+  `docs/`); **three.js is an optional peer dependency**, not Babylon; **Babylon is dev-only**
+  (the creator page bundles it, the library entries must not), held by a no-Babylon bundle
+  guard — the embeds must work in any engine, so a three.js bundle with Babylon in it is a
+  failed build. Open question for the owner: whether the Pages deploy moves to
+  `workflow_dispatch` or a tag trigger so the review gates what the site serves. — seen in:
+  dramatis3d (review write-back for 14b948a..191c83d)
 - **Nearly all libraries** — **Prettier pinned to v2.8.8** — a deliberate/stale pin; upgrading would reformat the tree. Watch it before assuming Prettier 3 behavior.

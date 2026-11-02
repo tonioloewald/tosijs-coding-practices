@@ -428,6 +428,16 @@ practice). A pattern is visible across five AARs that is invisible inside any on
 > `docs/iife.js` on every change and re-dirties the tree between `git add` and `git commit`,
 > so a running watcher will strand a half-committed release. — seen in: tosijs-3d, tosijs
 
+### Build steps never write tracked source
+
+The rule behind the note above: a build or dev step writes only to its output directory. A
+step that regenerates a tracked file (a bundled `docs/iife.js`, a toc block rewritten into a
+source `.md`) re-dirties the tree between `git add` and `git commit`, and in parallel
+worktrees dirties every lane that builds. Generate into the build output, or give the step a
+check mode that fails instead of writing. — seen in: tosijs (`docs/iife.js`), tosijs-3d,
+dramatis3d (tosijs-ui `buildSite` rewriting the toc in `site/docs/docs.md`; four swarm lanes
+reverted it — reports/2026-11-02-swarm-run.md, review write-back for 14b948a..191c83d)
+
 ## Version is stamped, never hand-edited
 
 - `package.json` `version` is the ONLY place you edit. A prebuild writes `src/version.ts`

@@ -202,9 +202,32 @@ ecosystem-wide sweep):
 
 — source: bun's Zig→Rust port (external — bun.com/blog/bun-in-rust: 535k lines, 1,448 files,
 64 concurrent agents, 11 days; `PORTING.md` + a whole-codebase lifetimes table before any
-translation, a 3-file trial before scale-out). Not yet exercised at this scale in our
-ecosystem; the harness pieces (adversarial review, refute-default verification) match what
-`tools/pre-release-review` already practices.
+translation, a 3-file trial before scale-out). The harness pieces (adversarial review,
+refute-default verification) match what `tools/pre-release-review` already practices.
+
+Exercised in this ecosystem on a greenfield build: 13 agents (contracts, five build lanes, a fit
+check, three engine lanes, integrate, a docs owner), about 2 hours wall clock. Territories held
+(zero textual merge conflicts); what cost time was what git can't see:
+
+- **Contracts before lanes, with a committed real sample.** Lanes started without written
+  interfaces invent their own seams. Commit a real artifact (an exported file, a fixture) with
+  the contracts, so the shared gate runs from the first lane commit instead of reporting NOT
+  RUN until the producing lane lands. A contract that leaves a gap (an input owned by another
+  lane's stub) gets a provisional twin invented to get unblocked.
+- **One source of lane rules, generated into every brief.** A computed brief and a
+  hand-written lanes doc disagreed about what shared files may take; four lanes hit it.
+- **Run a named fit lane as early as there is anything to fit.** Every real mismatch was
+  semantic (a builder ignoring a flag the licence lookup honoured; a UI offering choices the
+  exporter refuses), and only real data run across the seams found them. Give the fit lane
+  its own territory: who owned the cross-lane tests was unclear.
+- **Builds never write tracked files.** A build that regenerated a tracked doc's toc dirtied
+  every lane's tree and four lanes had to revert it (see [releasing](./releasing.md) "Build
+  steps never write tracked source").
+- **Worktrees outside the repo; one scratch directory per agent.** Worktrees inside the repo let
+  the formatter walk into them; a shared scratchpad let agents overwrite each other's temp
+  files.
+
+— seen in: dramatis3d (reports/2026-11-02-swarm-run.md; review write-back for 14b948a..191c83d)
 
 ## A rot-prone claim gets a date AND a test
 

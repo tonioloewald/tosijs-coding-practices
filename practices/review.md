@@ -1097,6 +1097,14 @@ Detail:
 - `CHANGELOG.md` has an entry for this version; README / `CLAUDE.md` / `AGENTS.md` reflect the
   change; if a **durable cross-project practice** changed, update the shared KB (and grep the
   cross-cutting docs for parallel mentions — see `../CONTRIBUTING.md`).
+- **The agent entry doc is a doc surface, and the one agents read first.** A "make the docs
+  true" sweep that fixes README but not `CLAUDE.md`/`AGENTS.md` leaves every agent session
+  starting from a false picture. Update the entry doc in the same commit as the sweep, or pin
+  it with a drift test: it names every `package.json` script, and it holds no scaffold-era
+  status ("Nothing is built", "No code … yet") once `package.json` exists. That test is
+  mechanical, so it belongs in Tier 0 (`release-doctor`) rather than a lens prompt. — seen in:
+  dramatis3d (three lenses found `CLAUDE.md` still saying "Nothing is built here yet" after a
+  docs pass fixed README; review write-back for 14b948a..191c83d)
 - **Code without a doc sweep is the mirror of `release-check`'s markdown-only diff**, and
   nothing gates it. Grep the **old** wording, not the new: you already know the new sentence,
   so searching for it finds your own edit, while the stale promise is phrased the way it was
@@ -1617,7 +1625,13 @@ tested, not only the happy path. Then the shapes security blockers actually took
 - **Cost before the meter.** What runs before any budget, fuel or cap applies, and is it
   linear in attacker-controlled size? Parsers, scanners, memos, regex constants, nesting
   depth. Blocked nine rounds of one release; closed only when the VM admitted ASTs and the
-  front ends ran outside it or behind an admission cap.
+  front ends ran outside it or behind an admission cap. **A decompression or size cap counts
+  only if it applies before or during the work.** A cap checked in the output callback of a
+  one-shot inflate (fflate `Inflate.push(bytes, true)` inflates everything before `ondata`
+  runs) is post-meter: a 700k-character share link cost 2.2 s and about 2 GB RSS before its
+  256 KB cap threw. Cap the input length first and feed the decoder in slices; the test is a
+  high-ratio bomb whose refusal is cheap, not only one that is refused. — seen in: dramatis3d
+  (share links, review write-back for 14b948a..191c83d)
 - **Copy at the boundary.** Does a value cross as anything other than a copy built from
   exactly what was read? `structuredClone` copies slots a check never saw; a Proxy lies
   about `length`; a thrown value skips the membrane; a request is admitted as one string

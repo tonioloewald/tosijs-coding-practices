@@ -7,12 +7,20 @@ Pick a host by project shape. Four targets recur across the ecosystem:
 - **Cloudflare Pages / R2 / Workers** — static asset CDNs and edge compute.
 - **Tauri DMG** — desktop apps; "deploy" means code-sign + notarize, not a web host.
 
-There is **no CI _deploy_ in this ecosystem** — every deploy is a hand-run local command.
+There is **almost no CI _deploy_ in this ecosystem** — every deploy is a hand-run local command
+(one exception, below).
 (There *is* CI on some repos, for tests: tosijs-ui and haltija both have workflows. Don't read
 "no CI deploy" as "no CI"; see [review](./review.md) on knowing which lanes are gated.) GitHub
 Pages auto-redeploys from `main`'s `/docs` on push; everything else (Firebase deploy,
 `wrangler`, `npm publish`, DMG notarize) you run yourself. See [releasing](./releasing.md)
 for the version-stamp + npm-publish flow. — seen in: tosijs, tosijs-ui, tosijs-3d, tosijs-product, kith-email, loewald-dot-com
+
+- **The one exception: dramatis3d deploys its site from CI.** Its Pages workflow builds `www/`
+  (gitignored) and deploys with the Pages actions on push to `main`, so a site change ships
+  before any review runs. If you copy it, make the deploy depend on the test job passing, and
+  consider `workflow_dispatch` or a tag trigger so the review gates what the site serves
+  (recorded under "Known divergences" in [`00-stack.md`](./00-stack.md)). — seen in: dramatis3d
+  (review write-back for 14b948a..191c83d)
 
 ## GitHub Pages
 
