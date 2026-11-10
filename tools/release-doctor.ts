@@ -484,6 +484,12 @@ const buildScript = declaredBuild
     const hasFile = existsSync(join(process.cwd(), 'LICENSE')) || existsSync(join(process.cwd(), 'LICENSE.md'))
     if (hasField && hasFile) add('license', 'PASS')
     else add('license', 'FAIL', `${hasField ? '' : 'no license field; '}${hasFile ? '' : 'no LICENSE file'}`)
+    // The defaults (practices/licensing.md): advisory, since a divergence may be the owner's call.
+    const notes: string[] = []
+    if (hasField && pkg.license !== 'Apache-2.0') notes.push(`code licence is ${pkg.license}, not the Apache-2.0 default: ask the owner once`)
+    if (!existsSync(join(process.cwd(), 'LICENSE-CONTENT'))) notes.push('no LICENSE-CONTENT (content defaults to CC0)')
+    else if (Array.isArray(pkg.files) && !pkg.files.includes('LICENSE-CONTENT')) notes.push("files doesn't list LICENSE-CONTENT, so npm drops it")
+    add('licence defaults', notes.length ? 'WARN' : 'PASS', notes.join('; '))
   }
 }
 

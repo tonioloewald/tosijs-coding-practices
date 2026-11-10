@@ -1582,6 +1582,7 @@ licence that asks nothing (CC0, public domain) is still worth a credit, and the 
 something (CC BY, MIT, ISC, Apache) ask it as a condition. The lens keeps the project's
 **acknowledgements page** true: every source named, linked to its original, with its licence,
 and a way to reach us for a correction or a takedown.
+Our own work's licences are the defaults in [`licensing.md`](licensing.md).
 
 Gates, in order; a "no" closes the lens:
 

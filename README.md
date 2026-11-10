@@ -149,6 +149,7 @@ or **Cloudflare Pages / R2** as appropriate. Full detail: [`practices/00-stack.m
 | Checking whether your repo is missing an ecosystem-wide change | **[`practices/rollouts.md`](practices/rollouts.md)** — the standing list; adopt what is missing |
 | Publishing a release, or moving a repo's publishing to CI | [`practices/publishing-via-oidc.md`](practices/publishing-via-oidc.md): **adopted** (OIDC + staged publishing, maintainer approves with 2FA; piloted on tosijs-ui 1.15.3) |
 | Shipping to a host | [`practices/deployment.md`](practices/deployment.md) |
+| Choosing or stating a licence | [`practices/licensing.md`](practices/licensing.md) — code Apache-2.0, content CC0, no gotchas |
 | Managing state or schemas | [`practices/state-and-schema.md`](practices/state-and-schema.md) |
 | Building web components | [`practices/web-components.md`](practices/web-components.md) |
 | Writing TJS / safety boundaries / monadic errors | [`practices/tjs-lang.md`](practices/tjs-lang.md) |
@@ -235,6 +236,8 @@ practices/
   state-and-schema.md
   web-components.md
   tjs-lang.md
+  licensing.md       ← code Apache-2.0, content CC0
+templates/           ← files repos copy verbatim (publish.yml, LICENSE, LICENSE-CONTENT)
 tools/               ← executable forms of practices (pre-release-review workflow + skill)
 ```
 
@@ -246,3 +249,9 @@ project. See `CONTRIBUTING.md` for how entries are added and kept honest, and
 the [board](https://virta.tosijs.net/host/#?virta.scope=tosijs-coding-practices) for open
 work on the repo itself ([`TODO.md`](TODO.md) points there). The history is append-only,
 since the no-signoff carve-out above rests on it.
+
+## Licence
+
+The tools and templates are [Apache-2.0](LICENSE). The practices and other prose are
+[CC0 1.0](LICENSE-CONTENT): public domain, no attribution needed. Copy any of it into your own
+project's docs. The defaults behind this are [`practices/licensing.md`](practices/licensing.md).
