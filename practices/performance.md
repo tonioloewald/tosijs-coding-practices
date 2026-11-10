@@ -160,6 +160,17 @@ So the budget isn't a hard ceiling on the total. What it actually governs:
   the duplication or the wrong-layer code it's pointing at. Sometimes the
   best "size fix" is extracting a package (which can then serve several
   consumers) or deleting a subsystem the platform has since absorbed.
+- **Raise on purchase; slim on a schedule.** When a fix or feature crosses a
+  headroom floor, raise the budget (owner-approved, with the reason in the
+  budget comment) rather than hunting for an unrelated quick win to offset it.
+  A trim found under that pressure is the smallest thing nearby, not the best
+  thing to cut, and it hides the cost of the change that caused it. Instead,
+  run an **explicit slimming pass** now and then: a whole-library look for
+  dead code, duplicated logic, wrong-layer code and prose that could be
+  shorter, judged on its own merits and recorded as its own budget
+  decrease. The two together keep the history honest: each raise names what
+  it bought, each decrease names what was removed. — seen in: tosijs
+  (owner, 2026-11-11)
 - **Guard the API surface instead.** The scarce resource is not bytes, it's
   concepts a user must hold and a maintainer must keep true forever. A small
   API that deletes a lot of consumer code is the goal; a large API that
