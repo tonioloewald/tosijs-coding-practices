@@ -1649,6 +1649,18 @@ tested, not only the happy path. Then the shapes security blockers actually took
   flight recorders, error messages holding received values?
 - **The fix is the next door.** Review each remediation for the same class, not only the
   finding it fixed: one run went six rounds, each blocker in the previous round's fix.
+- **Guard the key the code USES, not the one it was given.** A key or path guard must run
+  on the key after every normalisation the code applies (bracket strip, compound split,
+  case fold, decoding), and the test must enumerate every spelling the normaliser accepts.
+  tosijs shipped this bypass twice running: 1.10.10's `[=key]` (an id-path spelling of a
+  key), then 1.10.11's `__proto__` guard compared the raw prop while the trap stripped
+  `[__proto__]` and split `a.map[__proto__]` *after* the check. Put the guard after the
+  normaliser, share one forbidden-name predicate, and make the spelling table the test.
+- **An inert sink is inert only on an inert element.** "Text is safe" holds for a `<span>`,
+  not for `<script>` or `<style>`, whose text is code: setting an empty parser-inserted
+  script's `textContent` runs it. When a boundary lists inert targets, the refusal table
+  needs an element-kind axis as well as an attribute axis. — seen in: tosijs 1.10.11
+  (`enableDeclarativeBinding`, review write-back for v1.10.10..58f49499)
 - **Shipped holes.** A fixed hole that was in published versions: affected range named,
   deprecated, and advised, or `npm audit` reports zero to everyone on it.
 - **The pipeline.** Publish workflows, release scripts and jobs holding `id-token` or
