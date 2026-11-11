@@ -122,10 +122,12 @@ Look UP and OUT, not down. Lens 6 asks "is the DX we PROVIDE good?" — you ask 
 - **Nascent anti-patterns:** a clever workaround one copy-paste away from becoming convention; a pattern spreading because the right way is too hard; code fighting the observant model (reaching for a re-render because a binding was awkward to express).
 - **Compensating complexity:** defensive unwrapping, sanitizing inputs the upstream should have handled, indirection routing around a limitation, a version pin that dodges a bug instead of fixing it.
 - **Normalized friction:** loop steps we've stopped noticing (manual regeneration, port collisions, cert setup, two lockfiles, a script renamed to dodge a builtin). Familiarity is not the same as fine.
-For each outgoing finding, name the UPSTREAM tool and the missing seam/affordance, and propose the upstream fix. The recommendation must be to **FILE A GITHUB ISSUE on the upstream repo** (the channel), with the body OPENING \`From: <this repo> @ <version>\` — everything posts from one account, so provenance lives in the body or nowhere — and mirror it in this repo's UPSTREAM.md with the issue URL. NEVER edit the upstream repo directly (agents stay in their own repo; that requires human signoff). Do not accept a silent workaround.
+For each outgoing finding, name the UPSTREAM tool and the missing seam/affordance, and propose the upstream fix. The recommendation must be to **FILE IT WITH THE OWNING PROJECT** (the channel): a TASK ON ITS VIRTA BOARD if it is enrolled (\`virta new "…" --project <target> --tags from:<this repo>\`), otherwise an ISSUE ON ITS GITHUB (always for repos outside the ecosystem), with the body OPENING \`From: <this repo> @ <version>\` — everything posts from one account, so provenance lives in the body or nowhere. Index: \`virta list "from:<this repo>"\`, plus UPSTREAM.md for what went to GitHub. NEVER edit the upstream repo directly (agents stay in their own repo; that requires human signoff). Do not accept a silent workaround.
 
 === 7b. INCOMING — what have our consumers filed against US? ===
-ENUMERATE, DO NOT GLANCE. This is not a footnote; it is half the lens. Resolve the repo from \`git remote get-url origin\`, then run:
+ENUMERATE, DO NOT GLANCE. This is not a footnote; it is half the lens. If the repo is on the board (\`virta brief\` prints it), incoming asks are there:
+  virta list "project:<this-repo>"
+Otherwise resolve the repo from \`git remote get-url origin\` and run:
   gh issue list -R tonioloewald/<this-repo> --state open
 - GIVE EVERY OPEN ISSUE A DISPOSITION. For each, state which: FIXED BY THIS RELEASE (-> close it naming the version, AND put it in the release notes), STILL OPEN (-> say so), or STALE (-> close it). An issue this release silently closes can REFRAME WHAT THE RELEASE IS — e.g. a library migration that also happens to unblock a downstream port is not just a library migration, and the notes must say so.
 - CROSS-CHECK EVERY WORKAROUND FROM 7a AGAINST THE ISSUE LIST. Is there already an issue for it? A TEST LOOSENED, OR COMPLEXITY ADDED, TO ROUTE AROUND A BUG WE FILED AGAINST OURSELVES is the signature failure of this half — 7a flags the SHAPE of it and will not connect it to the open issue unless you deliberately do.
@@ -271,7 +273,7 @@ const CASCADES = {
 7. Breaking? -> four facts, any missing one = finding: justified beyond what a deprecation could buy / version reflects it / CHANGELOG names exactly what broke / migration notes reachable from the artifact.
 8. Any new log/console output? Each line: does it change what a reader would DO? NO -> spam, finding.`,
   ecosystem: `1. Does the diff contain a workaround, pin, defensive unwrap, or hand-rolled copy of something an upstream should provide? Each -> name the upstream + the missing seam; disposition = FILE AN ISSUE, never a silent workaround.
-2. Enumerate open incoming issues (gh issue list). Does EVERY one have a disposition (fixed-by-this-release / still-open / stale)?
+2. Enumerate open incoming asks (the board's project list if enrolled, else gh issue list). Does EVERY one have a disposition (fixed-by-this-release / still-open / stale)?
 3. Cross-check every gate-1 workaround against the incoming list — is there already an issue for it?
 4. Breaking or tightening? -> MEASURE the consumer footprint (downloads + dependents + owner knowledge); grade severity against the measured base, both directions.`,
   practices: `1. Did the practices move under this project? (git log --since last release on the practices checkout) Each change touching this project -> dispositioned: adopted / already compliant / deliberately diverging (recorded).
@@ -589,13 +591,13 @@ Produce a triaged report:
 - Never silently drop a finding — deferred ones must appear as explicit follow-ups.
 - **A failing test is never dismissed as "pre-existing" or "not caused by this change."** Any red/skipped test in the coverage findings must appear in the report — fixed if easy, otherwise flagged as a follow-up that is still scheduled, never waved away.
 - **ROUTE BY LENS — findings do not all belong in the same place.** Put each follow-up under the right destination heading:
-  - lenses correctness/efficiency/dryness/docs/coverage/dx/idiom -> fix now, or file to this repo's \`TODO.md\`.
-  - lens **ecosystem** -> a **GitHub issue filed on the UPSTREAM repo** (name the tool and the missing seam), mirrored in this repo's \`UPSTREAM.md\` with the issue URL. NEVER a direct edit to another repo — agents stay in their own repo unless the human signs off. Also list any incoming open issues this release should have addressed or should now close.
+  - lenses correctness/efficiency/dryness/docs/coverage/dx/idiom -> fix now, or file to this repo's board (\`TODO.md\` if it isn't on the board).
+  - lens **ecosystem** -> **filed with the OWNING project** (name the tool and the missing seam): a task on its board if enrolled, otherwise an issue on its GitHub; GitHub-filed ones mirrored in this repo's \`UPSTREAM.md\`. NEVER a direct edit to another repo — agents stay in their own repo unless the human signs off. Also list any incoming open issues this release should have addressed or should now close.
   - lens **practices** -> a change to the shared \`tosijs-coding-practices\` repo (name the doc), and/or this repo's CLAUDE.md/AGENTS.md.
 - **ecosystem and practices findings rarely BLOCK** — they compound. Do not let them drag the verdict to BLOCK unless something is actively broken; but never drop them either.
 - **CYCLE FLAG (one line, no analysis).** Check \`reviews/\`: if any blocker in THIS run sits in code that was itself the remediation of a prior blocker, or the same lens has blocked twice this cycle, add ONE line to the report, at the top: "STOP: a blocker fix led to another blocker (<lens>). Before patching again, find the underlying problem and plan a proper fix; if that is not tractable now, file it as a separate task with the plan." Do not root-cause it yourself here; the stop and the plan are the remediating agent's job (practices/review.md "The fix-led-to-a-blocker stop").
 
-reportMarkdown must be a complete, ready-to-read report: a one-line verdict, a per-lens summary, the blockers, then follow-ups as checkbox TODO lines **grouped by destination** (\`TODO.md\` / \`UPSTREAM.md\` + upstream repo / shared practices), then any completeness gaps.`,
+reportMarkdown must be a complete, ready-to-read report: a one-line verdict, a per-lens summary, the blockers, then follow-ups as checkbox TODO lines **grouped by destination** (this repo's board or \`TODO.md\` / the owning project's board or GitHub / shared practices), then any completeness gaps.`,
   { label: 'triage', phase: 'Triage', schema: REPORT_SCHEMA, agentType: 'general-purpose' }
 )
 

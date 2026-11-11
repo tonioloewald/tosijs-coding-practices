@@ -68,7 +68,9 @@ install** before treating it as a code defect — a stale `node_modules` has fak
    diffs against a release tag; uncommitted work should be committed or stashed first so the
    diff is meaningful). **Then freshen the inputs**: pull the practices checkout (a stale
    copy reviews with last week's rules and last week's release-doctor) and
-   `gh issue list --state open` (open issues are review input — connect, don't re-derive).
+   the incoming asks: this repo's board (`virta list "project:<this repo>"`, after `virta
+   project onboard` imports new GitHub issues), or `gh issue list --state open` if the repo
+   isn't on the board (incoming asks are review input — connect, don't re-derive).
    Why: development.md "returning-from-a-gap".
 
 2. **Determine the base ref** (what to diff against — the last release):
@@ -192,12 +194,12 @@ install** before treating it as a code defect — a stale `node_modules` has fak
   tracked" are different outcomes and the user must see which.
 - **GO** → proceed to the release flow (`practices/releasing.md`).
 
-**Route follow-ups by lens — they do not all go to `TODO.md`:**
+**Route follow-ups by lens — they do not all go to the same place:**
 
 | Lens | Destination |
 | --- | --- |
-| correctness, efficiency, DRYness, docs, coverage, DX | fix now, or this repo's `TODO.md` |
-| **ecosystem & abstraction health** | a **GitHub issue on the upstream repo** (`gh issue create -R tonioloewald/<target>`), body opening `From: <this repo> @ <version>` (everything posts from one account — provenance lives in the body or nowhere), mirrored in this repo's `UPSTREAM.md` with the issue URL. **Never edit the other repo** — file, don't fix. Also close any incoming issue this release fixes, naming the version. |
+| correctness, efficiency, DRYness, docs, coverage, DX | fix now, or this repo's board (`TODO.md` if it isn't on the board) |
+| **ecosystem & abstraction health** | file it with the owning project: a **task on its board** if it is enrolled (`virta new "…" --project <target> --tags from:<this repo> --body "From: <this repo> @ <version> …"`, after `virta similar` for an existing one), otherwise an **issue on its GitHub** (`gh issue create -R tonioloewald/<target>`), body opening `From: <this repo> @ <version>`. Everything posts from one account, so provenance lives in the body or nowhere. Ecosystem repos are on the board unless `virta brief` in their checkout says otherwise; repos outside the ecosystem (Bun, typescript-eslint, …) always get a GitHub issue. Index: `virta list "from:<this repo>"`, plus `UPSTREAM.md` for what went to GitHub. **Never edit the other repo** — file, don't fix. Also close any incoming ask this release fixes, naming the version. |
 | **practices & process self-review** | a **direct edit** to the shared **`tosijs-coding-practices`** repo (it is the standing exception to file-don't-fix — filing an issue there is a deferral, not a write-back; grep its cross-cutting docs for parallel mentions), and/or this repo's `CLAUDE.md`/`AGENTS.md`. The write-back must **name the commit range it covers** (`<base>..<sha>`, `<sha>` = the reviewed repo's HEAD at write time) — without the range, staleness has to be noticed instead of checked, and it is not noticed |
 
 Lenses 7–8 rarely block a release — they **compound**. If they returned no findings, be
@@ -212,13 +214,13 @@ gets waved away as "pre-existing" or "not mine." Treat every failing test as a f
 
 - **Fix it if it's easy** — do it now.
 - **If it's not easy, flag it explicitly** (failing test + suspected cause) **and still
-  schedule the fix** in `TODO.md`. Lower priority is fine; dropping it is not.
+  schedule the fix** on the board (or in `TODO.md`). Lower priority is fine; dropping it is not.
 
 ## Notes
 
 - The reviewers are read-only (they run tests/builds only to observe; they never edit or
   commit). All fixing happens after the review, deliberately.
-- **Stay in this repo.** Ecosystem findings are **filed as issues on the upstream repo**, never
+- **Stay in this repo.** Ecosystem findings are **filed with the owning project** (its board, or its GitHub if it isn't on the board), never
   fixed by editing it. Wandering into another repo needs a specific reason and human signoff.
 - **`bump` does not select the gate — `tier` does.** `bump` is passed through for the report's
   framing only. The completeness critic (which names what was *not* reviewed, starting with

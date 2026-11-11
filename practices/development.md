@@ -13,8 +13,8 @@ How to work in a project day-to-day.
      <practices-checkout> pull --no-rebase`) and skim
      `git -C <practices-checkout> log --oneline --since=<HEAD date>` — disposition anything
      touching how this project works (adopt / already compliant / diverge-and-record).
-  2. **Open issues on THIS repo**: `gh issue list --state open` — issues are the ecosystem's
-     cross-repo mail, and a >24h gap means unread mail: a consumer may have filed the exact
+  2. **Incoming asks for THIS repo**: `virta brief` on the board, else `gh issue list --state
+     open` — they are the ecosystem's cross-repo mail, and a >24h gap means unread mail: a consumer may have filed the exact
      defect you're about to trip over, or the fix you're about to duplicate.
   Rationale: the structured practices consult otherwise happens only at review/release time,
   so a repo touched rarely can run weeks on stale rules. The trigger is deterministic (HEAD
@@ -463,16 +463,18 @@ and go.
 ## Stay in your repo; check what's been filed against it
 
 - **You work in one repo.** If you hit a problem that belongs to another (tosijs, tosijs-ui,
-  tjs-lang, tosijs-schema…), **file an issue on it — don't go fix it.** Editing another repo
+  tjs-lang, tosijs-schema…), **file it there — don't go fix it**: a task on its board, or an
+  issue on its GitHub if it isn't enrolled. Editing another repo
   bypasses its tests, conventions, and release gate, and strands changes nobody is watching.
   If it genuinely can't wait, **ask for signoff first**. Full protocol:
   [`cross-project.md`](cross-project.md).
-- **When starting substantive work**, see what your consumers have told you:
+- **When starting substantive work**, see what your consumers have told you: `virta brief`
+  on the board, otherwise
   ```bash
   gh issue list -R tonioloewald/<this-repo> --state open
   ```
-  Those issues are where your seams are missing. Also skim `TODO.md` (own work) and
-  `UPSTREAM.md` (what you're blocked on upstream).
+  Those asks are where your seams are missing. Also skim your own work (the board, or
+  `TODO.md`) and what you're waiting on (`virta list "from:<this-repo>"`, or `UPSTREAM.md`).
 
 ## The self-improving habit
 

@@ -41,7 +41,8 @@ cite the projects it was learned in. And **commit it here**; don't strand a dirt
 next agent. The point of the carve-out is to remove friction from *recording* a lesson, not to
 license drive-by edits.
 
-**What you do instead: file an issue.** That is the channel.
+**What you do instead: file it with the owning project** — a task on its board, or an issue on
+its GitHub if it isn't on the board ("The channel" below).
 
 ## If your repo is on the task board, the board is where tasks live
 
@@ -81,8 +82,10 @@ CLI and MCP (start: <https://virta.tosijs.net/start/>). A repo is on the board i
   2026-09-26).
 - **Not on the board:** everything below still applies unchanged.
 
-The rest of the practices still mention `TODO.md`, `UPSTREAM.md` and GitHub issues. In a
-board repo, read those as "the board."
+Where an older entry still says `TODO.md`, `UPSTREAM.md` or "file an issue", read it as "the
+board" for an enrolled repo. Agents follow a written command literally: tjs-lang's review skill
+filed three asks for tosijs-ui as GitHub issues, which nobody there watches for incoming work,
+and they had to be re-filed on its board. — seen in: tjs-lang, tosijs-ui
 
 ## The owner's attention is the scarce resource
 
@@ -147,13 +150,25 @@ release candidate, not a release.
 
 — seen in: tosijs-encrypt (the Node 20 runtime warning sat in CI annotations), every board project
 
-## The channel: GitHub Issues on the target repo
+## The channel: the owning project's board, or its GitHub issues
 
-Every repo in the ecosystem has issues enabled and `gh` works against all of them. **An issue
-on the target repo is the canonical way one project tells another something.** It is visible
-to that repo's maintainer and to any agent working there; it has an ID, a state, and a home.
+**Pick the channel by the target, not by habit.** One project tells another something where
+the other one looks for incoming work:
+
+- **The target is on the board** (`virta brief` in its checkout prints its board): a task in
+  *its* project. Check first (`virta similar "<title>"`), then file and subscribe. The
+  `from:` tag makes `virta list "from:<your-repo>"` your index of what you're waiting on.
+- **The target isn't enrolled, or is outside the ecosystem** (Bun, typescript-eslint, …): an
+  issue on its GitHub. Every ecosystem repo has issues enabled and `gh` works against all of
+  them. It has an ID, a state, and a home.
+
+The body is the same either way:
 
 ```bash
+n=$(virta new "<concise problem statement>" --project <target> --tags from:<your-repo> \
+  --quiet --body "From: <your-repo> @ <version or commit> …")
+virta subscribe "$n"
+# or, for a target not on the board:
 gh issue create -R tonioloewald/<target-repo> \
   --title "<concise problem statement>" \
   --body "$(cat <<'EOF'
@@ -178,6 +193,7 @@ EOF
 ```
 
 - **Always put `From: <your-repo>` in the body — and open cross-repo COMMENTS the same way**
+  (on the board the identity names the repo, but not the version you were on).
   (owner, 2026-09: recurring). Every issue and comment posts from ONE account, so without
   the line all traffic reads as "from the owner" and triage loses the who-is-affected
   signal. The RFC threads' convention ("Consumer answer: `<repo>` —") is this rule for
@@ -219,9 +235,9 @@ they weren't certain of
 
 | Artifact | Lives in | Purpose |
 | --- | --- | --- |
-| **`TODO.md`** | your own repo | **Your** work. Issue tracking for yourself. Unchanged by this doc. |
-| **GitHub issue** | the **owning** repo | **The channel**, and **the record.** How you tell another project something, and where the detail lives. |
-| **`UPSTREAM.md`** | your own repo | An **index of links** to those issues, so you can see from here what you're waiting on. Records `✅ RESOLVED` with the fixing version. |
+| **Your board, or `TODO.md`** | your own project | **Your** work. A board repo's `TODO.md` is a pointer to the board. |
+| **A task on the owner's board, or a GitHub issue** | the **owning** project | **The channel**, and **the record.** How you tell another project something, and where the detail lives (board if it's enrolled, GitHub if not). |
+| **`virta list "from:<repo>"`, or `UPSTREAM.md`** | your own repo | An **index** of what you're waiting on. `UPSTREAM.md` is for asks that went to GitHub; on the board the `from:` tag is the index. Records `✅ RESOLVED` with the fixing version. |
 
 **Ignore the filename — `UPSTREAM.md` is a legacy name, not a routing rule.** The target isn't
 always "upstream" of you in any dependency sense: it may be a **dev tool** (haltija), a
@@ -271,11 +287,13 @@ entry until the link alone suffices.
 — follows from the propagation-path argument in the README; the failure mode is the same
 stale-twin drift seen inside this repo (CONTRIBUTING "grep for the parallel mention")
 
-## Checking issues — the other half
+## Checking incoming — the other half
 
-Filing is useless if nobody reads. Checking incoming issues is part of the routine:
+Filing is useless if nobody reads. Checking what arrived is part of the routine:
 
-- **At the start of substantive work in a repo**, look at what's open against it:
+- **At the start of substantive work in a repo**, look at what's open against it. On the
+  board: `virta brief`, or `virta list "project:<this-repo>"` (re-run `virta project onboard`
+  first to import new GitHub issues from outside reporters). Not on the board:
   ```bash
   gh issue list -R tonioloewald/<this-repo> --state open
   ```

@@ -1275,8 +1275,8 @@ report both.
 
 1. **Does the diff contain a workaround, pin, defensive unwrap, or hand-rolled copy of
    something an upstream should provide?** (fact: hunt per 7a) Each one → name the upstream
-   and the missing seam; the disposition is *file an issue*, never a silent workaround.
-2. **Enumerate open incoming issues** (mechanical: `gh issue list`). **Does every one have a
+   and the missing seam; the disposition is *file it with the owner*, never a silent workaround.
+2. **Enumerate open incoming asks** (mechanical: the repo's board if enrolled, else `gh issue list`). **Does every one have a
    disposition?** (fact: fixed-by-this-release / still-open / stale)
 3. **Cross-check every 7a workaround against the incoming list** (fact: is there already an
    issue for it? a loosened test routing around our own open bug is the signature failure).
@@ -1303,15 +1303,18 @@ Look up and out. Lens 6 asks "is the DX we **provide** good?" — this asks "is 
   manual regeneration, port collisions, cert setup, two lockfiles, a script renamed to dodge
   a builtin. Familiarity is not the same as fine.
 - **Action — file, don't fix.** You do **not** go edit the owning repo (see
-  [`cross-project.md`](cross-project.md)). File a **GitHub issue on the owning repo** —
-  that's the channel — and mirror it in this repo's `UPSTREAM.md` with the issue URL. An
-  `UPSTREAM.md` entry with no filed issue is a complaint nobody will ever read. Silently
+  [`cross-project.md`](cross-project.md) "The channel"). File it with the **owning project**:
+  a task on its board if it is enrolled, otherwise an issue on its GitHub (mirrored in this
+  repo's `UPSTREAM.md` with the URL). An index entry with nothing filed is a complaint nobody
+  will ever read. Silently
   working around the gap is exactly the failure this half exists to catch.
-- **Done when:** every workaround in the diff is either justified or **filed upstream as an issue**.
+- **Done when:** every workaround in the diff is either justified or **filed with its owner**.
 
 #### 7b. Incoming — what have our consumers filed against _us_?
 
-**Enumerate, don't glance.** This half is not a footnote; it is half the lens.
+**Enumerate, don't glance.** This half is not a footnote; it is half the lens. On the board,
+incoming asks are tasks in this project (`virta list "project:<this-repo>"`, after `virta
+project onboard` imports new GitHub issues). Not on the board:
 
 ```bash
 gh issue list -R tonioloewald/<this-repo> --state open
@@ -1889,11 +1892,11 @@ and testing that as a property, over ordering checks by hand.
   `docs` wholesale — but it addresses PACKAGING, not publication. **Check the path against
   both `files` and the site's `docPaths`/output dir before committing.**
 - **Route by lens — these findings do not all belong in the same place:**
-  - **Lenses 1–6 and 9** → fix now, or file to this repo's `TODO.md`. (Lens 9 findings that
+  - **Lenses 1–6 and 9** → fix now, or file to this repo's board (`TODO.md` if not enrolled). (Lens 9 findings that
     touch the user's machine — a global binary, a kill policy — are correctness findings for
     triage purposes, not nits: they block.)
-  - **Lens 7** → a **GitHub issue on the owning repo** (the channel), mirrored in this repo's
-    `UPSTREAM.md` with the issue URL. Never a direct edit to the owning repo — see
+  - **Lens 7** → filed with the **owning project** (the channel): its board if enrolled,
+    otherwise its GitHub, mirrored in `UPSTREAM.md`. Never a direct edit to the owning repo — see
     [`cross-project.md`](cross-project.md).
   - **Lens 8** → a change to `tosijs-coding-practices` (and grep the cross-cutting docs for
     parallel mentions — see `../CONTRIBUTING.md`). **A direct edit, not an issue.**
@@ -2007,8 +2010,10 @@ unique to this list:
 ## Feed rough edges upstream, don't work around them silently
 
 - When you hit a sharp edge in an in-house dependency (tosijs / tosijs-ui / tosijs-schema),
-  **file an issue on that repo** instead of quietly coding around it — that is the channel —
-  and mirror it in an **`UPSTREAM.md`** at your repo root: newest at top, each entry
+  **file it with that project** instead of quietly coding around it — a task on its board,
+  or an issue on its GitHub if it isn't enrolled; that is the channel. On the board,
+  `virta list "from:<your-repo>"` is your index. For GitHub-filed asks, mirror them in an
+  **`UPSTREAM.md`** at your repo root: newest at top, each entry
   `Context` + concrete `Suggestion` + the **issue URL**, marked `✅ RESOLVED` with the fixing
   version once landed. Creates a durable, actionable backlog and stops the same integration
   trap being rediscovered. **File first, then mirror** — an `UPSTREAM.md` row without an

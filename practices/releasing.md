@@ -114,14 +114,16 @@ Unresolved correctness/security findings **block** the release. Route the rest b
 (review.md's routing table) — never silently drop one. Only start the flow below once the
 review is clean or its open findings are consciously deferred.
 
-**Settle your incoming issues.** Before releasing, check what consumers have filed against you
-and act on it — a release is when that debt comes due:
+**Settle your incoming asks.** Before releasing, check what consumers have filed against you
+and act on it — a release is when that debt comes due. On the board: `virta list
+"project:<this-repo>"` (after `virta project onboard`, which imports new GitHub issues). Not on
+the board:
 
 ```bash
 gh issue list -R tonioloewald/<this-repo> --state open
 ```
 
-Fix what this release should fix, and **close each fixed issue naming the version** — a
+Fix what this release should fix, and **close each fixed one naming the version** — a
 downstream agent is waiting on that signal to drop its workaround. See
 [`cross-project.md`](cross-project.md).
 
@@ -1190,8 +1192,8 @@ haltija
 A work session is **not** done until `git push` succeeds (subject to the human-only gate above).
 Every session, in order:
 
-1. **File remaining work** — add follow-ups to the project's `TODO.md` (issue tracking lives
-   there, not GitHub Issues, across these repos). — seen in: tosijs, tjs-lang, haltija
+1. **File remaining work** — follow-ups go on the project's board, or its `TODO.md` if it
+   isn't enrolled (not its own GitHub Issues). — seen in: tosijs, tjs-lang, haltija
 2. **Run quality gates** (if code changed) — tests, linters, build.
 3. **Push** — mandatory unless the repo gates it to a human:
 
