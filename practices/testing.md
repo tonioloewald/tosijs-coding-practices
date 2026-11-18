@@ -182,7 +182,7 @@ Known limitations to design around (each one is a recurring, non-obvious time-si
   slotted into a shadow root passes through that root (its slot and the ShadowRoot are on the
   path); in Happy DOM it does not. A unit test of shadow-root listeners or delegation passes
   for slotted content while the browser runs the handler twice. Cover slotted event paths in
-  a browser lane. — seen in: tosijs (1.10.12 review B1)
+  a browser lane. Filed upstream as happy-dom#2623 (2026-11-18, against 21.0.4). — seen in: tosijs (1.10.12 review B1)
 - **Throttled/debounced handlers are unreliable** — call the underlying method directly
   (e.g. `lb.update()`) rather than dispatching an event and waiting.
 - **DOM globals aren't auto-exposed under Bun** — a preload must instantiate the Happy DOM
