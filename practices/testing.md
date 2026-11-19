@@ -570,6 +570,38 @@ tab produced a confident, wrong "the routes don't render" finding; and a haltija
 co-tenancy A/B manufactured a 3-of-3 reproducible phantom regression — `hj doctor` read green
 throughout both)
 
+## What only a person can check: post a test checklist, then wait on it
+
+Some checks need a person: it works by touch, it looks right in Safari, it feels smooth on a
+phone, it reads well in a headset. Don't ask for these in chat, and don't call them verified.
+Post a checklist to the dev site and wait for the answers the way you wait for CI.
+
+- **Post, then wait:** `tosijs-checklist post checks.json`, then
+  `tosijs-checklist wait --timeout=3600`. Exit 0 means every item passed, 1 means one failed,
+  and 2 means it timed out. The commands, the list format and the setup for a server that
+  isn't the doc site's are in tosijs-ui's
+  [test checklists](https://ui.tosijs.net/doc-site-system/#test-checklists) docs.
+- **The person answers wherever they are.** Every page the dev server serves shows a badge,
+  on this machine, on a trusted LAN device, or through the tunnel with an edit session. They
+  give each item 👍 or 👎 and a comment. A tosijs-3d scene shows it on its system bar too, so
+  it can be answered in a headset.
+- **One observable thing per item, worded so 👍 means it works.** Give the page as `url` and
+  the actions as `steps`: "Open the menu on your phone: it opens with one tap", not "check the
+  menu". A vague item gets a 👍 that proves nothing.
+- **Ask only what a person must check.** Their time is the scarcest thing in the loop. A
+  test or a browser agent handles geometry, DOM state and console errors. The checklist is
+  for feel, real devices and real eyes.
+- **A 👎 is a failing test.** Read the comment and the page schematic attached to the
+  answer, fix the problem, and post the item again. A timeout is not a pass; report the item
+  as unverified.
+- **The schematic is structure, not pixels.** It shows what was on screen and its text, which
+  is enough to find the element. It can't show whether something looked right; the 👎 and
+  the comment tell you that.
+- **An answered item counts as looking.** It satisfies review lens 3b
+  ([`review.md`](review.md)) and a release step where a person drives the demos.
+
+— seen in: tosijs-ui (1.19), tosijs-3d (scene system bar)
+
 ## Doc / live-example tests
 
 **If you're on `tosijs-ui` and you aren't checking the live examples and using in-browser
@@ -642,7 +674,8 @@ The instruments, ranked by what they actually prove here:
 1. **Eyeballing the doc system.** Tests passing has **never** been a good substitute for
    looking at the doc site — it is the dogfood instrument: real components, real build, real
    content, real browser, and the failures that matter surface there first. Budget review
-   time for *looking* (review lens 3b) before budgeting for more tests.
+   time for *looking* (review lens 3b) before budgeting for more tests. When the looking
+   needs the owner, post a test checklist (above) so they look at exactly what changed.
 2. **The in-browser lanes and Haltija** — built as the *honest* tests, deliberately: real
    geometry, real events, real focus, none of happy-dom's structural blindness.
 3. **Small tests asserting a specific promise** — pure-logic contracts, peer floors,
@@ -818,8 +851,8 @@ happy-dom zero-geometry that hid an entire behavioral tier from every test. Disc
 - **Structure is a promise only when it is a contract** — roles, labels, ARIA state,
   form-association are promise-level (a screen reader consumes them); div-nesting and class
   names are not.
-- What something **looks like** is checked by looking (review lens 3b: browser session or
-  labelled unverified) — a DOM assert is not a substitute, and happy-dom's zero geometry
+- What something **looks like** is checked by looking (review lens 3b: a browser session, a
+  person's answer to a test checklist, or labelled unverified) — a DOM assert is not a substitute, and happy-dom's zero geometry
   means layout claims are *unmeasurable* in the unit tier by construction.
 
 — seen in: owner (recurring, cross-project); tosijs-3d-ensemble (promise-asserting tests as

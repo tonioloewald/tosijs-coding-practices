@@ -1036,9 +1036,12 @@ six inline `<style>` blocks rewritten, a new page-layout mode adopted across eve
 and no lens loaded the page. The repo already prescribes a browser agent for exactly this, in
 its own `CLAUDE.md`.
 
-**The rule:** a visual claim is either backed by a browser session in the review, or it is
-labelled **unverified** in the report. Both are acceptable; silently inheriting the author's
-description is not. Two traps worth knowing when you do look, both of which produce
+**The rule:** a visual claim is backed by a browser session in the review, or by a person's
+answer to a test checklist item
+([`testing.md`](testing.md#what-only-a-person-can-check-post-a-test-checklist-then-wait-on-it)),
+or it is labelled **unverified** in the report. Any of these is acceptable; silently
+inheriting the author's description is not. Feel, touch and real-device claims can only be
+backed by a person, so post those items rather than labelling them unverified by default. Two traps worth knowing when you do look, both of which produce
 plausible-but-wrong results rather than errors:
 
 - A **backgrounded tab has `requestAnimationFrame` stopped**. Frameworks that render on a frame

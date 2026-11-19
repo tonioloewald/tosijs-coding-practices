@@ -83,7 +83,7 @@ const LENSES = [
   {
     key: 'correctness',
     title: 'Correctness',
-    checks: `Behavior is right. Stack-specific: observant correctness (new state paths actually observed/bound — no manual re-render sneaking in; \`await updates()\` around post-mutation assertions; id-path surgical updates intact); boxed vs raw (no proxy-on-proxy nesting; \`===\` on a BoxedScalar and \`toDOM\` getting raw values are silent traps); component lifecycle (\`content()\` once vs \`render()\` structural-only; \`value\` never an initAttribute; boolean attrs default false; light-vs-shadow DOM — path bindings break inside shadow DOM; no \`on<Event>\` callback props); edge cases, async settling, form-association, error/failure paths.`,
+    checks: `Behavior is right. Stack-specific: observant correctness (new state paths actually observed/bound — no manual re-render sneaking in; \`await updates()\` around post-mutation assertions; id-path surgical updates intact); boxed vs raw (no proxy-on-proxy nesting; \`===\` on a BoxedScalar and \`toDOM\` getting raw values are silent traps); component lifecycle (\`content()\` once vs \`render()\` structural-only; \`value\` never an initAttribute; boolean attrs default false; light-vs-shadow DOM — path bindings break inside shadow DOM; no \`on<Event>\` callback props); edge cases, async settling, form-association, error/failure paths. A CLAIM ABOUT WHAT SOMETHING LOOKS OR FEELS LIKE (layout, touch, a real device, a headset) is backed by a browser session you ran or by a person's answer to a test checklist (\`tosijs-checklist status\`), or it is reported UNVERIFIED with the checklist item that would settle it; never repeat the author's description as checked.`,
   },
   {
     key: 'efficiency',
