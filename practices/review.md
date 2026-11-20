@@ -746,6 +746,12 @@ field that is NOT MARKED?** If the answer is "skips it", it fails open. The fix 
 predicate that refuses what it does not recognise, plus a completeness test that fails on an
 unmarked field of the kind the gate guards. — seen in: tosijs-3d-ensemble (0.4.0)
 
+**A fix that claims a class ("no X on any route", "every door") ships a test that enumerates
+the class by parsing the source**, so a new member fails a test instead of the next review.
+Rows listed by hand in the test are the instance-fix again, in test form: they cover what was
+found, and the claim covers everything. If the class can't be found mechanically, the claim
+is too big: narrow it to the members listed. — seen in: tjs-lang (0.14.0, `guest-key-writes`)
+
 **The signature is measurable mid-flight: plot findings per round, and read the curve, not the
 count.** Class-fixing decays — each sweep removes a population, so later rounds find less.
 Instance-fixing stays flat, because every round samples the same undrained pool. Flat yield by
@@ -1628,7 +1634,11 @@ tested, not only the happy path. Then the shapes security blockers actually took
   a test? **At the second instance of a class, the finding is "enumerate the doors and pin
   the list."** Another patch does not close it: in tjs-lang, patching never converged and a
   list closed every one (`regex-doors`, `budget-funnel`, `membrane-doors`,
-  `guest-key-writes`, `egress-doors`).
+  `guest-key-writes`, `egress-doors`). **The test finds the doors by parsing the source, not
+  from hand-listed rows**, and requires a stated reason for each one it finds. A hand list
+  only pins the doors someone already found: tjs-lang closed own-`__proto__` routes one at a
+  time and the next review found another (a custom atom's return, regex named groups). What
+  held was `guest-key-writes.test.ts` scanning `src/vm` for every native that creates a key.
 - **Cost before the meter.** What runs before any budget, fuel or cap applies, and is it
   linear in attacker-controlled size? Parsers, scanners, memos, regex constants, nesting
   depth. Blocked nine rounds of one release; closed only when the VM admitted ASTs and the
