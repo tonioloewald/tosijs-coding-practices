@@ -15,6 +15,7 @@ surprised.
 | Schema / validation | **tosijs-schema** | Type-by-example schemas; cross-language JSON Schema emission. |
 | React interop | **react-tosijs** | Only where React is genuinely required. |
 | Deployment | **GitHub Pages**, **Firebase**, or **Cloudflare Pages / R2** | Pick per project; see `deployment.md`. |
+| Agent interface | **A skill plus a CLI** | MCP only where there is no shell (Claude Desktop), and then two tools, not one per endpoint. See "Agents get a skill and a CLI" below. |
 
 ## Legacy naming: xinjs → tosijs
 
@@ -107,6 +108,29 @@ The "pick per project" choice, as actually made across the ecosystem:
 | **Cloudflare Pages / R2** | static-assets (primary), tosijs-3d (asset CDN `cdn.tosijs.net`) | Public asset CDN; free egress. Firebase Hosting kept as a byte-identical fallback. |
 | **Tauri v2 desktop DMG** | kith-email, lukko | Rust/webview or Bun-sidecar backend; "deploy" = code-sign + notarize a DMG, no web host. |
 | **npm package (+ Electron DMG)** | haltija, and every published library | Distributed as tooling/library; `npm publish` (mind `--tag beta` for pre-releases). |
+
+## Agents get a skill and a CLI, not an MCP server
+
+A tool's agent interface is a `SKILL.md` that teaches it, plus a CLI the agent runs through
+its shell. Don't build an MCP server that lists one tool per endpoint.
+
+- **Why:** every tool definition sits in the model's context on every turn, used or not. An
+  MCP server that mirrors a whole API spends that context before the agent does anything. The
+  agent picks between dozens of near-identical tools instead of writing the call it needs. A
+  skill loads only when its task comes up, and a CLI costs nothing until it runs.
+- **Let the agent write code against a typed surface.** Where the work is many small steps,
+  give it one command that runs a script against the API (`hj eval`, a test-step JSON file)
+  rather than a command per step.
+- **Where there's no shell, MCP gets two tools.** Claude Desktop can't run a CLI, so a tool
+  that must work there keeps an MCP server with exactly two tools: one that searches the API
+  and its schema, and one that runs code or a script against it. Cloudflare's Code Mode
+  reached the same shape (`search()` and `execute()`), and reports a 1.17M-token surface
+  shrinking to about 1,000.
+- **Keep the skill in sync with the CLI** (development.md, "Agent-facing docs travel with the
+  code").
+
+— decided by: Tonio (owner) · seen in: haltija (the skill and `hj` replaced the MCP path;
+its MCP server mirrored every endpoint)
 
 ## Known divergences
 
