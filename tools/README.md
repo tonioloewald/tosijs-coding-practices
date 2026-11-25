@@ -84,6 +84,15 @@ Edit `pre-release-review.workflow.js` to add/remove lenses, change the verify st
 (e.g. multi-vote for blockers), or set per-lens models. Keep it in sync with
 `practices/review.md` — if you change the criteria in one, grep the other.
 
+## `lean-plan` — a two-phase plan for a leaner, easier library
+
+[`lean-plan.SKILL.md`](lean-plan.SKILL.md) reads the whole repo and writes a plan to
+`reviews/lean-plan-<yyyy-mm>.md`, changing no source. Defects found on the way are listed
+first. Phase 1 removes no functionality; phase 2 removes redundant spellings by
+deprecate → migrate → delete, and is the owner's call row by row. It is Tier 3 of
+[`review.md`](../practices/review.md) aimed at the API. Install with
+`virta skill install lean-plan`.
+
 ## `weekly-maintenance.ts`
 
 Files the **Weekly maintenance** task on every enrolled board project; the checklist is

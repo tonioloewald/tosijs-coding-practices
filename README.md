@@ -143,6 +143,7 @@ or **Cloudflare Pages / R2** as appropriate. Full detail: [`practices/00-stack.m
 | Worrying about speed, bundle size, or monitoring | [`practices/performance.md`](practices/performance.md) |
 | Adding a dependency, or building/using a security gate | [`practices/dependencies.md`](practices/dependencies.md) — a gate must never report a pass it didn't earn |
 | Reviewing code (a diff, a PR, or the nine-lens pre-release review) | [`practices/review.md`](practices/review.md) |
+| Planning a cleanup: a leaner, simpler library that is easier to learn | [`tools/lean-plan.SKILL.md`](tools/lean-plan.SKILL.md) |
 | Writing docs, or fighting doc drift | [`practices/development.md`](practices/development.md) "Agent-facing docs travel with the code" — deeper, **experimental** proposals in [`practices/documentation-surface.md`](practices/documentation-surface.md) (evidenced parts being promoted per `reviews/2026-09-practices-audit.md` D7) |
 | Cutting a release / publishing | [`practices/releasing.md`](practices/releasing.md) |
 | Packing a tarball because you can't publish (`file:` deps, stopgap builds) | [`practices/releasing.md#bypassing-the-publish-loop-where-local-tarballs-live`](practices/releasing.md) — one agreed directory, never a session scratchpad |
@@ -238,7 +239,7 @@ practices/
   tjs-lang.md
   licensing.md       ← code Apache-2.0, content CC0
 templates/           ← files repos copy verbatim (publish.yml, LICENSE, LICENSE-CONTENT)
-tools/               ← executable forms of practices (pre-release-review workflow + skill)
+tools/               ← executable forms of practices (pre-release-review workflow + skill, lean-plan skill)
 ```
 
 ## Status

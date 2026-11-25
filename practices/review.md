@@ -207,7 +207,9 @@ mechanical; ecosystem + practices produced 0 blockers in 28 runs at ~24% of find
   remediation, not once at the end.**
 
 - **Tier 3 — the structural audit, quarterly (or per-major), whole-codebase scope.** The
-  things diff-scoped review is structurally blind to:
+  things diff-scoped review is structurally blind to. When the owner asks for a leaner,
+  easier library rather than an audit, run it as a two-phase plan: the `lean-plan` skill
+  ([`tools/lean-plan.SKILL.md`](../tools/lean-plan.SKILL.md)).
   - **Redundant code paths / structural twins** (the emit-convert and double-`initAttributes`
     class — flagged three times, deferred three times, double-fixed three times). Hard
     disposition rule: **a structural-twin finding cannot be deferred** — kill the path, or
