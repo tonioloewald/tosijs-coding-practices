@@ -301,38 +301,72 @@ Integration and browser tests do **not** auto-start their dependency:
   sibling repos distinct defaults, or let the config pick a free port, and always honour an
   `E2E_PORT` override so a human can escape without editing config. — seen in: tosijs, tosijs-ui
 
-## A browser test that reads `dist/` tests what you COMMITTED, not what you built
+## A browser test that reads `dist/` tests what the lane's server built: find out what that is
 
-*(tosijs 1.10.3.)* A `.pw.ts` that serves a built bundle to the page —
+*(tosijs 1.10.3; corrected at 1.10.13, covers tosijs `v1.10.12..28b1babb`.)* A `.pw.ts` that
+serves a built bundle to the page —
 
 ```ts
 const moduleSource = readFileSync(join(__dirname, '..', 'dist', 'module.js'), 'utf-8')
 await page.route('**/__test/module.js', (r) => r.fulfill({ body: moduleSource }))
 ```
 
-— is reading whatever is on disk *when Playwright loads the test file*. And
-Playwright's `webServer` starts a dev server first. If that dev server's build
-wipes `dist/` and restores the **committed** artifacts for anything it does not
-itself rebuild (tosijs does exactly this, deliberately, so a dev run cannot
-leave the tree looking like someone deleted the bundles), then the bundle your
-test serves is the committed one.
+— reads whatever is on disk *when Playwright loads the test file*, and Playwright's
+`webServer` has started a dev server first. What that server leaves in `dist/` is a property
+of the project's build script. Both answers occur, sometimes in one project:
 
-**Measured:** a tripwire written to FAIL the moment a new export landed
-**passed**. The working `dist/module.js` contained the symbol; the committed one
-had zero occurrences. A green lane against a bundle that predated the fix.
+- **It rebuilt the bundle from the working tree.** tosijs does this for the bundles its dev
+  run builds (measured at 1.10.13: with a fix uncommitted, `dist/module.js` after a lane run
+  held the fix and the committed copy did not). The lane is then testing your uncommitted
+  source, so **a green lane on a dirty tree says nothing about the commit.** Commit, then run
+  the lane.
+- **It restored the committed bundle.** True of any artifact the dev run does not rebuild
+  (tosijs's two experimental bundles), and of every bundle under a watch rebuild that wipes
+  and restores without rebuilding. The lane is then testing the last commit, and a
+  *tripwire*, a test asserting a defect still exists, goes green against it.
 
-> **Build → commit → browser lane.** And where the lane also deletes artifacts
-> it does not rebuild, you need a second build afterwards, so the full order is
-> **build → commit → browser lane → build again.**
+**Do not reason about which; run the experiment.** Stash the fix, run the spec and watch it
+go red; restore the fix and watch it go green. No commit is needed, it takes two minutes,
+and it is also the spec's recorded red run. If the result does not flip, the lane is not
+reading what you think it is.
+
+This section said for two months that tosijs was the second kind, from one tripwire that
+passed against a committed bundle. The build code was the same then, the measurement was
+never explained, and it does not reproduce. A confident note with a "Measured:" line in it
+was wrong, and was believed, because nobody re-ran it.
+
+> **Build → commit → browser lane → build again** is the safe order either way: the commit
+> makes the lane's result a statement about the commit, and the second build restores
+> whatever the lane's server replaced with a committed copy.
 
 Two things make this nastier than ordinary staleness:
 
-- **It fails in the safe-looking direction.** A stale bundle usually lacks your
-  change, so a test of new behaviour goes red and you investigate. A *tripwire* —
-  a test asserting a defect still exists — goes **green**, and green is the
-  answer you were hoping for.
-- **Nothing in the run mentions it.** The dev server logs the restore; the
+- **A stale bundle fails in the safe-looking direction.** It usually lacks your
+  change, so a test of new behaviour goes red and you investigate. A tripwire
+  goes **green**, and green is the answer you were hoping for.
+- **Nothing in the run mentions it.** The dev server logs a restore; the
   Playwright output does not, and the two scroll past in the same terminal.
+
+### A defect that depends on the browser's language needs a browser with that language
+
+*(tosijs 1.10.13, covers `v1.10.12..28b1babb`.)* `toLocaleLowerCase()` and
+`toLocaleUpperCase()` follow the browser's language. In Turkish and Azerbaijani `I`
+lower-cases to dotless `ı`, so a camelCase-to-kebab helper that used them emitted
+`align-ıtems` for every user of Firefox or Safari in that locale, for four years, with a
+green suite: no unit environment has a locale.
+
+- **Identifiers are converted with `toLowerCase()` / `toUpperCase()`.** The locale forms are
+  for text a person reads.
+- **Unit lane:** override the two `toLocale*` methods to call the engine's own Turkish
+  mapping (`toLocaleLowerCase.call(this, 'tr')`) and assert the public output, with a control
+  assertion that the override bites. Add a source guard that fails on a `toLocale*Case(` call
+  in library code outside doc examples: the fix is two method names, so the regression test
+  is their absence.
+- **Browser lane:** `test.use({ locale: 'tr-TR' })`. Playwright's locale changes case mapping
+  in **Firefox and WebKit and not in Chromium** (nor does `--lang`), so read the control in
+  the page (`'I'.toLocaleLowerCase()`), skip on Chromium with the reason stated, and FAIL on
+  the other two if the control stops holding. A spec that passes where the environment
+  cannot show the defect proves nothing. — seen in: tosijs
 
 **The same server also writes the COMMITTED site.** In a tosijs-ui/site project
 the webServer is `bun bin/site.ts`, which rebuilds `outputDir` (`docs/`, the

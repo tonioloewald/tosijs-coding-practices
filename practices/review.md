@@ -1674,6 +1674,15 @@ tested, not only the happy path. Then the shapes security blockers actually took
   key), then 1.10.11's `__proto__` guard compared the raw prop while the trap stripped
   `[__proto__]` and split `a.map[__proto__]` *after* the check. Put the guard after the
   normaliser, share one forbidden-name predicate, and make the spelling table the test.
+  **It then shipped a third time (1.10.13), so two more rules:** (1) *guard the operation,
+  not the place the spelling arrives.* The trap's check covered the key the trap read
+  itself; a compound path's base and every `.value` were resolved by a second function with
+  no read guard, so `a.__proto__.value` returned the prototype. Ask "which function resolves
+  a segment?", and guard every one of them, or the one they all call. (2) *Generate the
+  spelling table.* A hand-listed table holds the spellings someone thought of, which is why
+  it was green all three times; a product of segment spelling × position × parent kind × exit
+  found 463 hand-outs the day it was written. And a read is not harmless because it cannot
+  write: it can hand out the object. — tosijs, covers `v1.10.12..28b1babb`
 - **An inert sink is inert only on an inert element.** "Text is safe" holds for a `<span>`,
   not for `<script>` or `<style>`, whose text is code: setting an empty parser-inserted
   script's `textContent` runs it. When a boundary lists inert targets, the refusal table
