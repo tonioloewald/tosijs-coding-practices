@@ -1681,8 +1681,15 @@ tested, not only the happy path. Then the shapes security blockers actually took
   a segment?", and guard every one of them, or the one they all call. (2) *Generate the
   spelling table.* A hand-listed table holds the spellings someone thought of, which is why
   it was green all three times; a product of segment spelling × position × parent kind × exit
-  found 463 hand-outs the day it was written. And a read is not harmless because it cannot
-  write: it can hand out the object. — tosijs, covers `v1.10.12..28b1babb`
+  found several hundred hand-outs the day it was written. And a read is not harmless
+  because it cannot write: it can hand out the object. **Two things the first corpus got
+  wrong, found by its own re-review:** it detected a hand-out by identity, so a proxy
+  *wrapping* the prototype scored as a refusal and removing one of the guards left it
+  green (detect by what the value IS, and mutation-check each guard separately); and it
+  reached one branch of the resolver only because of an accident of its fixture (cover each
+  branch on purpose). Count the corpus's findings from its own counters, not from the lines
+  of a failing diff: two figures in this release's notes were off by one that way.
+  — tosijs, covers `v1.10.12..v1.10.13`
 - **An inert sink is inert only on an inert element.** "Text is safe" holds for a `<span>`,
   not for `<script>` or `<style>`, whose text is code: setting an empty parser-inserted
   script's `textContent` runs it. When a boundary lists inert targets, the refusal table
