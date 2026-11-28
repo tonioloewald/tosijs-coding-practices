@@ -81,6 +81,20 @@ How to work in a project day-to-day.
   `bun start` connects to *production* Firebase; use `bun start-emulated` + `bun seed` for
   isolated local work. Know your target before you write data. — seen in: loewald-dot-com
 
+## Docs, then examples, then code, then the examples become tests
+
+Write how a feature is used before writing it. Then write the examples that show it, then the
+code that makes them true. The examples then become its tests: test fences directly after
+each example ([`testing.md`](testing.md#doc--live-example-tests)). The docs can't drift from
+the code, because the same text is both. Writing the docs first is also the cheapest API
+review there is: a feature that's awkward to explain is awkward to use, and it's cheaper to
+change before the code exists.
+
+It's the same habit as DRY seen from another angle (review lens 3): one source for what a
+feature promises, with its tests generated from it.
+
+— owner (an ingrained habit, written down) · seen in: tosijs-ui (live-example test fences)
+
 ## Laziness with the right sign — minimize everyone's work
 
 Laziness is a legitimate engineering motivation, stated as policy by the owner: **DRY is, at

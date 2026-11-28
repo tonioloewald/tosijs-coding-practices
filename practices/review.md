@@ -1011,6 +1011,13 @@ Detail:
 
 ### 3. DRYness (reuse & simplification)
 
+**DRY finds bugs, not just bytes.** Ask it of the surface and of the implementation: are we
+doing the same thing in different ways? Two ways to do one thing in the API are one too many
+for a newcomer to learn. Two implementations of one rule are, more often than not, two
+answers, and at least one of them is wrong. The lean plans measured this: most of the 54
+defects they found were copies that disagreed (correctness gates 7 and 8). — owner (an
+ingrained habit, written down)
+
 **Cascade:**
 
 1. **Did the code get net larger?** (fact: `git diff --stat`, source lines only) Yes →
