@@ -881,6 +881,17 @@ obligations, which is why its reviews need more than the generic nine.
    be right-looking-but-wrong? Then it must carry the caveat (hard rule, below).
 6. **Did an instrument gain a signal it previously lacked?** Yes → every prior green obtained
    with the old instrument is unverified: re-run those checks (hard rule, below).
+7. **Is the rule the diff changes written anywhere else?** (fact: for each predicate, parser,
+   scanner, normaliser, URL or path composition, or teardown the diff touches, grep the repo
+   for other code that answers the same question. Search by what it decides ("is this a
+   number", "is this a tab body"), not only by name.) Yes → diff the copies. **A disagreement
+   is a correctness finding now,** even when the other copy is outside the diff. The fix is
+   the merge (lens 3, step 4), not a third copy.
+8. **Does the changed code depend on the environment?** (fact: the diff does case
+   conversion, local dates or times, storage, locale-sensitive sorting, or resolves package
+   subpaths) Yes → run it once where CI doesn't: a Turkish locale, a time zone west of UTC,
+   storage that throws, Node's resolver
+   ([`testing.md`](testing.md#test-the-environment-adopters-have-not-the-clean-room)).
 
 Detail and evidence for the gates above:
 
@@ -934,6 +945,18 @@ Detail and evidence for the gates above:
   (lens 9's blast radius pointing the good way).
 - **Done when:** the changed behavior has been **driven end-to-end** (see the next section),
   not just unit-tested — and driven in **more than one mode** if it supports more than one.
+- **Why gates 7 and 8 exist: reading by rule finds what reading by diff misses.** The first
+  two lean plans (`tools/lean-plan.SKILL.md`) read whole libraries and set out to slim them.
+  They found more defects than slimming: 13 live in tosijs 1.10.12 and 41 in tosijs-ui 1.19,
+  both releases that had passed this review. Most came from one cause: a rule written twice,
+  whose copies disagree. Examples: five "is a number" rules giving five answers; four ways of
+  resolving "an icon as a string or an element", three of them wrong; a proxy and a path
+  engine resolving the same key differently. A diff-scoped review checks the copy that
+  changed and never compares it with the others. The next-largest group needed an
+  environment CI lacks: a Turkish locale, a time zone west of UTC, blocked storage, Node's
+  resolver. Where a defect is one of a family, recommend a guard test over the whole class,
+  such as every component connected and disconnected N times, or every form component's
+  value, change, disabled and reset. Don't recommend a fix per member.
 
 — seen in: haltija (1.4.0: an https-only server kept `PORT`'s http default and advertised a
 port it wasn't listening on; a new warning was emitted before `--port` was parsed, so

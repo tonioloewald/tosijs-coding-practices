@@ -25,8 +25,11 @@ don't commit them.
 ## Read everything, and say how
 
 - Read every non-test module. On a large repo, read the core yourself, line by line, and
-  give other areas to a second reviewer. **Check every finding of theirs you quote against
-  the file.**
+  give other areas to other reviewers, one area each. Each says what they only skimmed. Then
+  one pass merges the reports and **re-opens every cited file:line**; in tosijs-ui that pass
+  dropped one item and corrected six counts or paths.
+- **Reviewers running in parallel don't share a port.** Either give each its own, or
+  run no browser and mark what that leaves unverified.
 - **Mark what you ran.** ✔ means executed (a unit check, a browser run against the
   published bundle), not inferred. A claim you only read is labelled as read.
 - **Line up the copies.** For every behaviour implemented more than once, diff the copies
@@ -47,8 +50,13 @@ owner must know.
    to do the most common task** (for example "ways to read a proxy's value: 11").
 4. **Fix first: defects found on the way.** They are neither cleanup nor redundancy. Give a
    table of the defect, its evidence (✔ with the exact reproduction), where it is, and its
-   card. Then a short sketch of each fix. Group defects that share a cause and name the
-   cause. Say which ones are worth a patch release on their own.
+   card. Say which ones are worth a patch release on their own. Then **group them by
+   cause**. For each cause give the fix the defects share (usually a phase 1 merge, not a
+   patch per copy), and the guard test or lane that would have caught the whole family:
+   - a class-wide test over every component;
+   - a scanner guard that fails on a copy outside the owner;
+   - a run under a Turkish locale, a time zone west of UTC, storage that throws, or Node's
+     resolver.
 5. **Phase 1: no functionality removed.** Open with **the guard** every package must pass:
    - the suites, including the browser lane;
    - a type-surface test;
@@ -99,5 +107,10 @@ owner must know.
 - **Report the plan's path and the "In brief" section to the owner.** The plan is the
   deliverable; don't paste it into chat.
 
-— asked by: Tonio (owner) · seen in: tosijs (`reviews/lean-plan-2026-11.md`, 1.10.12:
-thirteen defects found by lining up copies, eleven ways to read a value reduced to three)
+**It finds more bugs than slimming.** Most defects are one rule written twice, with copies
+that disagree: reading by rule exposes them, and reading by diff doesn't. The cheap form of
+this is in the correctness lens, gates 7 and 8 (review.md).
+
+— asked by: Tonio (owner) · seen in: tosijs (`reviews/lean-plan-2026-11.md`, 1.10.12: 13
+defects, eleven ways to read a value reduced to three), tosijs-ui (`reviews/lean-plan-2026-11.md`,
+1.19: 41 defects, most a rule written twice)
