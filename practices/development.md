@@ -93,7 +93,14 @@ change before the code exists.
 It's the same habit as DRY seen from another angle (review lens 3): one source for what a
 feature promises, with its tests generated from it.
 
-— owner (an ingrained habit, written down) · seen in: tosijs-ui (live-example test fences)
+**TJS builds this pattern into the language.** A parameter's type is an example value, and
+it becomes a runtime check. Inline `test` blocks sit beside the code they test, and the build
+runs them and produces the docs as well as the JS. So in a `.tjs` module the example, the
+type, the test and the docs are one text. Use that, rather than writing them separately
+([`testing.md`](testing.md#tjs-inline-tests), [`tjs-lang.md`](tjs-lang.md)).
+
+— owner (an ingrained habit, written down) · seen in: tosijs-ui (live-example test fences),
+tjs-lang (examples as types, inline tests run by the build)
 
 ## Laziness with the right sign — minimize everyone's work
 
